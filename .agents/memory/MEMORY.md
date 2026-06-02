@@ -1,0 +1,1 @@
+- [Fanfolio stack conventions](fanfolio-stack.md) — Expo Router + AsyncStorage + useLiveAssets + useGame + useColors; safe-language rules enforced throughout.

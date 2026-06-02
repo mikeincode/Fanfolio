@@ -156,6 +156,7 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         {[
+          { label: "View Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
           { label: "Learn Market Basics", icon: "book-open" as const, onPress: () => { router.back(); router.push("/(tabs)/learn"); } },
           { label: "View Leaderboard", icon: "award" as const, onPress: () => { router.back(); router.push("/(tabs)/leaderboard"); } },
           { label: "Browse Market", icon: "trending-up" as const, onPress: () => { router.back(); router.push("/(tabs)/market"); } },

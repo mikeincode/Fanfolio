@@ -136,6 +136,23 @@ export default function PortfolioScreen() {
         </View>
       )}
 
+      <Pressable
+        onPress={() => router.push("/journal")}
+        style={({ pressed }) => [
+          styles.journalBtn,
+          { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <View style={[styles.journalIcon, { backgroundColor: colors.primary + "15" }]}>
+          <Feather name="book" size={18} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.journalTitle, { color: colors.foreground }]}>Trading Journal</Text>
+          <Text style={[styles.journalSub, { color: colors.mutedForeground }]}>Review your buys and sells</Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+      </Pressable>
+
       <View style={styles.section}>
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Holdings</Text>
 
@@ -248,4 +265,8 @@ const styles = StyleSheet.create({
   allocationTrack: { flex: 1, height: 6, borderRadius: 3, overflow: "hidden" },
   allocationFill: { height: "100%", borderRadius: 3 },
   allocationPct: { width: 34, fontSize: 12, fontFamily: "Inter_500Medium", textAlign: "right" },
+  journalBtn: { flexDirection: "row", alignItems: "center", gap: 12, marginHorizontal: 20, marginBottom: 16, borderRadius: 14, borderWidth: 1, padding: 14 },
+  journalIcon: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  journalTitle: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  journalSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
 });

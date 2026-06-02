@@ -970,7 +970,12 @@ export default function HomeScreen() {
         {/* ── Recent Trades ──────────────────────────────── */}
         {recentTx.length > 0 && (
           <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Trades</Text>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Trades</Text>
+              <Pressable onPress={() => router.push("/journal")}>
+                <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+              </Pressable>
+            </View>
             {recentTx.map(tx => {
               const isBuy = tx.type === "buy";
               return (
