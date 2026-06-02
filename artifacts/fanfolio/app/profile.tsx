@@ -187,6 +187,7 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         {[
+          { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach") },
           { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
           { label: "View Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
           { label: "Learn Market Basics", icon: "book-open" as const, onPress: () => { router.back(); router.push("/(tabs)/learn"); } },

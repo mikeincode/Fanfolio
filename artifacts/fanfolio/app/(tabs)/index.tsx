@@ -525,6 +525,26 @@ export default function HomeScreen() {
   const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
+
+  const coachTip = useMemo(() => {
+    if (holdings.length === 0) return null;
+    const pv = holdings.reduce((s, h) => {
+      const a = liveAssets.find(x => x.id === h.assetId);
+      return s + (a ? a.price * h.quantity : 0);
+    }, 0);
+    if (pv === 0) return null;
+    const memePct = holdings.reduce((s, h) => {
+      const a = liveAssets.find(x => x.id === h.assetId);
+      return s + (a?.type === "Meme Coin" ? a.price * h.quantity : 0);
+    }, 0) / pv * 100;
+    const hasIndex = holdings.some(h => liveAssets.find(x => x.id === h.assetId)?.type === "Sport Index");
+    const sports = new Set(holdings.map(h => liveAssets.find(x => x.id === h.assetId)?.sport).filter(Boolean)).size;
+    if (!hasIndex) return "You own no indexes yet. Indexes can help spread risk across many assets.";
+    if (memePct > 50) return `Your portfolio is ${memePct.toFixed(0)}% meme coins. Expect bigger simulated swings.`;
+    if (sports >= 3) return `Nice diversification — you own assets across ${sports} sports.`;
+    if (sports === 1) return "All your assets are in one sport. Adding another sport builds real portfolio habits.";
+    return "Check your full Portfolio Coach report for a detailed breakdown.";
+  }, [holdings, liveAssets]);
   const [simulating, setSimulating] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
@@ -771,6 +791,25 @@ export default function HomeScreen() {
                 </Text>
               </View>
             </Pressable>
+          </View>
+        )}
+
+        {/* ── Coach Tip ────────────────────────────────── */}
+        {coachTip && (
+          <View style={styles.section}>
+            <View style={[styles.coachTipCard, { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "28" }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+                <Feather name="activity" size={13} color={colors.primary} />
+                <Text style={[styles.coachTipLabel, { color: colors.primary }]}>Coach Tip</Text>
+              </View>
+              <Text style={[styles.coachTipText, { color: colors.foreground }]}>{coachTip}</Text>
+              <Pressable
+                onPress={() => router.push("/portfolio-coach")}
+                style={[styles.coachTipBtn, { backgroundColor: colors.primary }]}
+              >
+                <Text style={[styles.coachTipBtnText, { color: colors.primaryForeground }]}>View Report</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
@@ -1221,6 +1260,12 @@ const styles = StyleSheet.create({
   challengeProgressLabel: { fontSize: 11, fontFamily: "Inter_500Medium", minWidth: 30, textAlign: "right" },
   challengeLevelRow: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
   challengeLevelText: { fontSize: 10, fontFamily: "Inter_400Regular" },
+  // Coach Tip card
+  coachTipCard: { borderRadius: 14, borderWidth: 1, padding: 14, gap: 10 },
+  coachTipLabel: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  coachTipText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  coachTipBtn: { alignSelf: "flex-start" as const, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  coachTipBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   // Scanner Pick card
   scanPickCard: { flexDirection: "row", borderRadius: 14, borderWidth: 1, overflow: "hidden" },
   scanPickAccent: { width: 3, alignSelf: "stretch" },

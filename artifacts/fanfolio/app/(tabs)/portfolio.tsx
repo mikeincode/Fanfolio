@@ -137,6 +137,23 @@ export default function PortfolioScreen() {
       )}
 
       <Pressable
+        onPress={() => router.push("/portfolio-coach")}
+        style={({ pressed }) => [
+          styles.journalBtn,
+          { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "28", opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <View style={[styles.journalIcon, { backgroundColor: colors.primary + "20" }]}>
+          <Feather name="activity" size={18} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.journalTitle, { color: colors.foreground }]}>Portfolio Coach</Text>
+          <Text style={[styles.journalSub, { color: colors.mutedForeground }]}>Review your risk and diversification</Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+      </Pressable>
+
+      <Pressable
         onPress={() => router.push("/journal")}
         style={({ pressed }) => [
           styles.journalBtn,
