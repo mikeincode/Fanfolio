@@ -213,6 +213,14 @@ interface AffectedHolding {
   impactLC: number;
 }
 
+interface AffectedWatchlistAsset {
+  assetId: string;
+  symbol: string;
+  name: string;
+  impactPercent: number;
+  currentPrice: number;
+}
+
 function DecisionCoachCard({
   event,
   colors,
@@ -222,7 +230,7 @@ function DecisionCoachCard({
   colors: ReturnType<typeof useColors>;
   onDismiss: () => void;
 }) {
-  const { holdings, priceOverrides } = useGame();
+  const { holdings, priceOverrides, watchlist } = useGame();
   const liveAssets = useLiveAssets();
   const [chosenAction, setChosenAction] = useState<"hold" | "buy" | "trim" | null>(null);
   const [lessonVisible, setLessonVisible] = useState(false);
@@ -254,10 +262,31 @@ function DecisionCoachCard({
     return affected.sort((a, b) => Math.abs(b.impactLC) - Math.abs(a.impactLC));
   }, [marketEvent, holdings, priceOverrides, liveAssets]);
 
+  const affectedWatchlist: AffectedWatchlistAsset[] = useMemo(() => {
+    if (!marketEvent) return [];
+    const result: AffectedWatchlistAsset[] = [];
+    for (const impact of marketEvent.impacts) {
+      if (!watchlist.includes(impact.assetId)) continue;
+      const alreadyHeld = holdings.some(h => h.assetId === impact.assetId);
+      if (alreadyHeld) continue;
+      const asset = liveAssets.find(a => a.id === impact.assetId);
+      result.push({
+        assetId: impact.assetId,
+        symbol: impact.symbol,
+        name: asset?.name ?? impact.symbol,
+        impactPercent: impact.impactPercent,
+        currentPrice: asset?.price ?? 0,
+      });
+    }
+    return result.sort((a, b) => Math.abs(b.impactPercent) - Math.abs(a.impactPercent));
+  }, [marketEvent, watchlist, holdings, liveAssets]);
+
   const totalImpactLC = affectedHoldings.reduce((s, h) => s + h.impactLC, 0);
   const impactIsPositive = totalImpactLC >= 0;
   const impactColor = impactIsPositive ? colors.green : colors.red;
   const biggestHolding = affectedHoldings[0];
+  const hasHoldings = affectedHoldings.length > 0;
+  const hasWatchlist = affectedWatchlist.length > 0;
 
   const handleAction = (action: "hold" | "buy" | "trim") => {
     Haptics.selectionAsync();
@@ -296,55 +325,96 @@ function DecisionCoachCard({
 
         <View style={[coachStyles.divider, { backgroundColor: colors.border }]} />
 
-        {affectedHoldings.length === 0 ? (
-          /* No affected holdings */
+        {!hasHoldings && !hasWatchlist ? (
+          /* Nothing affected at all */
           <View style={[coachStyles.noHoldingsCard, { backgroundColor: colors.muted + "30", borderColor: colors.border }]}>
             <Feather name="info" size={16} color={colors.mutedForeground} />
             <Text style={[coachStyles.noHoldingsText, { color: colors.mutedForeground }]}>
-              None of your current holdings were directly affected by this event. This is why diversification and a broad watchlist matter — you want positions across multiple sectors so you are not left out when any one area moves.
+              None of your current holdings or watched assets were directly affected. This is why diversification and a watchlist matter — tracking assets across multiple sectors means you are never fully left out when an area moves.
             </Text>
           </View>
         ) : (
           <>
             {/* Affected Holdings */}
-            <View style={coachStyles.section}>
-              <Text style={[coachStyles.sectionLabel, { color: colors.mutedForeground }]}>AFFECTED HOLDINGS</Text>
-              {affectedHoldings.map(h => {
-                const isUp = h.impactPercent >= 0;
-                const c = isUp ? colors.green : colors.red;
-                return (
-                  <View key={h.assetId} style={coachStyles.holdingRow}>
-                    <Text style={[coachStyles.holdingSymbol, { color: colors.foreground }]}>{h.symbol}</Text>
-                    <Text style={[coachStyles.holdingQty, { color: colors.mutedForeground }]}>{h.quantity} shares</Text>
-                    <View style={{ flex: 1 }} />
-                    <View style={[coachStyles.changePill, { backgroundColor: c + "20" }]}>
-                      <Text style={[coachStyles.changePillText, { color: c }]}>
-                        {isUp ? "+" : ""}{h.impactPercent.toFixed(0)}%
+            {hasHoldings && (
+              <View style={coachStyles.section}>
+                <Text style={[coachStyles.sectionLabel, { color: colors.mutedForeground }]}>AFFECTED HOLDINGS</Text>
+                {affectedHoldings.map(h => {
+                  const isUp = h.impactPercent >= 0;
+                  const c = isUp ? colors.green : colors.red;
+                  return (
+                    <View key={h.assetId} style={coachStyles.holdingRow}>
+                      <Text style={[coachStyles.holdingSymbol, { color: colors.foreground }]}>{h.symbol}</Text>
+                      <Text style={[coachStyles.holdingQty, { color: colors.mutedForeground }]}>{h.quantity} shares</Text>
+                      <View style={{ flex: 1 }} />
+                      <View style={[coachStyles.changePill, { backgroundColor: c + "20" }]}>
+                        <Text style={[coachStyles.changePillText, { color: c }]}>
+                          {isUp ? "+" : ""}{h.impactPercent.toFixed(0)}%
+                        </Text>
+                      </View>
+                      <Text style={[coachStyles.impactLC, { color: c }]}>
+                        {h.impactLC >= 0 ? "+" : ""}{h.impactLC.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
                       </Text>
                     </View>
-                    <Text style={[coachStyles.impactLC, { color: c }]}>
-                      {h.impactLC >= 0 ? "+" : ""}{h.impactLC.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
+                  );
+                })}
+              </View>
+            )}
+
+            {/* Watchlist assets affected — show even when user owns none */}
+            {hasWatchlist && (
+              <View style={coachStyles.section}>
+                <Text style={[coachStyles.sectionLabel, { color: colors.coin }]}>WATCHLIST MOVED</Text>
+                {!hasHoldings && (
+                  <View style={[coachStyles.watchlistNote, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "25" }]}>
+                    <Feather name="bookmark" size={13} color={colors.coin} />
+                    <Text style={[coachStyles.watchlistNoteText, { color: colors.foreground }]}>
+                      None of your holdings were affected, but assets on your watchlist moved. This is why tracking assets before trading helps — you learn how prices behave before spending LuckyCoin.
                     </Text>
                   </View>
-                );
-              })}
-            </View>
-
-            {/* Portfolio Impact */}
-            <View style={[coachStyles.impactBox, { backgroundColor: impactColor + "10", borderColor: impactColor + "30" }]}>
-              <View style={coachStyles.impactRow}>
-                <Feather name={impactIsPositive ? "trending-up" : "trending-down"} size={14} color={impactColor} />
-                <Text style={[coachStyles.impactLabel, { color: colors.mutedForeground }]}>Portfolio Impact</Text>
+                )}
+                {affectedWatchlist.map(w => {
+                  const isUp = w.impactPercent >= 0;
+                  const c = isUp ? colors.green : colors.red;
+                  return (
+                    <Pressable
+                      key={w.assetId}
+                      onPress={() => router.push({ pathname: "/asset/[id]", params: { id: w.assetId } })}
+                      style={coachStyles.holdingRow}
+                    >
+                      <Feather name="bookmark" size={11} color={colors.coin} />
+                      <Text style={[coachStyles.holdingSymbol, { color: colors.foreground }]}>{w.symbol}</Text>
+                      <Text style={[coachStyles.holdingQty, { color: colors.mutedForeground }]}>{w.currentPrice.toFixed(2)} LC</Text>
+                      <View style={{ flex: 1 }} />
+                      <View style={[coachStyles.changePill, { backgroundColor: c + "20" }]}>
+                        <Text style={[coachStyles.changePillText, { color: c }]}>
+                          {isUp ? "+" : ""}{w.impactPercent.toFixed(0)}%
+                        </Text>
+                      </View>
+                      <Feather name="chevron-right" size={12} color={colors.mutedForeground} />
+                    </Pressable>
+                  );
+                })}
               </View>
-              <Text style={[coachStyles.impactValue, { color: impactColor }]}>
-                {impactIsPositive ? "+" : ""}{totalImpactLC.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
-              </Text>
-              <Text style={[coachStyles.impactNote, { color: colors.mutedForeground }]}>
-                {impactIsPositive
-                  ? "Your holdings gained value from this event. Simulated gains — no cash value."
-                  : "Your holdings lost value from this event. Simulated loss — no cash value."}
-              </Text>
-            </View>
+            )}
+
+            {/* Portfolio Impact — only when holdings are affected */}
+            {hasHoldings && (
+              <View style={[coachStyles.impactBox, { backgroundColor: impactColor + "10", borderColor: impactColor + "30" }]}>
+                <View style={coachStyles.impactRow}>
+                  <Feather name={impactIsPositive ? "trending-up" : "trending-down"} size={14} color={impactColor} />
+                  <Text style={[coachStyles.impactLabel, { color: colors.mutedForeground }]}>Portfolio Impact</Text>
+                </View>
+                <Text style={[coachStyles.impactValue, { color: impactColor }]}>
+                  {impactIsPositive ? "+" : ""}{totalImpactLC.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
+                </Text>
+                <Text style={[coachStyles.impactNote, { color: colors.mutedForeground }]}>
+                  {impactIsPositive
+                    ? "Your holdings gained value from this event. Simulated gains — no cash value."
+                    : "Your holdings lost value from this event. Simulated loss — no cash value."}
+                </Text>
+              </View>
+            )}
 
             {/* Market Lesson */}
             <View style={[coachStyles.lessonBox, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
@@ -355,80 +425,82 @@ function DecisionCoachCard({
               <Text style={[coachStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
             </View>
 
-            {/* Action Buttons */}
-            <View style={coachStyles.section}>
-              <Text style={[coachStyles.sectionLabel, { color: colors.mutedForeground }]}>WHAT WOULD YOU DO?</Text>
-              <View style={coachStyles.actionRow}>
-                <Pressable
-                  onPress={() => handleAction("hold")}
-                  style={[
-                    coachStyles.actionBtn,
-                    {
-                      borderColor: chosenAction === "hold" ? colors.primary : colors.border,
-                      backgroundColor: chosenAction === "hold" ? colors.primary + "15" : colors.background,
-                    },
-                  ]}
-                >
-                  <Feather name="anchor" size={14} color={chosenAction === "hold" ? colors.primary : colors.mutedForeground} />
-                  <Text style={[coachStyles.actionBtnText, { color: chosenAction === "hold" ? colors.primary : colors.foreground }]}>Hold</Text>
-                </Pressable>
+            {/* Action Buttons — only shown when user has affected holdings */}
+            {hasHoldings && (
+              <View style={coachStyles.section}>
+                <Text style={[coachStyles.sectionLabel, { color: colors.mutedForeground }]}>WHAT WOULD YOU DO?</Text>
+                <View style={coachStyles.actionRow}>
+                  <Pressable
+                    onPress={() => handleAction("hold")}
+                    style={[
+                      coachStyles.actionBtn,
+                      {
+                        borderColor: chosenAction === "hold" ? colors.primary : colors.border,
+                        backgroundColor: chosenAction === "hold" ? colors.primary + "15" : colors.background,
+                      },
+                    ]}
+                  >
+                    <Feather name="anchor" size={14} color={chosenAction === "hold" ? colors.primary : colors.mutedForeground} />
+                    <Text style={[coachStyles.actionBtnText, { color: chosenAction === "hold" ? colors.primary : colors.foreground }]}>Hold</Text>
+                  </Pressable>
 
-                <Pressable
-                  onPress={() => handleAction("buy")}
-                  style={[
-                    coachStyles.actionBtn,
-                    {
-                      borderColor: chosenAction === "buy" ? colors.green : colors.border,
-                      backgroundColor: chosenAction === "buy" ? colors.green + "15" : colors.background,
-                    },
-                  ]}
-                >
-                  <Feather name="plus-circle" size={14} color={chosenAction === "buy" ? colors.green : colors.mutedForeground} />
-                  <Text style={[coachStyles.actionBtnText, { color: chosenAction === "buy" ? colors.green : colors.foreground }]}>Buy More</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => handleAction("buy")}
+                    style={[
+                      coachStyles.actionBtn,
+                      {
+                        borderColor: chosenAction === "buy" ? colors.green : colors.border,
+                        backgroundColor: chosenAction === "buy" ? colors.green + "15" : colors.background,
+                      },
+                    ]}
+                  >
+                    <Feather name="plus-circle" size={14} color={chosenAction === "buy" ? colors.green : colors.mutedForeground} />
+                    <Text style={[coachStyles.actionBtnText, { color: chosenAction === "buy" ? colors.green : colors.foreground }]}>Buy More</Text>
+                  </Pressable>
 
-                <Pressable
-                  onPress={() => handleAction("trim")}
-                  style={[
-                    coachStyles.actionBtn,
-                    {
-                      borderColor: chosenAction === "trim" ? colors.red : colors.border,
-                      backgroundColor: chosenAction === "trim" ? colors.red + "15" : colors.background,
-                    },
-                  ]}
-                >
-                  <Feather name="scissors" size={14} color={chosenAction === "trim" ? colors.red : colors.mutedForeground} />
-                  <Text style={[coachStyles.actionBtnText, { color: chosenAction === "trim" ? colors.red : colors.foreground }]}>Trim</Text>
-                </Pressable>
+                  <Pressable
+                    onPress={() => handleAction("trim")}
+                    style={[
+                      coachStyles.actionBtn,
+                      {
+                        borderColor: chosenAction === "trim" ? colors.red : colors.border,
+                        backgroundColor: chosenAction === "trim" ? colors.red + "15" : colors.background,
+                      },
+                    ]}
+                  >
+                    <Feather name="scissors" size={14} color={chosenAction === "trim" ? colors.red : colors.mutedForeground} />
+                    <Text style={[coachStyles.actionBtnText, { color: chosenAction === "trim" ? colors.red : colors.foreground }]}>Trim</Text>
+                  </Pressable>
 
-                <Pressable
-                  onPress={() => setLessonVisible(true)}
-                  style={[coachStyles.actionBtn, { borderColor: colors.blue + "60", backgroundColor: colors.blue + "10" }]}
-                >
-                  <Feather name="book" size={14} color={colors.blue} />
-                  <Text style={[coachStyles.actionBtnText, { color: colors.blue }]}>Lesson</Text>
-                </Pressable>
-              </View>
-
-              {/* Inline explanation when an action is chosen */}
-              {chosenAction && (
-                <View style={[coachStyles.explainBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <Text style={[coachStyles.explainText, { color: colors.foreground }]}>
-                    {ACTION_EXPLANATIONS[chosenAction]}
-                  </Text>
-                  {(chosenAction === "buy" || chosenAction === "trim") && biggestHolding && (
-                    <Pressable
-                      onPress={handleNavigateAsset}
-                      style={[coachStyles.goToAssetBtn, { backgroundColor: chosenAction === "buy" ? colors.green : colors.red, borderRadius: colors.radius - 4 }]}
-                    >
-                      <Text style={[coachStyles.goToAssetText, { color: chosenAction === "buy" ? "#0C0F14" : "#fff" }]}>
-                        Go to {biggestHolding.symbol} →
-                      </Text>
-                    </Pressable>
-                  )}
+                  <Pressable
+                    onPress={() => setLessonVisible(true)}
+                    style={[coachStyles.actionBtn, { borderColor: colors.blue + "60", backgroundColor: colors.blue + "10" }]}
+                  >
+                    <Feather name="book" size={14} color={colors.blue} />
+                    <Text style={[coachStyles.actionBtnText, { color: colors.blue }]}>Lesson</Text>
+                  </Pressable>
                 </View>
-              )}
-            </View>
+
+                {/* Inline explanation when an action is chosen */}
+                {chosenAction && (
+                  <View style={[coachStyles.explainBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Text style={[coachStyles.explainText, { color: colors.foreground }]}>
+                      {ACTION_EXPLANATIONS[chosenAction]}
+                    </Text>
+                    {(chosenAction === "buy" || chosenAction === "trim") && biggestHolding && (
+                      <Pressable
+                        onPress={handleNavigateAsset}
+                        style={[coachStyles.goToAssetBtn, { backgroundColor: chosenAction === "buy" ? colors.green : colors.red, borderRadius: colors.radius - 4 }]}
+                      >
+                        <Text style={[coachStyles.goToAssetText, { color: chosenAction === "buy" ? "#0C0F14" : "#fff" }]}>
+                          Go to {biggestHolding.symbol} →
+                        </Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </View>
+            )}
           </>
         )}
       </View>
@@ -449,7 +521,7 @@ function DecisionCoachCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist } = useGame();
   const liveAssets = useLiveAssets();
   const [simulating, setSimulating] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
@@ -470,6 +542,14 @@ export default function HomeScreen() {
       .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))
       .slice(0, 5),
     [liveAssets]
+  );
+
+  const watchlistMovers = useMemo(() =>
+    [...liveAssets]
+      .filter(a => watchlist.includes(a.id))
+      .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))
+      .slice(0, 5),
+    [liveAssets, watchlist]
   );
 
   const showCoachCard =
@@ -667,6 +747,71 @@ export default function HomeScreen() {
             />
           </View>
         )}
+
+        {/* ── Watchlist Movers ──────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.watchlistSectionLeft}>
+              <Feather name="bookmark" size={15} color={colors.coin} />
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Watchlist</Text>
+            </View>
+            <Pressable onPress={() => router.push("/(tabs)/market")}>
+              <Text style={[styles.seeAll, { color: colors.coin }]}>Manage</Text>
+            </Pressable>
+          </View>
+
+          {watchlistMovers.length === 0 ? (
+            <View style={[styles.watchlistEmpty, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "25" }]}>
+              <Feather name="bookmark" size={28} color={colors.coin} />
+              <Text style={[styles.watchlistEmptyTitle, { color: colors.foreground }]}>
+                Watch assets before you trade
+              </Text>
+              <Text style={[styles.watchlistEmptyText, { color: colors.mutedForeground }]}>
+                Following an asset helps you learn how prices move before spending LuckyCoin. Like scouting a player before drafting them.
+              </Text>
+              <Pressable
+                onPress={() => router.push("/(tabs)/market")}
+                style={[styles.watchlistEmptyBtn, { backgroundColor: colors.coin }]}
+              >
+                <Text style={[styles.watchlistEmptyBtnText, { color: "#0C0F14" }]}>Browse Market</Text>
+              </Pressable>
+            </View>
+          ) : (
+            watchlistMovers.map(asset => {
+              const isUp = asset.dailyChangePercent >= 0;
+              const changeColor = isUp ? colors.green : colors.red;
+              return (
+                <Pressable
+                  key={asset.id}
+                  onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
+                  style={({ pressed }) => [
+                    styles.moverCard,
+                    { backgroundColor: colors.card, borderColor: colors.coin + "30", opacity: pressed ? 0.85 : 1 },
+                  ]}
+                >
+                  <View style={styles.moverLeft}>
+                    <View style={styles.watchlistMoverSymbolRow}>
+                      <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
+                      <Feather name="bookmark" size={10} color={colors.coin} />
+                    </View>
+                    <Text style={[styles.moverName, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
+                  </View>
+                  <SparklineChart data={asset.chartData} width={60} height={24} positive={isUp} />
+                  <View style={styles.moverRight}>
+                    <Text style={[styles.moverPrice, { color: colors.foreground }]}>
+                      {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Text>
+                    <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
+                      <Text style={[styles.changeText, { color: changeColor }]}>
+                        {isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
+        </View>
 
         {/* ── Top Movers ───────────────────────────────── */}
         <View style={styles.section}>
@@ -882,6 +1027,14 @@ const styles = StyleSheet.create({
   ctaCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 20, gap: 6, alignItems: "center", marginBottom: 12 },
   ctaTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   ctaSub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
+  // Watchlist section
+  watchlistSectionLeft: { flexDirection: "row", alignItems: "center", gap: 6 },
+  watchlistEmpty: { borderRadius: 14, borderWidth: 1, padding: 20, gap: 8, alignItems: "center" },
+  watchlistEmptyTitle: { fontSize: 15, fontFamily: "Inter_700Bold", textAlign: "center" },
+  watchlistEmptyText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20, textAlign: "center" },
+  watchlistEmptyBtn: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
+  watchlistEmptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  watchlistMoverSymbolRow: { flexDirection: "row", alignItems: "center", gap: 5 },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────
@@ -941,6 +1094,8 @@ const coachStyles = StyleSheet.create({
   explainText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
   goToAssetBtn: { paddingHorizontal: 14, paddingVertical: 9, alignSelf: "flex-start" },
   goToAssetText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  watchlistNote: { flexDirection: "row", alignItems: "flex-start", gap: 8, borderRadius: 10, borderWidth: 1, padding: 12 },
+  watchlistNoteText: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 18 },
   noHoldingsCard: { borderRadius: 12, borderWidth: 1, padding: 14, flexDirection: "row", gap: 10, alignItems: "flex-start" },
   noHoldingsText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
 });

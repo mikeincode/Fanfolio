@@ -15,13 +15,14 @@ import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { CoinBadge } from "@/components/CoinBadge";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername } = useGame();
+  const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents } = useGame();
+  const liveAssets = useLiveAssets();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(username);
 
@@ -29,7 +30,7 @@ export default function ProfileScreen() {
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const portfolioValue = holdings.reduce((sum, h) => {
-    const asset = MOCK_ASSETS.find(a => a.id === h.assetId);
+    const asset = liveAssets.find(a => a.id === h.assetId);
     return sum + (asset ? asset.price * h.quantity : 0);
   }, 0);
   const totalValue = portfolioValue + luckyCoinBalance;
@@ -47,6 +48,8 @@ export default function ProfileScreen() {
     { label: "Total Value", value: `${Math.round(totalValue).toLocaleString()} LC`, icon: "dollar-sign" as const },
     { label: "Holdings", value: holdings.length.toString(), icon: "briefcase" as const },
     { label: "Trades", value: transactions.length.toString(), icon: "repeat" as const },
+    { label: "Watching", value: `${watchlist.length} asset${watchlist.length !== 1 ? "s" : ""}`, icon: "bookmark" as const },
+    { label: "Events", value: appliedEvents.length.toString(), icon: "zap" as const },
     { label: "Joined", value: joinedDate, icon: "calendar" as const },
   ];
 
@@ -100,14 +103,46 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.statsGrid}>
-        {stats.map(s => (
-          <View key={s.label} style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name={s.icon} size={16} color={colors.primary} />
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{s.value}</Text>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{s.label}</Text>
-          </View>
-        ))}
+        {stats.map(s => {
+          const isWatch = s.icon === "bookmark";
+          return (
+            <View
+              key={s.label}
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: isWatch && watchlist.length > 0 ? colors.coin + "50" : colors.border,
+                },
+              ]}
+            >
+              <Feather name={s.icon} size={16} color={isWatch ? colors.coin : colors.primary} />
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{s.value}</Text>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>{s.label}</Text>
+            </View>
+          );
+        })}
       </View>
+
+      {watchlist.length > 0 && (
+        <View style={[styles.watchlistCard, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
+          <View style={styles.watchlistHeader}>
+            <Feather name="bookmark" size={16} color={colors.coin} />
+            <Text style={[styles.watchlistTitle, { color: colors.coin }]}>Your Watchlist</Text>
+            <Text style={[styles.watchlistCount, { color: colors.mutedForeground }]}>{watchlist.length} assets</Text>
+          </View>
+          <Text style={[styles.watchlistBody, { color: colors.foreground }]}>
+            Watching an asset means you are following it without buying yet. Like scouting a player before drafting them — you study the market before spending LuckyCoin.
+          </Text>
+          <Pressable
+            onPress={() => { router.back(); router.push("/(tabs)/market"); }}
+            style={[styles.watchlistBtn, { borderColor: colors.coin + "50" }]}
+          >
+            <Feather name="trending-up" size={14} color={colors.coin} />
+            <Text style={[styles.watchlistBtnText, { color: colors.coin }]}>View Watchlist in Market</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={[styles.disclaimerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.disclaimerHeader}>
@@ -159,10 +194,17 @@ const styles = StyleSheet.create({
   username: { fontSize: 22, fontFamily: "Inter_700Bold" },
   rank: { fontSize: 13, fontFamily: "Inter_400Regular" },
   balancePill: { borderRadius: 50, borderWidth: 1, paddingHorizontal: 20, paddingVertical: 10, marginTop: 4 },
-  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 20, marginBottom: 20 },
+  statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 20, marginBottom: 16 },
   statCard: { width: "47%", borderRadius: 14, borderWidth: 1, padding: 16, gap: 4, alignItems: "center" },
   statValue: { fontSize: 18, fontFamily: "Inter_700Bold", textAlign: "center" },
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  watchlistCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 16, gap: 10, marginBottom: 16 },
+  watchlistHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  watchlistTitle: { fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },
+  watchlistCount: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  watchlistBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  watchlistBtn: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, alignSelf: "flex-start" },
+  watchlistBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   disclaimerCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 20, gap: 8 },
   disclaimerHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   disclaimerTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },

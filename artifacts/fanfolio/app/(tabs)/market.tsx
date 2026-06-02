@@ -17,11 +17,12 @@ import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { AssetCard } from "@/components/AssetCard";
 import { useGame } from "@/context/GameContext";
 
-type FilterTab = "All" | AssetType;
+type FilterTab = "All" | "Watchlist" | AssetType;
 
-const TABS: FilterTab[] = ["All", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
+const TABS: FilterTab[] = ["All", "Watchlist", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
 const TAB_LABELS: Record<FilterTab, string> = {
   "All": "All",
+  "Watchlist": "Watchlist",
   "Team Stock": "Teams",
   "Player Coin": "Players",
   "Sport Index": "Indexes",
@@ -35,14 +36,16 @@ export default function MarketScreen() {
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
   const [search, setSearch] = useState("");
   const liveAssets = useLiveAssets();
-  const { latestEvent } = useGame();
+  const { latestEvent, watchlist, addToWatchlist, removeFromWatchlist, isWatched } = useGame();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const filtered = useMemo(() => {
     let assets = liveAssets;
-    if (activeTab !== "All") {
+    if (activeTab === "Watchlist") {
+      assets = assets.filter(a => watchlist.includes(a.id));
+    } else if (activeTab !== "All") {
       assets = assets.filter(a => a.type === activeTab);
     }
     if (search.trim()) {
@@ -54,7 +57,15 @@ export default function MarketScreen() {
       );
     }
     return assets;
-  }, [activeTab, search, liveAssets]);
+  }, [activeTab, search, liveAssets, watchlist]);
+
+  const handleWatchToggle = (assetId: string) => {
+    if (isWatched(assetId)) {
+      removeFromWatchlist(assetId);
+    } else {
+      addToWatchlist(assetId);
+    }
+  };
 
   const gainers = liveAssets.filter(a => a.dailyChangePercent > 0).length;
   const losers = liveAssets.filter(a => a.dailyChangePercent < 0).length;
@@ -73,6 +84,12 @@ export default function MarketScreen() {
               <View style={[styles.metaDot, { backgroundColor: colors.red }]} />
               <Text style={[styles.metaText, { color: colors.mutedForeground }]}>{losers} down</Text>
             </View>
+            {watchlist.length > 0 && (
+              <View style={styles.metaItem}>
+                <Feather name="bookmark" size={11} color={colors.coin} />
+                <Text style={[styles.metaText, { color: colors.coin }]}>{watchlist.length} watching</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -110,19 +127,31 @@ export default function MarketScreen() {
           contentContainerStyle={styles.tabList}
           renderItem={({ item }) => {
             const active = activeTab === item;
+            const isWatchlistTab = item === "Watchlist";
+            const activeBg = isWatchlistTab ? colors.coin : colors.primary;
             return (
               <Pressable
                 onPress={() => setActiveTab(item)}
                 style={[
                   styles.tab,
                   {
-                    backgroundColor: active ? colors.primary : colors.card,
-                    borderColor: active ? colors.primary : colors.border,
+                    backgroundColor: active ? activeBg : colors.card,
+                    borderColor: active ? activeBg : colors.border,
                   },
                 ]}
               >
-                <Text style={[styles.tabText, { color: active ? colors.primaryForeground : colors.mutedForeground }]}>
-                  {TAB_LABELS[item]}
+                {isWatchlistTab && (
+                  <Feather
+                    name="bookmark"
+                    size={11}
+                    color={active ? "#0C0F14" : colors.coin}
+                  />
+                )}
+                <Text style={[
+                  styles.tabText,
+                  { color: active ? (isWatchlistTab ? "#0C0F14" : colors.primaryForeground) : colors.mutedForeground },
+                ]}>
+                  {TAB_LABELS[item]}{isWatchlistTab && watchlist.length > 0 ? ` (${watchlist.length})` : ""}
                 </Text>
               </Pressable>
             );
@@ -138,13 +167,33 @@ export default function MarketScreen() {
         renderItem={({ item }) => (
           <AssetCard
             asset={item}
+            isWatched={isWatched(item.id)}
+            onWatchToggle={handleWatchToggle}
             onPress={() => router.push({ pathname: "/asset/[id]", params: { id: item.id } })}
           />
         )}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Feather name="search" size={32} color={colors.mutedForeground} />
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No assets found</Text>
+            {activeTab === "Watchlist" ? (
+              <>
+                <Feather name="bookmark" size={36} color={colors.coin} />
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No assets on your watchlist</Text>
+                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                  Tap the {"\u{1F516}"} icon on any asset to watch it. Following an asset helps you learn how prices move before spending LuckyCoin.
+                </Text>
+                <Pressable
+                  onPress={() => setActiveTab("All")}
+                  style={[styles.emptyBtn, { backgroundColor: colors.coin, borderRadius: colors.radius - 4 }]}
+                >
+                  <Text style={[styles.emptyBtnText, { color: "#0C0F14" }]}>Browse All Assets</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Feather name="search" size={32} color={colors.mutedForeground} />
+                <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No assets found</Text>
+              </>
+            )}
           </View>
         }
       />
@@ -157,7 +206,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingBottom: 8, gap: 10 },
   headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
   title: { fontSize: 28, fontFamily: "Inter_700Bold" },
-  marketMeta: { flexDirection: "row", gap: 12 },
+  marketMeta: { flexDirection: "row", gap: 10, alignItems: "center" },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaDot: { width: 6, height: 6, borderRadius: 3 },
   metaText: { fontSize: 12, fontFamily: "Inter_500Medium" },
@@ -167,8 +216,11 @@ const styles = StyleSheet.create({
   searchBar: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 40 },
   searchInput: { flex: 1, fontSize: 14 },
   tabList: { gap: 8, paddingVertical: 4 },
-  tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
+  tab: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   tabText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  empty: { alignItems: "center", paddingTop: 60, gap: 8 },
-  emptyText: { fontSize: 15, fontFamily: "Inter_500Medium" },
+  empty: { alignItems: "center", paddingTop: 60, paddingHorizontal: 32, gap: 10 },
+  emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold", textAlign: "center" },
+  emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
+  emptyBtn: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 },
+  emptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
 });

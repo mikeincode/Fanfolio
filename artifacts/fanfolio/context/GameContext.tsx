@@ -57,6 +57,7 @@ interface GameState {
   joinDate: number;
   priceOverrides: Record<string, AssetPriceOverride>;
   appliedEvents: AppliedEvent[];
+  watchlist: string[];
 }
 
 interface GameContextValue extends GameState {
@@ -69,6 +70,9 @@ interface GameContextValue extends GameState {
   updateUsername: (username: string) => void;
   applyMarketEvent: (eventId?: string) => { success: boolean; event: MarketEvent | null; message: string };
   latestEvent: AppliedEvent | null;
+  addToWatchlist: (assetId: string) => void;
+  removeFromWatchlist: (assetId: string) => void;
+  isWatched: (assetId: string) => boolean;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -83,6 +87,7 @@ const defaultState: GameState = {
   joinDate: Date.now(),
   priceOverrides: {},
   appliedEvents: [],
+  watchlist: [],
 };
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -99,6 +104,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             ...parsed,
             priceOverrides: parsed.priceOverrides ?? {},
             appliedEvents: parsed.appliedEvents ?? [],
+            watchlist: parsed.watchlist ?? [],
           });
         } catch {
           setState(defaultState);
@@ -213,7 +219,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!event) return { success: false, event: null, message: "Event not found" };
 
     const newOverrides: Record<string, AssetPriceOverride> = { ...state.priceOverrides };
-
     let biggestMove = { symbol: "", assetId: "", changePercent: 0 };
 
     for (const impact of event.impacts) {
@@ -223,7 +228,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const existing = newOverrides[impact.assetId];
       const currentPrice = existing?.price ?? base.price;
       const currentChart = existing?.chartData ?? base.chartData;
-
       const newPrice = Math.max(0.01, currentPrice * (1 + impact.impactPercent / 100));
       const newChartData = [...currentChart, newPrice].slice(-25);
 
@@ -262,6 +266,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return { success: true, event, message: event.title };
   }, [state, save]);
 
+  const addToWatchlist = useCallback((assetId: string) => {
+    if (state.watchlist.includes(assetId)) return;
+    save({ ...state, watchlist: [...state.watchlist, assetId] });
+  }, [state, save]);
+
+  const removeFromWatchlist = useCallback((assetId: string) => {
+    save({ ...state, watchlist: state.watchlist.filter(id => id !== assetId) });
+  }, [state, save]);
+
+  const isWatched = useCallback((assetId: string): boolean => {
+    return state.watchlist.includes(assetId);
+  }, [state.watchlist]);
+
   const latestEvent = state.appliedEvents[0] ?? null;
   const canClaimDaily = state.lastDailyClaim !== new Date().toDateString();
 
@@ -279,6 +296,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       updateUsername,
       applyMarketEvent,
       latestEvent,
+      addToWatchlist,
+      removeFromWatchlist,
+      isWatched,
     }}>
       {children}
     </GameContext.Provider>

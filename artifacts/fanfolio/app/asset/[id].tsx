@@ -67,7 +67,7 @@ function TradeModal({
     if (result.success) {
       const lesson = isBuy
         ? "Remember: Never invest more than you can afford to lose. Diversify your portfolio!"
-        : "Selling locks in your profit or loss. Review your portfolio to see your updated position.";
+        : "Selling locks in your simulated gain or loss. Review your portfolio to see your updated position.";
       onClose();
       setTimeout(() => {
         Alert.alert(isBuy ? "Trade Executed!" : "Sold!", result.message + "\n\n" + lesson, [{ text: "Got it" }]);
@@ -166,7 +166,7 @@ export default function AssetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { getHolding } = useGame();
+  const { getHolding, isWatched, addToWatchlist, removeFromWatchlist } = useGame();
   const [tradeMode, setTradeMode] = useState<TradeMode | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -174,6 +174,17 @@ export default function AssetDetailScreen() {
 
   const asset = useLiveAsset(id ?? "");
   const holding = getHolding(id ?? "");
+  const watched = id ? isWatched(id) : false;
+
+  const handleWatchToggle = () => {
+    if (!id) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (watched) {
+      removeFromWatchlist(id);
+    } else {
+      addToWatchlist(id);
+    }
+  };
 
   if (!asset) {
     return (
@@ -211,7 +222,7 @@ export default function AssetDetailScreen() {
         </View>
 
         <View style={styles.header}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.symbol, { color: colors.foreground }]}>{asset.symbol}</Text>
             <Text style={[styles.assetName, { color: colors.mutedForeground }]}>{asset.name}</Text>
             <Text style={[styles.sport, { color: colors.mutedForeground }]}>{asset.sport}</Text>
@@ -259,6 +270,19 @@ export default function AssetDetailScreen() {
             <Text style={[styles.cardBody, { color: colors.foreground }]}>{asset.marketLesson}</Text>
           </View>
 
+          {/* Watchlist education card */}
+          <View style={[styles.card, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
+            <View style={styles.cardRow}>
+              <Feather name="bookmark" size={14} color={colors.coin} />
+              <Text style={[styles.cardLabel, { color: colors.coin }]}>Watching This Asset</Text>
+            </View>
+            <Text style={[styles.cardBody, { color: colors.foreground }]}>
+              {watched
+                ? "You are watching this asset. You will see it in your Watchlist and the coach will alert you when market events affect it."
+                : "Watching an asset means you are following it without buying yet. This is like scouting a player before drafting them onto your roster."}
+            </Text>
+          </View>
+
           {holding && (
             <View style={[styles.card, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>
               <Text style={[styles.cardLabel, { color: colors.primary }]}>Your Position</Text>
@@ -286,6 +310,24 @@ export default function AssetDetailScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: bottomPad + 12, backgroundColor: colors.background, borderTopColor: colors.border }]}>
+        {/* Watchlist toggle */}
+        <Pressable
+          onPress={handleWatchToggle}
+          style={({ pressed }) => [
+            styles.watchFooterBtn,
+            {
+              borderColor: watched ? colors.coin : colors.border,
+              backgroundColor: watched ? colors.coin + "15" : colors.card,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
+        >
+          <Feather name="bookmark" size={18} color={watched ? colors.coin : colors.mutedForeground} />
+          <Text style={[styles.watchFooterText, { color: watched ? colors.coin : colors.mutedForeground }]}>
+            {watched ? "Watching" : "Watch"}
+          </Text>
+        </Pressable>
+
         <Pressable
           onPress={() => setTradeMode("buy")}
           style={({ pressed }) => [styles.tradeBtn, { backgroundColor: colors.green, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 }]}
@@ -344,7 +386,9 @@ const styles = StyleSheet.create({
   positionRow: { flexDirection: "row", justifyContent: "space-between" },
   posLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   posValue: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  footer: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 12, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  footer: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingTop: 12, borderTopWidth: 1 },
+  watchFooterBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 52, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1.5 },
+  watchFooterText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   tradeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 52 },
   tradeBtnText: { fontSize: 16, fontFamily: "Inter_700Bold" },
 });
