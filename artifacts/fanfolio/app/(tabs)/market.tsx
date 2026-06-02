@@ -90,13 +90,6 @@ export default function MarketScreen() {
                 <Text style={[styles.metaText, { color: colors.coin }]}>{watchlist.length} watching</Text>
               </View>
             )}
-            <Pressable
-              onPress={() => router.push("/scanner")}
-              style={[styles.scannerBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40" }]}
-            >
-              <Feather name="filter" size={12} color={colors.primary} />
-              <Text style={[styles.scannerBtnText, { color: colors.primary }]}>Scan</Text>
-            </Pressable>
           </View>
         </View>
 
@@ -230,6 +223,4 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   emptyBtn: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 },
   emptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
-  scannerBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12, borderWidth: 1 },
-  scannerBtnText: { fontSize: 12, fontFamily: "Inter_700Bold" },
 });

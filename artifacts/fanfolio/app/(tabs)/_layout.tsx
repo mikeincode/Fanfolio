@@ -20,6 +20,10 @@ function NativeTabLayout() {
         <Icon sf={{ default: "chart.line.uptrend.xyaxis", selected: "chart.line.uptrend.xyaxis" }} />
         <Label>Market</Label>
       </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="scanner">
+        <Icon sf={{ default: "magnifyingglass.circle", selected: "magnifyingglass.circle.fill" }} />
+        <Label>Scanner</Label>
+      </NativeTabs.Trigger>
       <NativeTabs.Trigger name="portfolio">
         <Icon sf={{ default: "briefcase", selected: "briefcase.fill" }} />
         <Label>Portfolio</Label>
@@ -72,6 +76,7 @@ function ClassicTabLayout() {
               ]}
             />
           ) : null,
+        tabBarLabelStyle: { fontSize: 10 },
       }}
     >
       <Tabs.Screen
@@ -80,9 +85,9 @@ function ClassicTabLayout() {
           title: "Home",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
+              <SymbolView name="house" tintColor={color} size={22} />
             ) : (
-              <Feather name="home" size={22} color={color} />
+              <Feather name="home" size={20} color={color} />
             ),
         }}
       />
@@ -92,9 +97,21 @@ function ClassicTabLayout() {
           title: "Market",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="chart.line.uptrend.xyaxis" tintColor={color} size={24} />
+              <SymbolView name="chart.line.uptrend.xyaxis" tintColor={color} size={22} />
             ) : (
-              <Feather name="trending-up" size={22} color={color} />
+              <Feather name="trending-up" size={20} color={color} />
+            ),
+        }}
+      />
+      <Tabs.Screen
+        name="scanner"
+        options={{
+          title: "Scanner",
+          tabBarIcon: ({ color }) =>
+            isIOS ? (
+              <SymbolView name="magnifyingglass.circle" tintColor={color} size={22} />
+            ) : (
+              <Feather name="filter" size={20} color={color} />
             ),
         }}
       />
@@ -104,9 +121,9 @@ function ClassicTabLayout() {
           title: "Portfolio",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="briefcase" tintColor={color} size={24} />
+              <SymbolView name="briefcase" tintColor={color} size={22} />
             ) : (
-              <Feather name="briefcase" size={22} color={color} />
+              <Feather name="briefcase" size={20} color={color} />
             ),
         }}
       />
@@ -116,9 +133,9 @@ function ClassicTabLayout() {
           title: "Learn",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="book" tintColor={color} size={24} />
+              <SymbolView name="book" tintColor={color} size={22} />
             ) : (
-              <Feather name="book-open" size={22} color={color} />
+              <Feather name="book-open" size={20} color={color} />
             ),
         }}
       />
@@ -128,9 +145,9 @@ function ClassicTabLayout() {
           title: "Ranks",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="trophy" tintColor={color} size={24} />
+              <SymbolView name="trophy" tintColor={color} size={22} />
             ) : (
-              <Feather name="award" size={22} color={color} />
+              <Feather name="award" size={20} color={color} />
             ),
         }}
       />

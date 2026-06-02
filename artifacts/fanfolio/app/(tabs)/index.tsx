@@ -552,6 +552,32 @@ export default function HomeScreen() {
     [liveAssets, watchlist]
   );
 
+  const scannerPick = useMemo(() => {
+    const wlMover = [...liveAssets]
+      .filter(a => watchlist.includes(a.id) && Math.abs(a.dailyChangePercent) > 5)
+      .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))[0];
+    if (wlMover) return { asset: wlMover, scanLabel: "Watchlist Mover", scanEmoji: "👁️", isUp: wlMover.dailyChangePercent >= 0 };
+
+    const momentum = [...liveAssets]
+      .filter(a => a.dailyChangePercent > 10)
+      .sort((a, b) => b.dailyChangePercent - a.dailyChangePercent)[0];
+    if (momentum) return { asset: momentum, scanLabel: "Momentum Leader", scanEmoji: "🚀", isUp: true };
+
+    const dip = [...liveAssets]
+      .filter(a => a.dailyChangePercent < -10)
+      .sort((a, b) => a.dailyChangePercent - b.dailyChangePercent)[0];
+    if (dip) return { asset: dip, scanLabel: "Dip Watch", scanEmoji: "📉", isUp: false };
+
+    const highVol = [...liveAssets]
+      .filter(a => a.riskScore >= 8)
+      .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))[0];
+    if (highVol) return { asset: highVol, scanLabel: "High Volatility", scanEmoji: "🌊", isUp: highVol.dailyChangePercent >= 0 };
+
+    const biggest = [...liveAssets]
+      .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))[0];
+    return biggest ? { asset: biggest, scanLabel: "Biggest Mover", scanEmoji: "⚡", isUp: biggest.dailyChangePercent >= 0 } : null;
+  }, [liveAssets, watchlist]);
+
   const showCoachCard =
     showCoach &&
     !!latestEvent &&
@@ -745,6 +771,64 @@ export default function HomeScreen() {
               colors={colors}
               onDismiss={() => setCoachDismissedId(latestEvent.eventId)}
             />
+          </View>
+        )}
+
+        {/* ── Scanner Pick ──────────────────────────────── */}
+        {scannerPick && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.watchlistSectionLeft}>
+                <Feather name="filter" size={15} color={colors.primary} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Scanner Pick</Text>
+              </View>
+              <Pressable onPress={() => router.push("/(tabs)/scanner")}>
+                <Text style={[styles.seeAll, { color: colors.primary }]}>Open Scanner</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              onPress={() => router.push({ pathname: "/asset/[id]", params: { id: scannerPick.asset.id } })}
+              style={({ pressed }) => [
+                styles.scanPickCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.85 : 1,
+                },
+              ]}
+            >
+              <View style={[styles.scanPickAccent, { backgroundColor: scannerPick.isUp ? colors.green : colors.red }]} />
+              <View style={styles.scanPickBody}>
+                <View style={styles.scanPickTop}>
+                  <View style={[styles.scanPickLabelRow, { backgroundColor: colors.primary + "15" }]}>
+                    <Text style={styles.scanPickLabelEmoji}>{scannerPick.scanEmoji}</Text>
+                    <Text style={[styles.scanPickLabel, { color: colors.primary }]}>{scannerPick.scanLabel}</Text>
+                  </View>
+                  <View style={[styles.scanPickChange, { backgroundColor: (scannerPick.isUp ? colors.green : colors.red) + "18" }]}>
+                    <Text style={[styles.scanPickChangeTxt, { color: scannerPick.isUp ? colors.green : colors.red }]}>
+                      {scannerPick.isUp ? "+" : ""}{scannerPick.asset.dailyChangePercent.toFixed(2)}%
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.scanPickMain}>
+                  <View style={styles.scanPickInfo}>
+                    <Text style={[styles.scanPickSymbol, { color: colors.foreground }]}>{scannerPick.asset.symbol}</Text>
+                    <Text style={[styles.scanPickName, { color: colors.mutedForeground }]} numberOfLines={1}>
+                      {scannerPick.asset.name}
+                    </Text>
+                    <Text style={[styles.scanPickPrice, { color: colors.foreground }]}>
+                      {scannerPick.asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LC
+                    </Text>
+                  </View>
+                  <SparklineChart
+                    data={scannerPick.asset.chartData}
+                    width={80}
+                    height={36}
+                    color={scannerPick.isUp ? colors.green : colors.red}
+                  />
+                </View>
+              </View>
+            </Pressable>
           </View>
         )}
 
@@ -1035,6 +1119,21 @@ const styles = StyleSheet.create({
   watchlistEmptyBtn: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   watchlistEmptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   watchlistMoverSymbolRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  // Scanner Pick card
+  scanPickCard: { flexDirection: "row", borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  scanPickAccent: { width: 3, alignSelf: "stretch" },
+  scanPickBody: { flex: 1, padding: 14, gap: 8 },
+  scanPickTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  scanPickLabelRow: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  scanPickLabelEmoji: { fontSize: 12 },
+  scanPickLabel: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  scanPickChange: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  scanPickChangeTxt: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  scanPickMain: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  scanPickInfo: { gap: 2 },
+  scanPickSymbol: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  scanPickName: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  scanPickPrice: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────
