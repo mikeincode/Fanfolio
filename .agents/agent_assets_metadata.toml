@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "Jf06sEB5CTj-6j46UhtV0"
+uri = "file://artifacts/fanfolio/assets/images/icon.png"
+type = "image"
+title = "fanfolio app icon"
