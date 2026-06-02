@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useGame } from "@/context/GameContext";
 import { LESSONS, Lesson } from "@/data/mockLessons";
 
 function LessonDetail({ lesson, onClose, colors }: { lesson: Lesson; onClose: () => void; colors: ReturnType<typeof useColors> }) {
@@ -78,6 +79,7 @@ function LessonDetail({ lesson, onClose, colors }: { lesson: Lesson; onClose: ()
 export default function LearnScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { addLessonOpen } = useGame();
   const [selected, setSelected] = useState<Lesson | null>(null);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -118,7 +120,7 @@ export default function LearnScreen() {
         renderItem={({ item: lesson }) => (
           <Pressable
             key={lesson.id}
-            onPress={() => setSelected(lesson)}
+            onPress={() => { setSelected(lesson); addLessonOpen(); }}
             style={({ pressed }) => [
               styles.card,
               { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },

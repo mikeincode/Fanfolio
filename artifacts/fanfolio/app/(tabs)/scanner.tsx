@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -258,7 +258,9 @@ export default function ScannerScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const liveAssets = useLiveAssets();
-  const { isWatched, addToWatchlist, removeFromWatchlist, watchlist, holdings } = useGame();
+  const { isWatched, addToWatchlist, removeFromWatchlist, watchlist, holdings, setChallengeFlag } = useGame();
+
+  useEffect(() => { setChallengeFlag("open_scanner"); }, []);
 
   const [activePreset, setActivePreset] = useState<string>("biggest-movers");
   const [sportFilter, setSportFilter] = useState<SportFilter>("All Sports");
@@ -373,7 +375,11 @@ export default function ScannerScreen() {
                 return (
                   <Pressable
                     key={p.id}
-                    onPress={() => setActivePreset(p.id)}
+                    onPress={() => {
+                      setActivePreset(p.id);
+                      if (p.id === "dip-watch") setChallengeFlag("view_dip_watch");
+                      if (p.id === "momentum-leaders") setChallengeFlag("view_momentum");
+                    }}
                     style={[
                       styles.presetChip,
                       {

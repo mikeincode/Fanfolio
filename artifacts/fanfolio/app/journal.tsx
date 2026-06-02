@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -126,7 +126,9 @@ function TradeRow({ tx, colors }: { tx: Transaction; colors: ReturnType<typeof u
 export default function JournalScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { transactions } = useGame();
+  const { transactions, setChallengeFlag } = useGame();
+
+  useEffect(() => { setChallengeFlag("view_journal"); }, []);
 
   const [filter, setFilter] = useState<KindFilter>("All");
   const [sort, setSort] = useState<SortOption>("Newest");

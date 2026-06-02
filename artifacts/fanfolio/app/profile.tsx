@@ -16,12 +16,14 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
+import { useChallenges } from "@/hooks/useChallenges";
 import { CoinBadge } from "@/components/CoinBadge";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents } = useGame();
+  const { xpInfo, claimedCount, unlockedAchievementCount } = useChallenges();
   const liveAssets = useLiveAssets();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(username);
@@ -124,6 +126,35 @@ export default function ProfileScreen() {
         })}
       </View>
 
+      {/* XP / Level card */}
+      <Pressable
+        onPress={() => router.push("/challenges")}
+        style={[styles.xpCard, { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "25" }]}
+      >
+        <View style={styles.xpCardTop}>
+          <View style={[styles.xpLevelBadge, { backgroundColor: colors.primary }]}>
+            <Text style={[styles.xpLevelNum, { color: colors.primaryForeground }]}>{xpInfo.level}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.xpLevelTitle, { color: colors.primary }]}>{xpInfo.levelTitle}</Text>
+            <Text style={[styles.xpTotalText, { color: colors.foreground }]}>{xpInfo.totalXP.toLocaleString()} XP</Text>
+          </View>
+          <View style={styles.xpRightPills}>
+            <Text style={[styles.xpPillText, { color: colors.green }]}>✓ {claimedCount} done</Text>
+            <Text style={[styles.xpPillText, { color: colors.coin }]}>🏅 {unlockedAchievementCount} badges</Text>
+          </View>
+          <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
+        </View>
+        <View style={[styles.xpTrack, { backgroundColor: colors.primary + "20" }]}>
+          <View style={[styles.xpFill, { width: `${Math.round(xpInfo.progressInLevel * 100)}%` as any, backgroundColor: colors.primary }]} />
+        </View>
+        {!xpInfo.isMaxLevel && (
+          <Text style={[styles.xpProgress, { color: colors.mutedForeground }]}>
+            {xpInfo.totalXP} / {xpInfo.levelXPEnd} XP to next level
+          </Text>
+        )}
+      </Pressable>
+
       {watchlist.length > 0 && (
         <View style={[styles.watchlistCard, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
           <View style={styles.watchlistHeader}>
@@ -156,6 +187,7 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         {[
+          { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
           { label: "View Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
           { label: "Learn Market Basics", icon: "book-open" as const, onPress: () => { router.back(); router.push("/(tabs)/learn"); } },
           { label: "View Leaderboard", icon: "award" as const, onPress: () => { router.back(); router.push("/(tabs)/leaderboard"); } },
@@ -214,4 +246,15 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 14 },
   menuIcon: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
+  xpCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 16, gap: 8 },
+  xpCardTop: { flexDirection: "row", alignItems: "center", gap: 10 },
+  xpLevelBadge: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  xpLevelNum: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  xpLevelTitle: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  xpTotalText: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  xpRightPills: { alignItems: "flex-end", gap: 2, marginRight: 4 },
+  xpPillText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  xpTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
+  xpFill: { height: 6, borderRadius: 3 },
+  xpProgress: { fontSize: 11, fontFamily: "Inter_400Regular" },
 });

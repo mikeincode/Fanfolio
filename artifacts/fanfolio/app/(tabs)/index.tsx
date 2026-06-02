@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame, AppliedEvent } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
+import { useChallenges } from "@/hooks/useChallenges";
 import { MARKET_EVENTS } from "@/data/mockMarketEvents";
 import { LESSONS, Lesson } from "@/data/mockLessons";
 import { SparklineChart } from "@/components/SparklineChart";
@@ -523,6 +524,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist } = useGame();
   const liveAssets = useLiveAssets();
+  const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const [simulating, setSimulating] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
@@ -692,6 +694,85 @@ export default function HomeScreen() {
             </View>
           )}
         </Pressable>
+
+        {/* ── Next Challenge ───────────────────────────── */}
+        {nextChallenge && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <Feather name="target" size={15} color={colors.coin} />
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+                  {nextChallenge.isComplete ? "Reward Ready!" : "Next Challenge"}
+                </Text>
+              </View>
+              <Pressable onPress={() => router.push("/challenges")}>
+                <Text style={[styles.seeAll, { color: colors.primary }]}>All Challenges</Text>
+              </Pressable>
+            </View>
+
+            <Pressable
+              onPress={() => router.push("/challenges")}
+              style={({ pressed }) => [
+                styles.challengeCard,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: nextChallenge.isComplete ? colors.coin + "60" : colors.border,
+                  opacity: pressed ? 0.88 : 1,
+                },
+              ]}
+            >
+              {nextChallenge.isComplete && (
+                <View style={[styles.challengeReadyStripe, { backgroundColor: colors.coin + "18" }]}>
+                  <Feather name="gift" size={12} color={colors.coin} />
+                  <Text style={[styles.challengeReadyText, { color: colors.coin }]}>Tap to claim your reward</Text>
+                </View>
+              )}
+              <View style={styles.challengeCardBody}>
+                <View style={[styles.challengeIcon, { backgroundColor: (nextChallenge.isComplete ? colors.coin : colors.primary) + "18" }]}>
+                  <Feather name={nextChallenge.icon as any} size={18} color={nextChallenge.isComplete ? colors.coin : colors.primary} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.challengeTitle, { color: colors.foreground }]}>{nextChallenge.title}</Text>
+                  <Text style={[styles.challengeDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
+                    {nextChallenge.description}
+                  </Text>
+                </View>
+                <View style={styles.challengeRewardCol}>
+                  {nextChallenge.xpReward > 0 && (
+                    <Text style={[styles.challengeRewardText, { color: colors.primary }]}>+{nextChallenge.xpReward} XP</Text>
+                  )}
+                  {nextChallenge.lcReward > 0 && (
+                    <Text style={[styles.challengeRewardText, { color: colors.coin }]}>+{nextChallenge.lcReward} LC</Text>
+                  )}
+                </View>
+              </View>
+              <View style={styles.challengeProgressRow}>
+                <View style={[styles.challengeTrack, { backgroundColor: colors.border }]}>
+                  <View style={[
+                    styles.challengeFill,
+                    {
+                      width: `${Math.min(100, (nextChallenge.current / nextChallenge.total) * 100)}%` as any,
+                      backgroundColor: nextChallenge.isComplete ? colors.coin : colors.primary,
+                    },
+                  ]} />
+                </View>
+                <Text style={[styles.challengeProgressLabel, { color: colors.mutedForeground }]}>
+                  {nextChallenge.current}/{nextChallenge.total}
+                </Text>
+              </View>
+
+              {/* XP level mini row */}
+              <View style={[styles.challengeLevelRow, { borderTopColor: colors.border }]}>
+                <Text style={[styles.challengeLevelText, { color: colors.mutedForeground }]}>
+                  Lv.{xpInfo.level} {xpInfo.levelTitle}
+                </Text>
+                <Text style={[styles.challengeLevelText, { color: colors.mutedForeground }]}>
+                  {xpInfo.totalXP} XP · {claimedCount} done
+                </Text>
+              </View>
+            </Pressable>
+          </View>
+        )}
 
         {/* ── Market Pulse ─────────────────────────────── */}
         <View style={[styles.pulseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -1124,6 +1205,22 @@ const styles = StyleSheet.create({
   watchlistEmptyBtn: { marginTop: 4, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 10 },
   watchlistEmptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
   watchlistMoverSymbolRow: { flexDirection: "row", alignItems: "center", gap: 5 },
+  // Next Challenge card
+  challengeCard: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  challengeReadyStripe: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 7 },
+  challengeReadyText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  challengeCardBody: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12 },
+  challengeIcon: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  challengeTitle: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  challengeDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
+  challengeRewardCol: { alignItems: "flex-end", gap: 2 },
+  challengeRewardText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  challengeProgressRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingBottom: 10 },
+  challengeTrack: { flex: 1, height: 5, borderRadius: 3, overflow: "hidden" },
+  challengeFill: { height: 5, borderRadius: 3 },
+  challengeProgressLabel: { fontSize: 11, fontFamily: "Inter_500Medium", minWidth: 30, textAlign: "right" },
+  challengeLevelRow: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
+  challengeLevelText: { fontSize: 10, fontFamily: "Inter_400Regular" },
   // Scanner Pick card
   scanPickCard: { flexDirection: "row", borderRadius: 14, borderWidth: 1, overflow: "hidden" },
   scanPickAccent: { width: 3, alignSelf: "stretch" },

@@ -1,1 +1,2 @@
 - [Fanfolio stack conventions](fanfolio-stack.md) — Expo Router + AsyncStorage + useLiveAssets + useGame + useColors; safe-language rules enforced throughout.
+- [Fanfolio challenge system](fanfolio-challenges.md) — 17 challenges, 10 achievements, 7 levels; XP/flags persisted via GameContext; progress computed in useChallenges hook.

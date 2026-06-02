@@ -58,6 +58,11 @@ interface GameState {
   priceOverrides: Record<string, AssetPriceOverride>;
   appliedEvents: AppliedEvent[];
   watchlist: string[];
+  // Challenges & XP
+  xp: number;
+  claimedChallenges: string[];
+  challengeFlags: string[];
+  lessonsOpened: number;
 }
 
 interface GameContextValue extends GameState {
@@ -73,6 +78,10 @@ interface GameContextValue extends GameState {
   addToWatchlist: (assetId: string) => void;
   removeFromWatchlist: (assetId: string) => void;
   isWatched: (assetId: string) => boolean;
+  // Challenges
+  setChallengeFlag: (flagId: string) => void;
+  addLessonOpen: () => void;
+  claimChallengeReward: (challengeId: string, xpReward: number, lcReward: number) => { success: boolean };
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -88,6 +97,10 @@ const defaultState: GameState = {
   priceOverrides: {},
   appliedEvents: [],
   watchlist: [],
+  xp: 0,
+  claimedChallenges: [],
+  challengeFlags: [],
+  lessonsOpened: 0,
 };
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
@@ -105,6 +118,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             priceOverrides: parsed.priceOverrides ?? {},
             appliedEvents: parsed.appliedEvents ?? [],
             watchlist: parsed.watchlist ?? [],
+            xp: parsed.xp ?? 0,
+            claimedChallenges: parsed.claimedChallenges ?? [],
+            challengeFlags: parsed.challengeFlags ?? [],
+            lessonsOpened: parsed.lessonsOpened ?? 0,
           });
         } catch {
           setState(defaultState);
@@ -279,6 +296,30 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return state.watchlist.includes(assetId);
   }, [state.watchlist]);
 
+  const setChallengeFlag = useCallback((flagId: string) => {
+    if (state.challengeFlags.includes(flagId)) return;
+    save({ ...state, challengeFlags: [...state.challengeFlags, flagId] });
+  }, [state, save]);
+
+  const addLessonOpen = useCallback(() => {
+    save({ ...state, lessonsOpened: state.lessonsOpened + 1 });
+  }, [state, save]);
+
+  const claimChallengeReward = useCallback((
+    challengeId: string,
+    xpReward: number,
+    lcReward: number
+  ): { success: boolean } => {
+    if (state.claimedChallenges.includes(challengeId)) return { success: false };
+    save({
+      ...state,
+      xp: state.xp + xpReward,
+      luckyCoinBalance: state.luckyCoinBalance + lcReward,
+      claimedChallenges: [...state.claimedChallenges, challengeId],
+    });
+    return { success: true };
+  }, [state, save]);
+
   const latestEvent = state.appliedEvents[0] ?? null;
   const canClaimDaily = state.lastDailyClaim !== new Date().toDateString();
 
@@ -299,6 +340,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       addToWatchlist,
       removeFromWatchlist,
       isWatched,
+      setChallengeFlag,
+      addLessonOpen,
+      claimChallengeReward,
     }}>
       {children}
     </GameContext.Provider>
