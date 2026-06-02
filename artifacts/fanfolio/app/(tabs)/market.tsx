@@ -12,13 +12,14 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { MOCK_ASSETS, AssetType } from "@/data/mockAssets";
+import { AssetType } from "@/data/mockAssets";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { AssetCard } from "@/components/AssetCard";
+import { useGame } from "@/context/GameContext";
 
 type FilterTab = "All" | AssetType;
 
 const TABS: FilterTab[] = ["All", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
-
 const TAB_LABELS: Record<FilterTab, string> = {
   "All": "All",
   "Team Stock": "Teams",
@@ -33,12 +34,14 @@ export default function MarketScreen() {
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
   const [search, setSearch] = useState("");
+  const liveAssets = useLiveAssets();
+  const { latestEvent } = useGame();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const filtered = useMemo(() => {
-    let assets = MOCK_ASSETS;
+    let assets = liveAssets;
     if (activeTab !== "All") {
       assets = assets.filter(a => a.type === activeTab);
     }
@@ -51,10 +54,10 @@ export default function MarketScreen() {
       );
     }
     return assets;
-  }, [activeTab, search]);
+  }, [activeTab, search, liveAssets]);
 
-  const gainers = MOCK_ASSETS.filter(a => a.dailyChangePercent > 0).length;
-  const losers = MOCK_ASSETS.filter(a => a.dailyChangePercent < 0).length;
+  const gainers = liveAssets.filter(a => a.dailyChangePercent > 0).length;
+  const losers = liveAssets.filter(a => a.dailyChangePercent < 0).length;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -72,6 +75,16 @@ export default function MarketScreen() {
             </View>
           </View>
         </View>
+
+        {latestEvent && (
+          <View style={[styles.eventBanner, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
+            <Text style={styles.bannerEmoji}>{latestEvent.emoji}</Text>
+            <Text style={[styles.bannerText, { color: colors.foreground }]} numberOfLines={1}>
+              <Text style={{ fontFamily: "Inter_700Bold" }}>{latestEvent.title}</Text>
+              {" — prices updated"}
+            </Text>
+          </View>
+        )}
 
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Feather name="search" size={16} color={colors.mutedForeground} />
@@ -141,39 +154,20 @@ export default function MarketScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    gap: 10,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 2,
-  },
+  header: { paddingHorizontal: 16, paddingBottom: 8, gap: 10 },
+  headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
   title: { fontSize: 28, fontFamily: "Inter_700Bold" },
   marketMeta: { flexDirection: "row", gap: 12 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaDot: { width: 6, height: 6, borderRadius: 3 },
   metaText: { fontSize: 12, fontFamily: "Inter_500Medium" },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    height: 40,
-  },
+  eventBanner: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  bannerEmoji: { fontSize: 18 },
+  bannerText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular" },
+  searchBar: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, height: 40 },
   searchInput: { flex: 1, fontSize: 14 },
   tabList: { gap: 8, paddingVertical: 4 },
-  tab: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
+  tab: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1 },
   tabText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   empty: { alignItems: "center", paddingTop: 60, gap: 8 },
   emptyText: { fontSize: 15, fontFamily: "Inter_500Medium" },

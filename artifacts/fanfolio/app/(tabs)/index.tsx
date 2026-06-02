@@ -7,6 +7,8 @@ import {
   Pressable,
   Platform,
   Alert,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,240 +16,405 @@ import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
+
+function timeAgo(ts: number): string {
+  const secs = Math.floor((Date.now() - ts) / 1000);
+  if (secs < 60) return "just now";
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`;
+  if (secs < 86400) return `${Math.floor(secs / 3600)}h ago`;
+  return `${Math.floor(secs / 86400)}d ago`;
+}
+
+function EventResultModal({
+  visible,
+  onClose,
+  event,
+  colors,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  event: ReturnType<typeof useGame>["latestEvent"];
+  colors: ReturnType<typeof useColors>;
+}) {
+  if (!event) return null;
+  const isPositive = event.biggestMove.changePercent >= 0;
+  const moveColor = isPositive ? colors.green : colors.red;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={[modalStyles.container, { backgroundColor: colors.background }]}>
+        <View style={[modalStyles.header, { borderBottomColor: colors.border }]}>
+          <Text style={[modalStyles.headerTitle, { color: colors.foreground }]}>Market Event Fired</Text>
+          <Pressable onPress={onClose}>
+            <Feather name="x" size={22} color={colors.foreground} />
+          </Pressable>
+        </View>
+
+        <ScrollView contentContainerStyle={{ padding: 24, gap: 16 }} showsVerticalScrollIndicator={false}>
+          <View style={modalStyles.emojiRow}>
+            <Text style={modalStyles.emoji}>{event.emoji}</Text>
+            <View>
+              <Text style={[modalStyles.eventTitle, { color: colors.foreground }]}>{event.title}</Text>
+              <View style={[modalStyles.categoryBadge, { backgroundColor: colors.primary + "20" }]}>
+                <Text style={[modalStyles.categoryText, { color: colors.primary }]}>{event.category}</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={[modalStyles.summary, { color: colors.foreground }]}>{event.summary}</Text>
+
+          <View style={[modalStyles.bigMoveCard, { backgroundColor: moveColor + "12", borderColor: moveColor + "30" }]}>
+            <Text style={[modalStyles.bigMoveLabel, { color: colors.mutedForeground }]}>Biggest Move</Text>
+            <Text style={[modalStyles.bigMoveSymbol, { color: moveColor }]}>{event.biggestMove.symbol}</Text>
+            <Text style={[modalStyles.bigMovePct, { color: moveColor }]}>
+              {isPositive ? "+" : ""}{event.biggestMove.changePercent.toFixed(1)}%
+            </Text>
+          </View>
+
+          <View style={[modalStyles.lessonCard, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
+            <View style={modalStyles.lessonRow}>
+              <Feather name="book-open" size={14} color={colors.blue} />
+              <Text style={[modalStyles.lessonLabel, { color: colors.blue }]}>Market Lesson</Text>
+            </View>
+            <Text style={[modalStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
+          </View>
+
+          <Pressable
+            onPress={onClose}
+            style={[modalStyles.doneBtn, { backgroundColor: colors.primary, borderRadius: colors.radius }]}
+          >
+            <Text style={[modalStyles.doneBtnText, { color: colors.primaryForeground }]}>Got it</Text>
+          </Pressable>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
 
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents } = useGame();
+  const liveAssets = useLiveAssets();
+  const [simulating, setSimulating] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const portfolioValue = holdings.reduce((sum, h) => {
-    const asset = MOCK_ASSETS.find(a => a.id === h.assetId);
-    if (!asset) return sum;
-    return sum + asset.price * h.quantity;
+    const asset = liveAssets.find(a => a.id === h.assetId);
+    return sum + (asset ? asset.price * h.quantity : 0);
   }, 0);
-
   const totalValue = luckyCoinBalance + portfolioValue;
 
-  const topMovers = [...MOCK_ASSETS]
+  const topMovers = [...liveAssets]
     .sort((a, b) => Math.abs(b.dailyChangePercent) - Math.abs(a.dailyChangePercent))
     .slice(0, 5);
 
   const handleClaim = () => {
     const result = claimDaily();
-    Haptics.notificationAsync(
-      result.success
-        ? Haptics.NotificationFeedbackType.Success
-        : Haptics.NotificationFeedbackType.Warning
-    );
+    Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
     Alert.alert(result.success ? "Daily Claim!" : "Already Claimed", result.message);
   };
 
+  const handleSimulateEvent = () => {
+    setSimulating(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setTimeout(() => {
+      const result = applyMarketEvent();
+      setSimulating(false);
+      if (result.success) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setShowEventModal(true);
+      }
+    }, 600);
+  };
+
   const recentTx = transactions.slice(0, 3);
+  const recentEvents = appliedEvents.slice(0, 5);
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: bottomPad + 90 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: colors.mutedForeground }]}>Hey, {username}</Text>
-          <Text style={[styles.subGreeting, { color: colors.foreground }]}>Your Dashboard</Text>
-        </View>
-        <Pressable
-          onPress={() => router.push("/profile")}
-          style={[styles.avatar, { backgroundColor: colors.primary }]}
-        >
-          <Text style={[styles.avatarText, { color: colors.primaryForeground }]}>
-            {username.charAt(0).toUpperCase()}
-          </Text>
-        </Pressable>
-      </View>
-
-      <View style={[styles.portfolioCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-        <Text style={[styles.portfolioLabel, { color: colors.mutedForeground }]}>Total Value</Text>
-        <Text style={[styles.portfolioValue, { color: colors.foreground }]}>
-          {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-        </Text>
-        <Text style={[styles.lcLabel, { color: colors.mutedForeground }]}>LuckyCoin</Text>
-
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        <View style={styles.statsRow}>
-          <View style={styles.stat}>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Portfolio</Text>
-            <CoinBadge amount={portfolioValue} size="md" showLabel={false} />
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.stat}>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Available</Text>
-            <CoinBadge amount={luckyCoinBalance} size="md" showLabel={false} />
-          </View>
-          <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
-          <View style={styles.stat}>
-            <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Holdings</Text>
-            <Text style={[styles.statValue, { color: colors.foreground }]}>{holdings.length}</Text>
-          </View>
-        </View>
-      </View>
-
-      <Pressable
-        onPress={handleClaim}
-        disabled={!canClaimDaily}
-        style={({ pressed }) => [
-          styles.claimCard,
-          {
-            backgroundColor: canClaimDaily ? colors.coin + "18" : colors.card,
-            borderColor: canClaimDaily ? colors.coin + "60" : colors.border,
-            opacity: pressed ? 0.85 : 1,
-          },
-        ]}
+    <>
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        contentContainerStyle={{ paddingTop: topPad + 16, paddingBottom: bottomPad + 90 }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.claimLeft}>
-          <View style={[styles.claimIcon, { backgroundColor: canClaimDaily ? colors.coin + "30" : colors.muted }]}>
-            <Feather name="gift" size={20} color={canClaimDaily ? colors.coin : colors.mutedForeground} />
-          </View>
+        <View style={styles.header}>
           <View>
-            <Text style={[styles.claimTitle, { color: canClaimDaily ? colors.coin : colors.mutedForeground }]}>
-              {canClaimDaily ? "Daily Claim Available!" : "Daily Claim"}
-            </Text>
-            <Text style={[styles.claimSub, { color: colors.mutedForeground }]}>
-              {canClaimDaily ? "+1,000 LuckyCoin free" : "Come back tomorrow"}
-            </Text>
+            <Text style={[styles.greeting, { color: colors.mutedForeground }]}>Hey, {username}</Text>
+            <Text style={[styles.subGreeting, { color: colors.foreground }]}>Your Dashboard</Text>
           </View>
-        </View>
-        {canClaimDaily && (
-          <View style={[styles.claimBtn, { backgroundColor: colors.coin }]}>
-            <Text style={[styles.claimBtnText, { color: "#0C0F14" }]}>Claim</Text>
-          </View>
-        )}
-      </Pressable>
-
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Top Movers</Text>
-          <Pressable onPress={() => router.push("/(tabs)/market")}>
-            <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+          <Pressable
+            onPress={() => router.push("/profile")}
+            style={[styles.avatar, { backgroundColor: colors.primary }]}
+          >
+            <Text style={[styles.avatarText, { color: colors.primaryForeground }]}>
+              {username.charAt(0).toUpperCase()}
+            </Text>
           </Pressable>
         </View>
 
-        {topMovers.map(asset => {
-          const isUp = asset.dailyChangePercent >= 0;
-          const changeColor = isUp ? colors.green : colors.red;
-          return (
-            <Pressable
-              key={asset.id}
-              onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
-              style={({ pressed }) => [
-                styles.moverCard,
-                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-              ]}
-            >
-              <View style={styles.moverLeft}>
-                <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
-                <Text style={[styles.moverName, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
-              </View>
-              <SparklineChart data={asset.chartData} width={60} height={24} positive={isUp} />
-              <View style={styles.moverRight}>
-                <Text style={[styles.moverPrice, { color: colors.foreground }]}>
-                  {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Text>
-                <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
-                  <Text style={[styles.changeText, { color: changeColor }]}>
-                    {isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%
-                  </Text>
-                </View>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+        <View style={[styles.portfolioCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.portfolioLabel, { color: colors.mutedForeground }]}>Total Value</Text>
+          <Text style={[styles.portfolioValue, { color: colors.foreground }]}>
+            {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </Text>
+          <Text style={[styles.lcLabel, { color: colors.mutedForeground }]}>LuckyCoin</Text>
 
-      {recentTx.length > 0 && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Trades</Text>
-          {recentTx.map(tx => {
-            const isBuy = tx.type === "buy";
-            return (
-              <View
-                key={tx.id}
-                style={[styles.txCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              >
-                <View style={[styles.txIcon, { backgroundColor: (isBuy ? colors.green : colors.red) + "20" }]}>
-                  <Feather
-                    name={isBuy ? "arrow-down-left" : "arrow-up-right"}
-                    size={16}
-                    color={isBuy ? colors.green : colors.red}
-                  />
-                </View>
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Portfolio</Text>
+              <CoinBadge amount={portfolioValue} size="md" showLabel={false} />
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.stat}>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Available</Text>
+              <CoinBadge amount={luckyCoinBalance} size="md" showLabel={false} />
+            </View>
+            <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.stat}>
+              <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Holdings</Text>
+              <Text style={[styles.statValue, { color: colors.foreground }]}>{holdings.length}</Text>
+            </View>
+          </View>
+        </View>
+
+        <Pressable
+          onPress={handleClaim}
+          disabled={!canClaimDaily}
+          style={({ pressed }) => [
+            styles.claimCard,
+            {
+              backgroundColor: canClaimDaily ? colors.coin + "18" : colors.card,
+              borderColor: canClaimDaily ? colors.coin + "60" : colors.border,
+              opacity: pressed ? 0.85 : 1,
+            },
+          ]}
+        >
+          <View style={styles.claimLeft}>
+            <View style={[styles.claimIcon, { backgroundColor: canClaimDaily ? colors.coin + "30" : colors.muted }]}>
+              <Feather name="gift" size={20} color={canClaimDaily ? colors.coin : colors.mutedForeground} />
+            </View>
+            <View>
+              <Text style={[styles.claimTitle, { color: canClaimDaily ? colors.coin : colors.mutedForeground }]}>
+                {canClaimDaily ? "Daily Claim Available!" : "Daily Claim"}
+              </Text>
+              <Text style={[styles.claimSub, { color: colors.mutedForeground }]}>
+                {canClaimDaily ? "+1,000 LuckyCoin free" : "Come back tomorrow"}
+              </Text>
+            </View>
+          </View>
+          {canClaimDaily && (
+            <View style={[styles.claimBtn, { backgroundColor: colors.coin }]}>
+              <Text style={[styles.claimBtnText, { color: "#0C0F14" }]}>Claim</Text>
+            </View>
+          )}
+        </Pressable>
+
+        {/* ── Market Pulse ─────────────────────────────────── */}
+        <View style={[styles.pulseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.pulseHeader}>
+            <View style={styles.pulseLeft}>
+              <View style={[styles.pulseDot, { backgroundColor: colors.green }]} />
+              <Text style={[styles.pulseTitle, { color: colors.foreground }]}>Market Pulse</Text>
+            </View>
+            <Text style={[styles.pulseCount, { color: colors.mutedForeground }]}>
+              {appliedEvents.length} event{appliedEvents.length !== 1 ? "s" : ""} simulated
+            </Text>
+          </View>
+
+          {latestEvent ? (
+            <View style={styles.pulseEventBody}>
+              <View style={styles.pulseEventRow}>
+                <Text style={styles.pulseEmoji}>{latestEvent.emoji}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.txTitle, { color: colors.foreground }]}>
-                    {isBuy ? "Bought" : "Sold"} {tx.assetSymbol}
-                  </Text>
-                  <Text style={[styles.txSub, { color: colors.mutedForeground }]}>
-                    {tx.quantity} shares @ {tx.price.toLocaleString()}
+                  <Text style={[styles.pulseEventTitle, { color: colors.foreground }]}>{latestEvent.title}</Text>
+                  <Text style={[styles.pulseEventSport, { color: colors.mutedForeground }]}>{latestEvent.sport} · {timeAgo(latestEvent.appliedAt)}</Text>
+                </View>
+                <View style={[
+                  styles.moveBadge,
+                  { backgroundColor: (latestEvent.biggestMove.changePercent >= 0 ? colors.green : colors.red) + "20" }
+                ]}>
+                  <Text style={[styles.moveBadgeText, { color: latestEvent.biggestMove.changePercent >= 0 ? colors.green : colors.red }]}>
+                    {latestEvent.biggestMove.symbol} {latestEvent.biggestMove.changePercent >= 0 ? "+" : ""}{latestEvent.biggestMove.changePercent.toFixed(0)}%
                   </Text>
                 </View>
-                <Text style={[styles.txAmount, { color: isBuy ? colors.red : colors.green }]}>
-                  {isBuy ? "-" : "+"}{tx.total.toLocaleString()} LC
-                </Text>
               </View>
+              <Text style={[styles.pulseSummary, { color: colors.mutedForeground }]} numberOfLines={2}>
+                {latestEvent.summary}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.pulseEmptyRow}>
+              <Feather name="activity" size={18} color={colors.mutedForeground} />
+              <Text style={[styles.pulseEmptyText, { color: colors.mutedForeground }]}>
+                No events yet — simulate your first market event below
+              </Text>
+            </View>
+          )}
+
+          <Pressable
+            onPress={handleSimulateEvent}
+            disabled={simulating}
+            style={({ pressed }) => [
+              styles.simulateBtn,
+              {
+                backgroundColor: simulating ? colors.muted : colors.primary,
+                borderRadius: colors.radius - 2,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            {simulating ? (
+              <>
+                <ActivityIndicator size="small" color={colors.mutedForeground} />
+                <Text style={[styles.simulateBtnText, { color: colors.mutedForeground }]}>Simulating...</Text>
+              </>
+            ) : (
+              <>
+                <Feather name="zap" size={16} color={colors.primaryForeground} />
+                <Text style={[styles.simulateBtnText, { color: colors.primaryForeground }]}>Simulate Market Event</Text>
+              </>
+            )}
+          </Pressable>
+        </View>
+
+        {/* ── Top Movers ───────────────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Top Movers</Text>
+            <Pressable onPress={() => router.push("/(tabs)/market")}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+            </Pressable>
+          </View>
+
+          {topMovers.map(asset => {
+            const isUp = asset.dailyChangePercent >= 0;
+            const changeColor = isUp ? colors.green : colors.red;
+            return (
+              <Pressable
+                key={asset.id}
+                onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
+                style={({ pressed }) => [
+                  styles.moverCard,
+                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+                ]}
+              >
+                <View style={styles.moverLeft}>
+                  <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
+                  <Text style={[styles.moverName, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
+                </View>
+                <SparklineChart data={asset.chartData} width={60} height={24} positive={isUp} />
+                <View style={styles.moverRight}>
+                  <Text style={[styles.moverPrice, { color: colors.foreground }]}>
+                    {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                  <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
+                    <Text style={[styles.changeText, { color: changeColor }]}>
+                      {isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
             );
           })}
         </View>
-      )}
 
-      {holdings.length === 0 && (
-        <Pressable
-          onPress={() => router.push("/(tabs)/market")}
-          style={({ pressed }) => [
-            styles.ctaCard,
-            { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40", opacity: pressed ? 0.85 : 1 },
-          ]}
-        >
-          <Feather name="trending-up" size={24} color={colors.primary} />
-          <Text style={[styles.ctaTitle, { color: colors.primary }]}>Start your first trade</Text>
-          <Text style={[styles.ctaSub, { color: colors.mutedForeground }]}>Browse the market and buy your first asset</Text>
-          <Feather name="arrow-right" size={18} color={colors.primary} />
-        </Pressable>
-      )}
-    </ScrollView>
+        {/* ── Event History ─────────────────────────────────── */}
+        {recentEvents.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Event History</Text>
+            {recentEvents.map((ev, i) => {
+              const isPos = ev.biggestMove.changePercent >= 0;
+              const moveColor = isPos ? colors.green : colors.red;
+              return (
+                <View
+                  key={ev.eventId + i}
+                  style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <Text style={styles.historyEmoji}>{ev.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.historyTitle, { color: colors.foreground }]}>{ev.title}</Text>
+                    <Text style={[styles.historySport, { color: colors.mutedForeground }]}>
+                      {ev.sport} · {timeAgo(ev.appliedAt)}
+                    </Text>
+                  </View>
+                  <View style={[styles.historyBadge, { backgroundColor: moveColor + "20" }]}>
+                    <Text style={[styles.historyBadgeText, { color: moveColor }]}>
+                      {ev.biggestMove.symbol} {isPos ? "+" : ""}{ev.biggestMove.changePercent.toFixed(0)}%
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* ── Recent Trades ──────────────────────────────────── */}
+        {recentTx.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Trades</Text>
+            {recentTx.map(tx => {
+              const isBuy = tx.type === "buy";
+              return (
+                <View key={tx.id} style={[styles.txCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={[styles.txIcon, { backgroundColor: (isBuy ? colors.green : colors.red) + "20" }]}>
+                    <Feather name={isBuy ? "arrow-down-left" : "arrow-up-right"} size={16} color={isBuy ? colors.green : colors.red} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.txTitle, { color: colors.foreground }]}>{isBuy ? "Bought" : "Sold"} {tx.assetSymbol}</Text>
+                    <Text style={[styles.txSub, { color: colors.mutedForeground }]}>{tx.quantity} shares @ {tx.price.toLocaleString()}</Text>
+                  </View>
+                  <Text style={[styles.txAmount, { color: isBuy ? colors.red : colors.green }]}>
+                    {isBuy ? "-" : "+"}{tx.total.toLocaleString()} LC
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {holdings.length === 0 && (
+          <Pressable
+            onPress={() => router.push("/(tabs)/market")}
+            style={({ pressed }) => [
+              styles.ctaCard,
+              { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40", opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <Feather name="trending-up" size={24} color={colors.primary} />
+            <Text style={[styles.ctaTitle, { color: colors.primary }]}>Start your first trade</Text>
+            <Text style={[styles.ctaSub, { color: colors.mutedForeground }]}>Browse the market and buy your first asset</Text>
+            <Feather name="arrow-right" size={18} color={colors.primary} />
+          </Pressable>
+        )}
+      </ScrollView>
+
+      <EventResultModal
+        visible={showEventModal}
+        onClose={() => setShowEventModal(false)}
+        event={latestEvent}
+        colors={colors}
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 20 },
   greeting: { fontSize: 13, fontFamily: "Inter_400Regular" },
   subGreeting: { fontSize: 22, fontFamily: "Inter_700Bold" },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  portfolioCard: {
-    marginHorizontal: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 20,
-    marginBottom: 12,
-  },
+  portfolioCard: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 20, marginBottom: 12 },
   portfolioLabel: { fontSize: 12, fontFamily: "Inter_500Medium" },
   portfolioValue: { fontSize: 42, fontFamily: "Inter_700Bold", lineHeight: 50 },
   lcLabel: { fontSize: 12, fontFamily: "Inter_500Medium", marginTop: -4 },
@@ -257,35 +424,39 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   statValue: { fontSize: 16, fontFamily: "Inter_700Bold" },
   statDivider: { width: 1, height: 32 },
-  claimCard: {
-    marginHorizontal: 20,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 24,
-  },
+  claimCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
   claimLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
   claimIcon: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   claimTitle: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
   claimSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
   claimBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   claimBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  // Market Pulse
+  pulseCard: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 24, gap: 14 },
+  pulseHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  pulseLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  pulseDot: { width: 8, height: 8, borderRadius: 4 },
+  pulseTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  pulseCount: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  pulseEventBody: { gap: 8 },
+  pulseEventRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  pulseEmoji: { fontSize: 28 },
+  pulseEventTitle: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  pulseEventSport: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  moveBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  moveBadgeText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  pulseSummary: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  pulseEmptyRow: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 },
+  pulseEmptyText: { flex: 1, fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  simulateBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 44 },
+  simulateBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  // Sections
   section: { paddingHorizontal: 20, marginBottom: 24 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   sectionTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
   seeAll: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  moverCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
+  // Movers
+  moverCard: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
   moverLeft: { flex: 1 },
   moverSymbol: { fontSize: 14, fontFamily: "Inter_700Bold" },
   moverName: { fontSize: 11, fontFamily: "Inter_400Regular" },
@@ -293,28 +464,43 @@ const styles = StyleSheet.create({
   moverPrice: { fontSize: 14, fontFamily: "Inter_700Bold" },
   changeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   changeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
-  txCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
+  // Event history
+  historyCard: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
+  historyEmoji: { fontSize: 22 },
+  historyTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  historySport: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  historyBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  historyBadgeText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  // Trades
+  txCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
   txIcon: { width: 34, height: 34, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   txTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
   txSub: { fontSize: 11, fontFamily: "Inter_400Regular" },
   txAmount: { fontSize: 13, fontFamily: "Inter_700Bold" },
-  ctaCard: {
-    marginHorizontal: 20,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 20,
-    gap: 6,
-    alignItems: "center",
-    marginBottom: 12,
-  },
+  // CTA
+  ctaCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 20, gap: 6, alignItems: "center", marginBottom: 12 },
   ctaTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   ctaSub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
+});
+
+const modalStyles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, paddingTop: 24, paddingBottom: 16, borderBottomWidth: 1 },
+  headerTitle: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  emojiRow: { flexDirection: "row", alignItems: "center", gap: 14 },
+  emoji: { fontSize: 48 },
+  eventTitle: { fontSize: 20, fontFamily: "Inter_700Bold", marginBottom: 6 },
+  categoryBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 6 },
+  categoryText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  summary: { fontSize: 15, fontFamily: "Inter_400Regular", lineHeight: 23 },
+  bigMoveCard: { borderRadius: 12, borderWidth: 1, padding: 16, alignItems: "center", gap: 2 },
+  bigMoveLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  bigMoveSymbol: { fontSize: 24, fontFamily: "Inter_700Bold" },
+  bigMovePct: { fontSize: 28, fontFamily: "Inter_700Bold" },
+  lessonCard: { borderRadius: 12, borderWidth: 1, padding: 16, gap: 8 },
+  lessonRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  lessonLabel: { fontSize: 11, fontFamily: "Inter_600SemiBold", textTransform: "uppercase", letterSpacing: 0.5 },
+  lessonText: { fontSize: 14, fontFamily: "Inter_400Regular", lineHeight: 22 },
+  doneBtn: { height: 52, alignItems: "center", justifyContent: "center", marginTop: 8 },
+  doneBtnText: { fontSize: 16, fontFamily: "Inter_700Bold" },
 });

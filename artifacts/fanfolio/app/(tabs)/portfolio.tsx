@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
 
@@ -20,29 +20,24 @@ export default function PortfolioScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { holdings, luckyCoinBalance } = useGame();
+  const liveAssets = useLiveAssets();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   const enriched = useMemo(() => {
     return holdings.map(h => {
-      const asset = MOCK_ASSETS.find(a => a.id === h.assetId);
+      const asset = liveAssets.find(a => a.id === h.assetId);
       if (!asset) return null;
       const currentValue = asset.price * h.quantity;
       const profitLoss = currentValue - h.totalInvested;
       const profitLossPercent = h.totalInvested > 0 ? (profitLoss / h.totalInvested) * 100 : 0;
       return { ...h, asset, currentValue, profitLoss, profitLossPercent };
     }).filter(Boolean) as Array<{
-      assetId: string;
-      quantity: number;
-      averageCost: number;
-      totalInvested: number;
-      asset: typeof MOCK_ASSETS[0];
-      currentValue: number;
-      profitLoss: number;
-      profitLossPercent: number;
+      assetId: string; quantity: number; averageCost: number; totalInvested: number;
+      asset: ReturnType<typeof useLiveAssets>[0]; currentValue: number; profitLoss: number; profitLossPercent: number;
     }>;
-  }, [holdings]);
+  }, [holdings, liveAssets]);
 
   const portfolioValue = enriched.reduce((s, e) => s + e.currentValue, 0);
   const totalInvested = enriched.reduce((s, e) => s + e.totalInvested, 0);
@@ -54,17 +49,11 @@ export default function PortfolioScreen() {
   const worst = enriched.length > 0 ? enriched.reduce((a, b) => a.profitLossPercent < b.profitLossPercent ? a : b) : null;
 
   const sportMap: Record<string, number> = {};
-  enriched.forEach(e => {
-    sportMap[e.asset.sport] = (sportMap[e.asset.sport] ?? 0) + e.currentValue;
-  });
+  enriched.forEach(e => { sportMap[e.asset.sport] = (sportMap[e.asset.sport] ?? 0) + e.currentValue; });
 
   const sportTypes = new Set(enriched.map(e => e.asset.type));
   const diversificationScore = Math.min(10, Math.round((sportTypes.size / 5) * 10));
-
-  const avgRisk = enriched.length > 0
-    ? enriched.reduce((s, e) => s + e.asset.riskScore * (e.currentValue / portfolioValue), 0)
-    : 0;
-
+  const avgRisk = enriched.length > 0 ? enriched.reduce((s, e) => s + e.asset.riskScore * (e.currentValue / Math.max(portfolioValue, 1)), 0) : 0;
   const plColor = totalPL >= 0 ? colors.green : colors.red;
 
   return (
@@ -81,14 +70,9 @@ export default function PortfolioScreen() {
           {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
         </Text>
         <Text style={[styles.heroUnit, { color: colors.mutedForeground }]}>LuckyCoin</Text>
-
         {totalInvested > 0 && (
           <View style={[styles.plRow, { backgroundColor: plColor + "15", borderRadius: 8, padding: 8, marginTop: 8 }]}>
-            <Feather
-              name={totalPL >= 0 ? "trending-up" : "trending-down"}
-              size={14}
-              color={plColor}
-            />
+            <Feather name={totalPL >= 0 ? "trending-up" : "trending-down"} size={14} color={plColor} />
             <Text style={[styles.plText, { color: plColor }]}>
               {totalPL >= 0 ? "+" : ""}{totalPL.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
               ({totalPLPct >= 0 ? "+" : ""}{totalPLPct.toFixed(2)}%)
@@ -116,9 +100,7 @@ export default function PortfolioScreen() {
         <View style={styles.scoreRow}>
           <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.scoreLabel, { color: colors.mutedForeground }]}>Diversification</Text>
-            <Text style={[styles.scoreValue, { color: diversificationScore >= 5 ? colors.green : colors.red }]}>
-              {diversificationScore}/10
-            </Text>
+            <Text style={[styles.scoreValue, { color: diversificationScore >= 5 ? colors.green : colors.red }]}>{diversificationScore}/10</Text>
           </View>
           <View style={[styles.scoreCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.scoreLabel, { color: colors.mutedForeground }]}>Avg Risk</Text>
@@ -252,15 +234,7 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   emptySub: { fontSize: 13, fontFamily: "Inter_400Regular", textAlign: "center" },
   emptyAction: { fontSize: 14, fontFamily: "Inter_600SemiBold", marginTop: 4 },
-  holdingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
+  holdingCard: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 8 },
   holdingLeft: { flex: 1 },
   holdingSym: { fontSize: 14, fontFamily: "Inter_700Bold" },
   holdingName: { fontSize: 11, fontFamily: "Inter_400Regular" },

@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { getAssetById } from "@/data/mockAssets";
+import { useLiveAsset } from "@/hooks/useLiveAssets";
 import { useGame } from "@/context/GameContext";
 import { SparklineChart } from "@/components/SparklineChart";
 import { RiskBar } from "@/components/RiskBar";
@@ -62,22 +62,15 @@ function TradeModal({
       ? buyAsset(assetId, assetName, assetSymbol, price, qty)
       : sellAsset(assetId, assetName, assetSymbol, price, qty);
 
-    Haptics.notificationAsync(
-      result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
-    );
+    Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
 
     if (result.success) {
       const lesson = isBuy
         ? "Remember: Never invest more than you can afford to lose. Diversify your portfolio!"
         : "Selling locks in your profit or loss. Review your portfolio to see your updated position.";
-
       onClose();
       setTimeout(() => {
-        Alert.alert(
-          isBuy ? "Trade Executed!" : "Sold!",
-          result.message + "\n\n" + lesson,
-          [{ text: "Got it" }]
-        );
+        Alert.alert(isBuy ? "Trade Executed!" : "Sold!", result.message + "\n\n" + lesson, [{ text: "Got it" }]);
       }, 300);
     } else {
       Alert.alert("Trade Failed", result.message);
@@ -91,9 +84,7 @@ function TradeModal({
   return (
     <View style={[tradeStyles.container, { backgroundColor: colors.background }]}>
       <View style={[tradeStyles.header, { paddingTop: topPad + 8, borderBottomColor: colors.border }]}>
-        <Text style={[tradeStyles.title, { color: colors.foreground }]}>
-          {isBuy ? "Buy" : "Sell"} {assetSymbol}
-        </Text>
+        <Text style={[tradeStyles.title, { color: colors.foreground }]}>{isBuy ? "Buy" : "Sell"} {assetSymbol}</Text>
         <Pressable onPress={onClose}>
           <Feather name="x" size={22} color={colors.foreground} />
         </Pressable>
@@ -147,9 +138,7 @@ function TradeModal({
 
         {qty > 0 && (
           <View style={[tradeStyles.totalBox, { backgroundColor: accentColor + "12", borderColor: accentColor + "40" }]}>
-            <Text style={[tradeStyles.totalLabel, { color: colors.mutedForeground }]}>
-              {isBuy ? "Total Cost" : "You Receive"}
-            </Text>
+            <Text style={[tradeStyles.totalLabel, { color: colors.mutedForeground }]}>{isBuy ? "Total Cost" : "You Receive"}</Text>
             <Text style={[tradeStyles.totalValue, { color: accentColor }]}>
               {total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LC
             </Text>
@@ -161,19 +150,11 @@ function TradeModal({
           disabled={!canTrade}
           style={({ pressed }) => [
             tradeStyles.tradeBtn,
-            {
-              backgroundColor: canTrade ? accentColor : colors.muted,
-              borderRadius: colors.radius,
-              opacity: pressed ? 0.85 : 1,
-            },
+            { backgroundColor: canTrade ? accentColor : colors.muted, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 },
           ]}
         >
           <Text style={[tradeStyles.tradeBtnText, { color: canTrade ? (isBuy ? "#0C0F14" : "#fff") : colors.mutedForeground }]}>
-            {!canTrade && qty === 0
-              ? "Enter quantity"
-              : !canTrade
-              ? isBuy ? "Insufficient balance" : "Not enough shares"
-              : `Confirm ${isBuy ? "Buy" : "Sell"}`}
+            {!canTrade && qty === 0 ? "Enter quantity" : !canTrade ? (isBuy ? "Insufficient balance" : "Not enough shares") : `Confirm ${isBuy ? "Buy" : "Sell"}`}
           </Text>
         </Pressable>
       </ScrollView>
@@ -191,12 +172,12 @@ export default function AssetDetailScreen() {
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const asset = getAssetById(id ?? "");
+  const asset = useLiveAsset(id ?? "");
   const holding = getHolding(id ?? "");
 
   if (!asset) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.container, { backgroundColor: colors.background, alignItems: "center", justifyContent: "center" }]}>
         <Text style={{ color: colors.foreground }}>Asset not found</Text>
       </View>
     );
@@ -307,10 +288,7 @@ export default function AssetDetailScreen() {
       <View style={[styles.footer, { paddingBottom: bottomPad + 12, backgroundColor: colors.background, borderTopColor: colors.border }]}>
         <Pressable
           onPress={() => setTradeMode("buy")}
-          style={({ pressed }) => [
-            styles.tradeBtn,
-            { backgroundColor: colors.green, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 },
-          ]}
+          style={({ pressed }) => [styles.tradeBtn, { backgroundColor: colors.green, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 }]}
         >
           <Feather name="arrow-down-left" size={18} color="#0C0F14" />
           <Text style={[styles.tradeBtnText, { color: "#0C0F14" }]}>Buy</Text>
@@ -319,10 +297,7 @@ export default function AssetDetailScreen() {
         {holding && (
           <Pressable
             onPress={() => setTradeMode("sell")}
-            style={({ pressed }) => [
-              styles.tradeBtn,
-              { backgroundColor: colors.red, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 },
-            ]}
+            style={({ pressed }) => [styles.tradeBtn, { backgroundColor: colors.red, borderRadius: colors.radius, opacity: pressed ? 0.85 : 1 }]}
           >
             <Feather name="arrow-up-right" size={18} color="#fff" />
             <Text style={[styles.tradeBtnText, { color: "#fff" }]}>Sell</Text>
@@ -330,12 +305,7 @@ export default function AssetDetailScreen() {
         )}
       </View>
 
-      <Modal
-        visible={!!tradeMode}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setTradeMode(null)}
-      >
+      <Modal visible={!!tradeMode} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTradeMode(null)}>
         {tradeMode && (
           <TradeModal
             mode={tradeMode}
@@ -374,25 +344,8 @@ const styles = StyleSheet.create({
   positionRow: { flexDirection: "row", justifyContent: "space-between" },
   posLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
   posValue: { fontSize: 16, fontFamily: "Inter_700Bold" },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    borderTopWidth: 1,
-  },
-  tradeBtn: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    height: 52,
-  },
+  footer: { position: "absolute", bottom: 0, left: 0, right: 0, flexDirection: "row", gap: 12, paddingHorizontal: 20, paddingTop: 12, borderTopWidth: 1 },
+  tradeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 52 },
   tradeBtnText: { fontSize: 16, fontFamily: "Inter_700Bold" },
 });
 
