@@ -19,11 +19,13 @@ import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useTraderIdentity } from "@/hooks/useTraderIdentity";
 import { CoinBadge } from "@/components/CoinBadge";
+import { MOCK_ASSETS } from "@/data/mockAssets";
+import { buildLeaderboard, getBestCategory, CATEGORIES, UserLeaderboardStats } from "@/data/mockLeaderboard";
 
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents } = useGame();
+  const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents, challengeFlags, xp } = useGame();
   const { xpInfo, claimedCount, unlockedAchievementCount } = useChallenges();
   const liveAssets = useLiveAssets();
   const traderIdentity = useTraderIdentity();
@@ -38,6 +40,58 @@ export default function ProfileScreen() {
     return sum + (asset ? asset.price * h.quantity : 0);
   }, 0);
   const totalValue = portfolioValue + luckyCoinBalance;
+
+  // ── Leaderboard rank computation ──
+  const userLeaderboardStats: UserLeaderboardStats = React.useMemo(() => {
+    const pv = portfolioValue;
+    let avgRisk = 5;
+    if (holdings.length > 0 && pv > 0) {
+      avgRisk = holdings.reduce((s, h) => {
+        const a = liveAssets.find(x => x.id === h.assetId);
+        const v = a ? a.price * h.quantity : 0;
+        return s + (a ? a.riskScore * (v / pv) : 0);
+      }, 0);
+    }
+    const indexVal = holdings.reduce((s, h) => {
+      const a = liveAssets.find(x => x.id === h.assetId);
+      return s + (a?.type === "Sport Index" ? a.price * h.quantity : 0);
+    }, 0);
+    const memeVal = holdings.reduce((s, h) => {
+      const a = liveAssets.find(x => x.id === h.assetId);
+      return s + (a?.type === "Meme Coin" ? a.price * h.quantity : 0);
+    }, 0);
+    const indexExposurePct = pv > 0 ? (indexVal / pv) * 100 : 0;
+    const memeExposurePct = pv > 0 ? (memeVal / pv) * 100 : 0;
+    const uniqueSports = new Set(holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.sport).filter(Boolean)).size;
+    const uniqueTypes = new Set(holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.type).filter(Boolean)).size;
+    let divScore = Math.min(uniqueSports * 18, 45) + Math.min(uniqueTypes * 15, 40);
+    if (indexExposurePct > 0) divScore += 15;
+    if (memeExposurePct < 30) divScore += 5;
+    const diversificationScore = Math.min(100, divScore);
+    const usedScanner = challengeFlags.includes("open_scanner");
+    const usedDipWatch = challengeFlags.includes("view_dip_watch");
+    const usedMomentum = challengeFlags.includes("view_momentum");
+    const viewedJournal = challengeFlags.includes("view_journal");
+    const scannerScore = Math.min(100, (usedScanner ? 30 : 0) + (usedDipWatch ? 18 : 0) + (usedMomentum ? 18 : 0) + (viewedJournal ? 15 : 0) + Math.min(watchlist.length * 5, 19));
+    const lowRiskScore = Math.max(0, (10 - avgRisk) * 8 + diversificationScore * 0.3 + indexExposurePct * 0.2);
+    const weeklyChangePct = transactions.length === 0 ? 0 : Math.min(25, transactions.filter(t => t.type === "buy").length * 0.8 + transactions.filter(t => t.type === "sell").length * 1.2 + (xp / 100));
+    return {
+      totalValue, xp, weeklyChangePct, avgRisk, diversificationScore,
+      indexExposurePct, memeExposurePct, tradeCount: transactions.length,
+      badgesCount: unlockedAchievementCount, scannerScore, comebackScore: transactions.length > 5 ? 45 : 30, lowRiskScore,
+    };
+  }, [portfolioValue, holdings, liveAssets, challengeFlags, watchlist, transactions, xp, totalValue, unlockedAchievementCount]);
+
+  const overallRank = React.useMemo(() => {
+    const entries = buildLeaderboard("Overall", username, userLeaderboardStats);
+    return entries.find(e => e.isUser)?.rank ?? 99;
+  }, [username, userLeaderboardStats]);
+
+  const bestCategory = React.useMemo(() =>
+    getBestCategory(username, userLeaderboardStats),
+    [username, userLeaderboardStats]
+  );
+  const bestCatDef = CATEGORIES.find(c => c.id === bestCategory);
 
   const joinedDate = new Date(joinDate).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
@@ -208,6 +262,31 @@ export default function ProfileScreen() {
         <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
       </Pressable>
 
+      {/* ── Leaderboard Rank Card ──────────────────────── */}
+      <Pressable
+        onPress={() => { router.back(); router.push("/(tabs)/leaderboard"); }}
+        style={({ pressed }) => [
+          styles.rankCard,
+          { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <View style={styles.rankCardLeft}>
+          <View style={[styles.rankNumWrap, { backgroundColor: colors.primary + "18" }]}>
+            <Text style={[styles.rankNumText, { color: colors.primary }]}>#{overallRank}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.rankLabel, { color: colors.mutedForeground }]}>Fanfolio 500 Overall Rank</Text>
+            <Text style={[styles.rankBestCat, { color: colors.foreground }]}>
+              Best: {bestCatDef?.label ?? "Overall"}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.rankCardRight}>
+          <Feather name="award" size={16} color={colors.primary} />
+          <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+        </View>
+      </Pressable>
+
       <View style={styles.menuSection}>
         {[
           { label: "Trader Identity", icon: "user" as const, onPress: () => router.push("/strategy-profile") },
@@ -288,4 +367,11 @@ const styles = StyleSheet.create({
   xpTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
   xpFill: { height: 6, borderRadius: 3 },
   xpProgress: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  rankCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 },
+  rankCardLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  rankCardRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  rankNumWrap: { width: 50, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  rankNumText: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  rankLabel: { fontSize: 11, fontFamily: "Inter_500Medium", marginBottom: 2 },
+  rankBestCat: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
 });
