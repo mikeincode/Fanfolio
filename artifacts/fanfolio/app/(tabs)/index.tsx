@@ -48,6 +48,9 @@ function lessonForCategory(category: string): string {
     case "Defense":
     case "Championship":
       return "what-is-diversification";
+    case "Coach":
+    case "Futures":
+      return "what-is-diversification";
     case "Upset":
     case "Comeback":
     case "Breakout":

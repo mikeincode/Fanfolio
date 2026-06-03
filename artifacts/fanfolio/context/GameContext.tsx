@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { getAllAssetById } from "@/data/assetUniverse";
 import { getEventById, getRandomEvent, MarketEvent } from "@/data/mockMarketEvents";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { safeMerge } from "@/lib/cloudSaveUtils";
@@ -558,7 +558,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     let biggestMove = { symbol: "", assetId: "", changePercent: 0 };
 
     for (const impact of event.impacts) {
-      const base = MOCK_ASSETS.find(a => a.id === impact.assetId);
+      const base = getAllAssetById(impact.assetId);
       if (!base) continue;
       const existing = newOverrides[impact.assetId];
       const currentPrice = existing?.price ?? base.price;
