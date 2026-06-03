@@ -191,6 +191,8 @@ export function safeMerge(local: GameState, cloud: GameState): GameState {
     portfolioSnapshots: mergedSnaps,
     lastAutoPulseDate: local.lastAutoPulseDate ?? cloud.lastAutoPulseDate ?? null,
     pendingPulseId: local.pendingPulseId ?? cloud.pendingPulseId ?? null,
+    // Generated pulses are ephemeral (daily); prefer local; do not persist across cloud merges
+    pendingGeneratedPulse: local.pendingGeneratedPulse ?? null,
   };
 }
 

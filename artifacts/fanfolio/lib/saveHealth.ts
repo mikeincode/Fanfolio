@@ -41,6 +41,7 @@ const REPAIR_DEFAULTS: Readonly<GameState> = {
   portfolioSnapshots: [],
   lastAutoPulseDate: null,
   pendingPulseId: null,
+  pendingGeneratedPulse: null,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -336,6 +337,7 @@ export function safeParseGameState(json: string): SaveHealthResult {
     portfolioSnapshots,
     lastAutoPulseDate,
     pendingPulseId,
+    pendingGeneratedPulse: null,
   };
 
   const status: SaveHealthStatus = repaired.length === 0 ? "ok" : "repaired";

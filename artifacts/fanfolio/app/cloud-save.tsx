@@ -78,6 +78,7 @@ export default function CloudSaveScreen() {
     portfolioSnapshots: portfolioSnapshots ?? [],
     lastAutoPulseDate: null,
     pendingPulseId: null,
+    pendingGeneratedPulse: null,
   };
 
   const localSummary: SaveSummary = summarizeState(localState, localSavedAt);

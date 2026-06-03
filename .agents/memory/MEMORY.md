@@ -4,3 +4,4 @@
 - [Fanfolio save health](fanfolio-save-health.md) — lib/saveHealth.ts validates/repairs local saves; GameContext exposes saveHealthStatus/saveWasRepaired/corruptedSaveBackedUpAt; corrupted saves backed up to CORRUPTED_BACKUP_KEY before reset.
 - [Fanfolio user preferences wiring](fanfolio-user-prefs.md) — all 4 prefs (haptics/eduTips/compactCards/safetyDisclaimers) wired into app behavior; use `const topPad = Platform.OS === "web"` as reliable anchor for hook insertion in screen functions.
 - [Fanfolio Rookie Playbook](fanfolio-rookie-playbook.md) — uses challengeFlags strings for new flags; declare playbookSteps useMemo AFTER handleSimulateEvent to avoid TDZ crash.
+- [Fanfolio Market Source Adapter](fanfolio-market-source-adapter.md) — data/marketSources.ts + lib/marketSourceAdapter.ts; GameState.pendingGeneratedPulse; saveHealth.ts state object needs pendingGeneratedPulse: null.

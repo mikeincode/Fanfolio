@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame, CORRUPTED_BACKUP_KEY } from "@/context/GameContext";
+import { generateRandomSourceEvent } from "@/lib/marketSourceAdapter";
 
 const FANFOLIO_KEYS = [
   "@fanfolio_game_state_v2",
@@ -26,6 +27,7 @@ const FANFOLIO_KEYS = [
 type Phase = "idle" | "confirm" | "resetting" | "done" | "error";
 type CorruptPhase = "idle" | "writing" | "done" | "error";
 type DemoPhase = "idle" | "applying" | "done" | "error";
+type StoryPhase = "idle" | "applying" | "done" | "error";
 
 export default function DevResetScreen() {
   const colors = useColors();
@@ -38,6 +40,9 @@ export default function DevResetScreen() {
   const [corruptPhase, setCorruptPhase] = useState<CorruptPhase>("idle");
   const [demoPhase, setDemoPhase] = useState<DemoPhase>("idle");
   const [demoEventTitle, setDemoEventTitle] = useState<string | null>(null);
+  const [storyPhase, setStoryPhase] = useState<StoryPhase>("idle");
+  const [storyEventTitle, setStoryEventTitle] = useState<string | null>(null);
+  const [storyCategory, setStoryCategory] = useState<string | null>(null);
 
   const handleWriteCorrupted = async () => {
     setCorruptPhase("writing");
@@ -322,6 +327,97 @@ export default function DevResetScreen() {
           <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
             <Feather name="alert-circle" size={15} color="#EF4444" />
             <Text style={[styles.resultText, { color: "#EF4444" }]}>Demo pulse failed.</Text>
+          </View>
+        )}
+
+        {/* ── Generate Pulse From Mock Source Story ──────────────────── */}
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Feather name="cpu" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+            Market Source Adapter
+          </Text>
+        </View>
+
+        <Text style={[styles.body2, { color: colors.mutedForeground }]}>
+          Generate a Market Pulse from a random simulated source story using the adapter pipeline. Tests the full story→event conversion and validates the adapter produces compatible market events.
+        </Text>
+
+        <View style={[styles.keysCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.keysTitle, { color: colors.mutedForeground }]}>WHAT THIS TESTS</Text>
+          <View style={styles.keyRow}>
+            <Feather name="cpu" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>Picks a random MOCK_SOURCE_STORY and runs it through generateMarketEventFromStory()</Text>
+          </View>
+          <View style={styles.keyRow}>
+            <Feather name="zap" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>Applies the generated event — updates prices, creates snapshot, feeds News and Coach</Text>
+          </View>
+          <View style={styles.keyRow}>
+            <Feather name="info" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>Does NOT affect the daily auto-pulse system</Text>
+          </View>
+        </View>
+
+        {storyPhase === "idle" && (
+          <Pressable
+            onPress={() => {
+              setStoryPhase("applying");
+              setTimeout(() => {
+                const generated = generateRandomSourceEvent();
+                if (!generated) { setStoryPhase("error"); return; }
+                const result = applyMarketEvent(undefined, { overrideEvent: generated });
+                if (result.success && result.event) {
+                  setStoryEventTitle(result.event.title);
+                  setStoryCategory(result.event.category);
+                  setStoryPhase("done");
+                } else {
+                  setStoryPhase("error");
+                }
+              }, 500);
+            }}
+            style={({ pressed }) => [
+              styles.dangerBtn,
+              { backgroundColor: "#0284C7", opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="cpu" size={16} color="#fff" />
+            <Text style={styles.dangerBtnText}>Generate Pulse From Source Story</Text>
+          </Pressable>
+        )}
+
+        {storyPhase === "applying" && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Running adapter pipeline…</Text>
+          </View>
+        )}
+
+        {storyPhase === "done" && (
+          <View style={{ gap: 8 }}>
+            <View style={[styles.resultRow, { backgroundColor: "#0284C718", borderColor: "#0284C740" }]}>
+              <Feather name="check-circle" size={15} color="#0284C7" />
+              <Text style={[styles.resultText, { color: "#0284C7" }]}>
+                Adapter generated{storyCategory ? ` [${storyCategory}]` : ""}:{" "}
+                {storyEventTitle ? `"${storyEventTitle}"` : "event applied"}. Check Home for Coach and News.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { setStoryPhase("idle"); setStoryEventTitle(null); setStoryCategory(null); }}
+              style={({ pressed }) => [
+                styles.dangerBtn,
+                { backgroundColor: "#0284C780", opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Feather name="refresh-cw" size={14} color="#fff" />
+              <Text style={styles.dangerBtnText}>Generate Another</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {storyPhase === "error" && (
+          <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
+            <Feather name="alert-circle" size={15} color="#EF4444" />
+            <Text style={[styles.resultText, { color: "#EF4444" }]}>Adapter generation failed.</Text>
           </View>
         )}
 
