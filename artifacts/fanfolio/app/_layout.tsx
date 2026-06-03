@@ -6,7 +6,7 @@ import {
   useFonts,
 } from "@expo-google-fonts/inter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Redirect, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -14,31 +14,27 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { GameProvider, useGame } from "@/context/GameContext";
+import { GameProvider } from "@/context/GameContext";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const { hasCompletedOnboarding } = useGame();
-
   return (
     <Stack screenOptions={{ headerBackTitle: "Back", headerShown: false }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="asset/[id]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="profile" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="news" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="journal" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="challenges" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="portfolio-coach" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="strategy-profile" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
-}
-
-function RootRedirect() {
-  const { hasCompletedOnboarding } = useGame();
-  if (!hasCompletedOnboarding) {
-    return <Redirect href="/onboarding" />;
-  }
-  return <Redirect href="/(tabs)" />;
 }
 
 export default function RootLayout() {

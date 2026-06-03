@@ -266,7 +266,7 @@ export default function NewsScreen() {
   }, [holdingIds]);
 
   // Latest applied event as a news-like item
-  const latestEventAsNews = appliedEvents.length > 0 ? appliedEvents[appliedEvents.length - 1] : null;
+  const latestEventAsNews = appliedEvents.length > 0 ? appliedEvents[0] : null;
 
   return (
     <View style={[sc.container, { backgroundColor: colors.background }]}>
