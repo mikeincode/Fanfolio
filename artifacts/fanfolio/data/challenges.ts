@@ -44,6 +44,19 @@ export const LEVELS: LevelDef[] = [
 ];
 
 export const CHALLENGES: ChallengeDefinition[] = [
+  // ── Rookie Playbook Milestone ──────────────────────────────
+  {
+    id: "rookie_playbook_complete",
+    category: "Getting Started",
+    title: "Rookie Playbook Complete",
+    description: "Finish all 7 steps in the Rookie Playbook.",
+    tip: "You claimed LuckyCoin, scouted the market, made your first trade, reacted to a Market Pulse, reviewed your portfolio, checked performance history, and opened a lesson. That's a real foundation.",
+    icon: "award",
+    xpReward: 150,
+    lcReward: 250,
+    total: 1,
+    achievementId: "rookie_graduate",
+  },
   // ── Getting Started ────────────────────────────────────────
   {
     id: "claim_daily",
@@ -222,4 +235,5 @@ export const ACHIEVEMENTS: AchievementDefinition[] = [
   { id: "risk_manager",         title: "Risk Manager",          description: "Maintained a portfolio average risk under 6.",    emoji: "🛡️" },
   { id: "market_event_analyst", title: "Market Event Analyst",  description: "Simulated 3 market events.",                      emoji: "⚡" },
   { id: "fanfolio_rookie",      title: "Fanfolio Rookie",       description: "Completed all 5 Getting Started challenges.",     emoji: "🎯" },
+  { id: "rookie_graduate",      title: "Rookie Graduate",       description: "Completed all 7 steps of the Rookie Playbook.",    emoji: "🎓" },
 ];

@@ -655,12 +655,14 @@ function RookiePlaybookCard({
   allDone,
   onDismiss,
   educationalTipsEnabled,
+  rewardClaimed,
 }: {
   colors: ReturnType<typeof useColors>;
   steps: PlaybookStepDef[];
   allDone: boolean;
   onDismiss: () => void;
   educationalTipsEnabled: boolean;
+  rewardClaimed: boolean;
 }) {
   const completedCount = steps.filter(s => s.done).length;
 
@@ -670,9 +672,20 @@ function RookiePlaybookCard({
         <Text style={{ fontSize: 22 }}>🏆</Text>
         <View style={{ flex: 1 }}>
           <Text style={[rpStyles.completedTitle, { color: colors.green }]}>Rookie Playbook Complete!</Text>
-          <Text style={[rpStyles.completedSub, { color: colors.mutedForeground }]}>
-            You've covered the basics. Keep trading and learning.
-          </Text>
+          {rewardClaimed ? (
+            <Text style={[rpStyles.completedSub, { color: colors.mutedForeground }]}>
+              Reward claimed. Keep trading and learning!
+            </Text>
+          ) : (
+            <Pressable
+              onPress={() => router.push("/challenges")}
+              style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+            >
+              <Text style={[rpStyles.claimPrompt, { color: colors.coin }]}>
+                🎁 Claim 250 LC + 150 XP in Challenges →
+              </Text>
+            </Pressable>
+          )}
         </View>
         <Pressable onPress={onDismiss} hitSlop={12}>
           <Feather name="x" size={17} color={colors.mutedForeground} />
@@ -781,7 +794,7 @@ function RookiePlaybookCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
@@ -1060,6 +1073,7 @@ export default function HomeScreen() {
               allDone={playbookAllDone}
               onDismiss={handleDismissPlaybook}
               educationalTipsEnabled={prefs.educationalTipsEnabled}
+              rewardClaimed={claimedChallenges.includes("rookie_playbook_complete")}
             />
           </View>
         )}
@@ -1779,6 +1793,7 @@ const rpStyles = StyleSheet.create({
   stepDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 16 },
   goBtn: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
   goBtnText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  claimPrompt: { fontSize: 12, fontFamily: "Inter_700Bold", marginTop: 3 },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────

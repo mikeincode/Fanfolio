@@ -65,6 +65,17 @@ export function useChallenges() {
 
     function getProgress(c: ChallengeDefinition): number {
       switch (c.id) {
+        case "rookie_playbook_complete": {
+          const done =
+            game.lastDailyClaim !== null &&
+            game.watchlist.length > 0 &&
+            (game.transactions.some(t => t.type === "buy") || game.holdings.length > 0) &&
+            game.appliedEvents.length > 0 &&
+            game.challengeFlags.includes("hasViewedPortfolio") &&
+            game.challengeFlags.includes("hasViewedPerformance") &&
+            game.lessonsOpened > 0;
+          return done ? 1 : 0;
+        }
         case "claim_daily":       return game.lastDailyClaim ? 1 : 0;
         case "buy_first":         return Math.min(1, buyTx.length);
         case "add_watchlist":     return Math.min(1, game.watchlist.length);
