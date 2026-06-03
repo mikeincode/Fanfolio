@@ -6,11 +6,11 @@ description: Key patterns and constraints for the Fanfolio Expo app to stay cons
 ## Stack
 - Expo Router (file-based routing), AsyncStorage persistence
 - `useGame()` from `context/GameContext.tsx` — provides `holdings`, `transactions`, `luckyCoinBalance`, `watchlist`, `username`, `joinDate`, `appliedEvents`, `updateUsername`
-- `useLiveAssets()` — live price-jittered array of `Asset` objects from `data/mockAssets.ts`
+- `useLiveAssets()` — live price-jittered array of `Asset` objects from `data/assetUniverse.ts` (ALL_ASSETS)
 - `useColors()` from `hooks/useColors.ts` — exposes `colors.primary`, `colors.green`, `colors.red`, `colors.coin`, `colors.blue`, `colors.foreground`, `colors.mutedForeground`, `colors.card`, `colors.border`, `colors.background`, `colors.primaryForeground`, `colors.radius`
 - `@expo/vector-icons` Feather icons throughout
 - Components: `SparklineChart`, `CoinBadge`, `RiskBar`
-- `getAssetById(id)` exported from `data/mockAssets.ts`
+- `getAllAssetById(id)` exported from `data/assetUniverse.ts` — use this everywhere, NOT `getAssetById` from `mockAssets.ts` (only covers legacy 24 assets)
 
 ## Route structure
 - Tabs: `app/(tabs)/` — Home (index), Market, Scanner, Portfolio, Learn, Leaderboard (ranks)
@@ -25,7 +25,7 @@ description: Key patterns and constraints for the Fanfolio Expo app to stay cons
 ```ts
 { id, assetId, assetName, assetSymbol, type: "buy"|"sell", quantity, price, total, timestamp }
 ```
-Transactions do NOT store asset type (Team Stock, etc.) — must look up via `getAssetById(assetId)`.
+Transactions do NOT store asset type (Team Stock, etc.) — must look up via `getAllAssetById(assetId)` from `data/assetUniverse.ts`. Never use `getAssetById` from `mockAssets.ts` — it only covers the legacy 24 assets and misses the full universe.
 
 ## Pre-existing TS errors (don't fix unless asked)
 - `SparklineChart` does not accept `color` prop (used in scanner.tsx + index.tsx scanner pick card)

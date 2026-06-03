@@ -13,19 +13,20 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame, Transaction } from "@/context/GameContext";
-import { getAssetById } from "@/data/mockAssets";
+import { getAllAssetById } from "@/data/assetUniverse";
 import { useUserPreferences } from "@/lib/userPreferences";
 
-type KindFilter = "All" | "Buys" | "Sells" | "Team Stock" | "Player Coin" | "Sport Index" | "Meme Coin" | "Future";
+type KindFilter = "All" | "Buys" | "Sells" | "Team Stock" | "Player Coin" | "Coach Stock" | "Sport Index" | "Meme Coin" | "Future";
 type SortOption = "Newest" | "Oldest" | "Largest";
 
-const KIND_FILTERS: KindFilter[] = ["All", "Buys", "Sells", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
+const KIND_FILTERS: KindFilter[] = ["All", "Buys", "Sells", "Team Stock", "Player Coin", "Coach Stock", "Sport Index", "Meme Coin", "Future"];
 const KIND_LABELS: Record<KindFilter, string> = {
   "All": "All",
   "Buys": "Buys",
   "Sells": "Sells",
   "Team Stock": "Teams",
   "Player Coin": "Players",
+  "Coach Stock": "Coaches",
   "Sport Index": "Indexes",
   "Meme Coin": "Meme",
   "Future": "Futures",
@@ -65,12 +66,13 @@ function StatCard({ label, value, sub, accent, colors }: {
 function TradeRow({ tx, colors }: { tx: Transaction; colors: ReturnType<typeof useColors> }) {
   const isBuy = tx.type === "buy";
   const iconColor = isBuy ? colors.green : colors.primary;
-  const asset = getAssetById(tx.assetId);
+  const asset = getAllAssetById(tx.assetId);
   const typeLabel = asset
     ? asset.type === "Sport Index" ? "Index"
       : asset.type === "Team Stock" ? "Team"
       : asset.type === "Player Coin" ? "Player"
       : asset.type === "Meme Coin" ? "Meme"
+      : asset.type === "Coach Stock" ? "Coach"
       : "Future"
     : "";
 
@@ -140,7 +142,7 @@ export default function JournalScreen() {
 
   // ── Augmented transactions with asset info ──────────────────
   const augmented = useMemo(() =>
-    transactions.map(tx => ({ ...tx, asset: getAssetById(tx.assetId) })),
+    transactions.map(tx => ({ ...tx, asset: getAllAssetById(tx.assetId) })),
     [transactions]
   );
 

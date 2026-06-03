@@ -1,7 +1,8 @@
 import { useMemo } from "react";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
-import { MOCK_ASSETS, type AssetType } from "@/data/mockAssets";
+import { type AssetType } from "@/data/mockAssets";
+import { ALL_ASSETS } from "@/data/assetUniverse";
 
 export type TraderIdentityId =
   | "rookie_learner"
@@ -204,7 +205,7 @@ export function useTraderIdentity(): TraderIdentityResult {
     const sellTx = transactions.filter(t => t.type === "sell");
     const totalTx = transactions.length;
 
-    const assetMap = Object.fromEntries(MOCK_ASSETS.map(a => [a.id, a]));
+    const assetMap = Object.fromEntries(ALL_ASSETS.map(a => [a.id, a]));
     const liveMap = Object.fromEntries(liveAssets.map(a => [a.id, a]));
 
     const isLowActivity =

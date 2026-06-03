@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { ALL_ASSETS } from "@/data/assetUniverse";
 import {
   CHALLENGES,
   ACHIEVEMENTS,
@@ -40,7 +40,7 @@ export function useChallenges() {
 
     const holdingSports = new Set(
       game.holdings
-        .map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.sport)
+        .map(h => ALL_ASSETS.find(a => a.id === h.assetId)?.sport)
         .filter((s): s is string => Boolean(s))
     );
 
@@ -60,7 +60,7 @@ export function useChallenges() {
     }
 
     const indexBuyCount = buyTx.filter(
-      t => MOCK_ASSETS.find(a => a.id === t.assetId)?.type === "Sport Index"
+      t => ALL_ASSETS.find(a => a.id === t.assetId)?.type === "Sport Index"
     ).length;
 
     function getProgress(c: ChallengeDefinition): number {
@@ -104,7 +104,7 @@ export function useChallenges() {
 
     const memeBuyAssetIds = new Set(
       game.transactions
-        .filter(t => t.type === "buy" && MOCK_ASSETS.find(a => a.id === t.assetId)?.type === "Meme Coin")
+        .filter(t => t.type === "buy" && ALL_ASSETS.find(a => a.id === t.assetId)?.type === "Meme Coin")
         .map(t => t.assetId)
     );
 

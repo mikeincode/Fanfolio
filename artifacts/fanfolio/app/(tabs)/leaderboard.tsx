@@ -16,7 +16,7 @@ import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useTraderIdentity } from "@/hooks/useTraderIdentity";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { ALL_ASSETS } from "@/data/assetUniverse";
 import {
   LeaderboardCategory,
   CATEGORIES,
@@ -71,10 +71,10 @@ function buildUserStats(
   const memeExposurePct = portfolioValue > 0 ? (memeValue / portfolioValue) * 100 : 0;
 
   const uniqueSports = new Set(
-    holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.sport).filter(Boolean)
+    holdings.map(h => ALL_ASSETS.find(a => a.id === h.assetId)?.sport).filter(Boolean)
   ).size;
   const uniqueTypes = new Set(
-    holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.type).filter(Boolean)
+    holdings.map(h => ALL_ASSETS.find(a => a.id === h.assetId)?.type).filter(Boolean)
   ).size;
   const largestPct = holdings.length > 0 && portfolioValue > 0
     ? Math.max(...holdings.map(h => {

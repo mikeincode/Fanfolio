@@ -20,7 +20,7 @@ import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useTraderIdentity } from "@/hooks/useTraderIdentity";
 import { CoinBadge } from "@/components/CoinBadge";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { ALL_ASSETS } from "@/data/assetUniverse";
 import { buildLeaderboard, getBestCategory, CATEGORIES, UserLeaderboardStats } from "@/data/mockLeaderboard";
 import { useUserPreferences } from "@/lib/userPreferences";
 
@@ -70,8 +70,8 @@ export default function ProfileScreen() {
     }, 0);
     const indexExposurePct = pv > 0 ? (indexVal / pv) * 100 : 0;
     const memeExposurePct = pv > 0 ? (memeVal / pv) * 100 : 0;
-    const uniqueSports = new Set(holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.sport).filter(Boolean)).size;
-    const uniqueTypes = new Set(holdings.map(h => MOCK_ASSETS.find(a => a.id === h.assetId)?.type).filter(Boolean)).size;
+    const uniqueSports = new Set(holdings.map(h => ALL_ASSETS.find(a => a.id === h.assetId)?.sport).filter(Boolean)).size;
+    const uniqueTypes = new Set(holdings.map(h => ALL_ASSETS.find(a => a.id === h.assetId)?.type).filter(Boolean)).size;
     let divScore = Math.min(uniqueSports * 18, 45) + Math.min(uniqueTypes * 15, 40);
     if (indexExposurePct > 0) divScore += 15;
     if (memeExposurePct < 30) divScore += 5;
