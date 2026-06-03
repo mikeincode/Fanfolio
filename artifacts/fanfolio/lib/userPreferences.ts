@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext, createContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PREFS_KEY = "@fanfolio_user_preferences_v1";
@@ -31,7 +31,20 @@ function parsePreferences(raw: string): UserPreferences {
   }
 }
 
-export function useUserPreferences() {
+// ── Context ────────────────────────────────────────────────────
+
+interface UserPreferencesContextValue {
+  prefs: UserPreferences;
+  prefsLoaded: boolean;
+  updatePref: <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => Promise<void>;
+  resetPreferences: () => Promise<void>;
+}
+
+const UserPreferencesContext = createContext<UserPreferencesContextValue | null>(null);
+
+// ── Provider ───────────────────────────────────────────────────
+
+export function UserPreferencesProvider({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefs] = useState<UserPreferences>(defaultPreferences);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
 
@@ -44,11 +57,13 @@ export function useUserPreferences() {
 
   const updatePref = useCallback(
     async <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
-      const next = { ...prefs, [key]: value };
-      setPrefs(next);
-      await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      setPrefs((current) => {
+        const next = { ...current, [key]: value };
+        AsyncStorage.setItem(PREFS_KEY, JSON.stringify(next));
+        return next;
+      });
     },
-    [prefs]
+    []
   );
 
   const resetPreferences = useCallback(async () => {
@@ -56,5 +71,19 @@ export function useUserPreferences() {
     await AsyncStorage.setItem(PREFS_KEY, JSON.stringify(defaultPreferences));
   }, []);
 
-  return { prefs, prefsLoaded, updatePref, resetPreferences };
+  return React.createElement(
+    UserPreferencesContext.Provider,
+    { value: { prefs, prefsLoaded, updatePref, resetPreferences } },
+    children
+  );
+}
+
+// ── Hook ───────────────────────────────────────────────────────
+
+export function useUserPreferences(): UserPreferencesContextValue {
+  const ctx = useContext(UserPreferencesContext);
+  if (!ctx) {
+    throw new Error("useUserPreferences must be used inside UserPreferencesProvider");
+  }
+  return ctx;
 }
