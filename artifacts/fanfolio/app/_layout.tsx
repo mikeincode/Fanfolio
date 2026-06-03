@@ -38,6 +38,8 @@ function RootLayoutNav() {
       <Stack.Screen name="strategy-profile" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="dev-reset" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="settings" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="performance" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="rookie-playbook" options={{ headerShown: false, presentation: "card" }} />
     </Stack>
   );
 }

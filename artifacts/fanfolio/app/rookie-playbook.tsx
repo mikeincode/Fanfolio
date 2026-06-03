@@ -73,7 +73,7 @@ export default function RookiePlaybookScreen() {
       num: 4,
       emoji: "⚡",
       title: "React to a Market Pulse",
-      what: "On the Home screen, tap the Simulate Event button. In the final version of Fanfolio, Market Pulses will appear automatically as real sports news breaks — injuries, trades, championship results, and more. For now, use the demo button to see how a news story can move prices.",
+      what: "On the Home screen, find the Today's Market Pulse card and tap Review Pulse. Fanfolio prepares a daily market storyline for you — see how a sports news story moves prices across your assets.",
       why: "Markets move when something real happens. Understanding why prices change is the most important skill you can build here.",
       actionLabel: "Go to Home",
       onAction: () => { router.back(); },
@@ -253,7 +253,7 @@ export default function RookiePlaybookScreen() {
       <View style={[s.footerCard, { backgroundColor: colors.muted, borderColor: colors.border }]}>
         <Feather name="info" size={13} color={colors.mutedForeground} />
         <Text style={[s.footerText, { color: colors.mutedForeground }]}>
-          In the full release of Fanfolio, Market Pulses will appear automatically when real sports stories break — injuries, signings, championships, and more. The demo event button is a temporary way to experience how news moves prices.
+          Fanfolio prepares a daily Market Pulse storyline for you. In a future release, these pulses will draw from real sports news as it breaks — injuries, signings, championships, and more.
         </Text>
       </View>
     </ScrollView>

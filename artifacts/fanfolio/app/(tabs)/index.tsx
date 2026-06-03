@@ -612,7 +612,7 @@ function PortfolioRecapCard({
 
       {educationalTipsEnabled && snaps.length === 0 && (
         <Text style={[recapStyles.hint, { color: colors.mutedForeground }]}>
-          Make a trade or simulate an event to start tracking performance history.
+          Make a trade or review a Market Pulse to start tracking performance history.
         </Text>
       )}
     </Pressable>
@@ -794,7 +794,7 @@ function RookiePlaybookCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, prepareDailyPulse, reviewDailyPulse, pendingPulseId, isLoaded, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, prepareDailyPulse, reviewDailyPulse, pendingPulseId, pendingGeneratedPulse, isLoaded, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
@@ -913,10 +913,11 @@ export default function HomeScreen() {
     }, [isLoaded, prepareDailyPulse])
   );
 
-  const pendingEvent = useMemo(() =>
-    pendingPulseId ? MARKET_EVENTS.find(e => e.id === pendingPulseId) ?? null : null,
-    [pendingPulseId]
-  );
+  const pendingEvent = useMemo(() => {
+    if (!pendingPulseId) return null;
+    // Curated events live in MARKET_EVENTS; generated pulses use pendingGeneratedPulse
+    return MARKET_EVENTS.find(e => e.id === pendingPulseId) ?? pendingGeneratedPulse ?? null;
+  }, [pendingPulseId, pendingGeneratedPulse]);
 
   const pulseReviewedToday = !!(
     latestEvent &&

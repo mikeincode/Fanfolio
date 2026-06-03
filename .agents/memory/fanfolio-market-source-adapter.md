@@ -20,7 +20,7 @@ description: Architecture of the market source story → MarketEvent pipeline; G
 2. `defaultState` object
 3. `mergeGameState()` return object
 4. `REPAIR_DEFAULTS` in `lib/saveHealth.ts`
-5. The explicit `state: GameState` object at line ~322 in `lib/saveHealth.ts` (parsed state builder — most easily forgotten)
+5. The explicit `state: GameState` object in `lib/saveHealth.ts` (parsed state builder — use `isValidMarketEvent()` guard to restore pendingGeneratedPulse; do NOT hardcode null or generated pulses will be lost on reload between prepare and review)
 6. `safeMerge()` return in `lib/cloudSaveUtils.ts`
 7. `localState: GameState` in `app/cloud-save.tsx`
 

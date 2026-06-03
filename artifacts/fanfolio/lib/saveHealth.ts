@@ -5,6 +5,7 @@ import type {
   AppliedEvent,
   PortfolioSnapshot,
 } from "@/context/GameContext";
+import type { MarketEvent } from "@/data/mockMarketEvents";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -92,6 +93,21 @@ function isValidAppliedEvent(e: unknown): e is AppliedEvent {
     typeof obj.eventId === "string" &&
     typeof obj.title === "string" &&
     typeof obj.appliedAt === "number"
+  );
+}
+
+function isValidMarketEvent(e: unknown): e is MarketEvent {
+  if (!e || typeof e !== "object" || Array.isArray(e)) return false;
+  const obj = e as Record<string, unknown>;
+  return (
+    typeof obj.id === "string" &&
+    typeof obj.title === "string" &&
+    typeof obj.sport === "string" &&
+    typeof obj.category === "string" &&
+    typeof obj.summary === "string" &&
+    typeof obj.marketLesson === "string" &&
+    typeof obj.emoji === "string" &&
+    Array.isArray(obj.impacts)
   );
 }
 
@@ -319,6 +335,22 @@ export function safeParseGameState(json: string): SaveHealthResult {
     repaired.push("pendingPulseId");
   }
 
+  // ── pendingGeneratedPulse ─────────────────────────────────────────────────
+  // Generated pulses are ephemeral but must survive an app reload between
+  // prepareDailyPulse() and reviewDailyPulse(). Restore if valid, otherwise
+  // drop gracefully (the pulse will be regenerated next time the home screen
+  // focuses if lastAutoPulseDate has already been stamped for today, the user
+  // simply won't get a second chance — that is safer than a stuck pending state).
+  let pendingGeneratedPulse: MarketEvent | null;
+  if (obj.pendingGeneratedPulse === null || obj.pendingGeneratedPulse === undefined) {
+    pendingGeneratedPulse = null;
+  } else if (isValidMarketEvent(obj.pendingGeneratedPulse)) {
+    pendingGeneratedPulse = obj.pendingGeneratedPulse;
+  } else {
+    pendingGeneratedPulse = null;
+    repaired.push("pendingGeneratedPulse");
+  }
+
   const state: GameState = {
     luckyCoinBalance,
     holdings,
@@ -337,7 +369,7 @@ export function safeParseGameState(json: string): SaveHealthResult {
     portfolioSnapshots,
     lastAutoPulseDate,
     pendingPulseId,
-    pendingGeneratedPulse: null,
+    pendingGeneratedPulse,
   };
 
   const status: SaveHealthStatus = repaired.length === 0 ? "ok" : "repaired";
