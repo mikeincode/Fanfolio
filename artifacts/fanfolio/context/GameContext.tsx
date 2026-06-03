@@ -11,11 +11,13 @@ import { MOCK_ASSETS } from "@/data/mockAssets";
 import { getEventById, getRandomEvent, MarketEvent } from "@/data/mockMarketEvents";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { safeMerge } from "@/lib/cloudSaveUtils";
+import { safeParseGameState, SaveHealthStatus } from "@/lib/saveHealth";
 import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "@fanfolio_game_state_v2";
 const SAVED_AT_KEY = "@fanfolio_local_saved_at";
 const BACKUP_KEY = "@fanfolio_local_backup_v1";
+export const CORRUPTED_BACKUP_KEY = "@fanfolio_corrupted_save_backup_v1";
 const INITIAL_BALANCE = 10000;
 const DAILY_CLAIM_AMOUNT = 1000;
 
@@ -114,6 +116,13 @@ interface GameContextValue extends GameState {
   fetchCloudState: () => Promise<{ state: GameState | null; updatedAt: number | null; error: string | null }>;
   smartMergeWithCloud: (cloudState: GameState) => Promise<{ success: boolean; error: string | null }>;
   loadFromCloudWithBackup: () => Promise<{ success: boolean; error: string | null; hasData: boolean }>;
+  // ── Save health ───────────────────────────────────────────────────────────
+  saveHealthStatus: SaveHealthStatus;
+  saveHealthMessage: string;
+  saveWasRepaired: boolean;
+  corruptedSaveBackedUpAt: number | null;
+  resetCorruptedLocalSave: () => void;
+  restoreCorruptedBackup: () => Promise<{ success: boolean; error: string | null }>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -161,37 +170,83 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [localBackupAt, setLocalBackupAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
+  // ── Save health state ────────────────────────────────────────────────────────
+  const [saveHealthStatus, setSaveHealthStatus] = useState<SaveHealthStatus>("ok");
+  const [saveHealthMessage, setSaveHealthMessage] = useState("Save loaded successfully.");
+  const [saveWasRepaired, setSaveWasRepaired] = useState(false);
+  const [corruptedSaveBackedUpAt, setCorruptedSaveBackedUpAt] = useState<number | null>(null);
+
   const stateRef = useRef<GameState>(defaultState);
   useEffect(() => { stateRef.current = state; }, [state]);
 
   // ── Load local state ────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
-      const [raw, savedAtRaw, backupRaw] = await Promise.all([
+      const [raw, savedAtRaw, backupRaw, corruptedRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEY),
         AsyncStorage.getItem(SAVED_AT_KEY),
         AsyncStorage.getItem(BACKUP_KEY),
+        AsyncStorage.getItem(CORRUPTED_BACKUP_KEY),
       ]);
+
       if (raw) {
-        try {
-          const parsed = JSON.parse(raw) as GameState;
-          const merged = mergeGameState(defaultState, parsed);
+        const result = safeParseGameState(raw);
+
+        if (result.status === "corrupted") {
+          // Back up the corrupted raw bytes before resetting
+          const backedUpAt = Date.now();
+          await AsyncStorage.setItem(
+            CORRUPTED_BACKUP_KEY,
+            JSON.stringify({ raw, backedUpAt })
+          );
+          await AsyncStorage.removeItem(STORAGE_KEY);
+          setState(defaultState);
+          stateRef.current = defaultState;
+          setSaveHealthStatus("corrupted");
+          setSaveHealthMessage(result.message);
+          setCorruptedSaveBackedUpAt(backedUpAt);
+        } else {
+          const merged = mergeGameState(defaultState, result.state!);
           setState(merged);
           stateRef.current = merged;
-        } catch {
-          setState(defaultState);
+          setSaveHealthStatus(result.status);
+          setSaveHealthMessage(result.message);
+          if (result.status === "repaired") {
+            setSaveWasRepaired(true);
+            // Persist the repaired state back to AsyncStorage
+            const now = Date.now();
+            await Promise.all([
+              AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(merged)),
+              AsyncStorage.setItem(SAVED_AT_KEY, String(now)),
+            ]);
+            setLocalSavedAt(now);
+          }
         }
       }
-      if (savedAtRaw) {
+
+      if (savedAtRaw && !raw) {
+        const n = parseInt(savedAtRaw, 10);
+        if (!isNaN(n)) setLocalSavedAt(n);
+      } else if (savedAtRaw && raw) {
         const n = parseInt(savedAtRaw, 10);
         if (!isNaN(n)) setLocalSavedAt(n);
       }
+
       if (backupRaw) {
         try {
-          const b = JSON.parse(backupRaw);
+          const b = JSON.parse(backupRaw) as { savedAt?: number };
           if (b?.savedAt) setLocalBackupAt(b.savedAt);
         } catch {}
       }
+
+      if (corruptedRaw && !raw) {
+        // Corrupted backup already exists from a previous session
+        try {
+          const c = JSON.parse(corruptedRaw) as { backedUpAt?: number };
+          if (c?.backedUpAt) setCorruptedSaveBackedUpAt(c.backedUpAt);
+        } catch {}
+      }
+
       setLoaded(true);
     };
     load();
@@ -229,13 +284,44 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     try {
       const raw = await AsyncStorage.getItem(BACKUP_KEY);
       if (!raw) return { success: false, error: "No backup found." };
-      const { state: backupState } = JSON.parse(raw);
+      const { state: backupState } = JSON.parse(raw) as { state: unknown };
       if (!backupState) return { success: false, error: "Backup data is invalid." };
       const restored = mergeGameState(defaultState, backupState as GameState);
       save(restored);
       return { success: true, error: null };
-    } catch (err: any) {
-      return { success: false, error: err?.message ?? "Restore failed." };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "Restore failed." };
+    }
+  }, [save]);
+
+  // ── Corrupted-save recovery ──────────────────────────────────────────────────
+  const resetCorruptedLocalSave = useCallback(() => {
+    const fresh = { ...defaultState, joinDate: Date.now() };
+    save(fresh);
+    setSaveHealthStatus("ok");
+    setSaveHealthMessage("Started fresh after corrupted save was cleared.");
+    setSaveWasRepaired(false);
+  }, [save]);
+
+  const restoreCorruptedBackup = useCallback(async (): Promise<{ success: boolean; error: string | null }> => {
+    try {
+      const raw = await AsyncStorage.getItem(CORRUPTED_BACKUP_KEY);
+      if (!raw) return { success: false, error: "No corrupted backup found." };
+      const parsed = JSON.parse(raw) as { raw?: string };
+      if (!parsed?.raw) return { success: false, error: "Corrupted backup has no data." };
+
+      const result = safeParseGameState(parsed.raw);
+      if (result.status === "corrupted" || !result.state) {
+        return { success: false, error: "Corrupted backup is still unreadable — cannot restore." };
+      }
+      const restored = mergeGameState(defaultState, result.state);
+      save(restored);
+      setSaveHealthStatus(result.status);
+      setSaveHealthMessage("Restored from corrupted backup (fields repaired where needed).");
+      setSaveWasRepaired(result.status === "repaired");
+      return { success: true, error: null };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "Restore failed." };
     }
   }, [save]);
 
@@ -275,8 +361,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       setLastSyncedAt(Date.now());
       return { success: true, error: null };
-    } catch (err: any) {
-      const msg = err?.message ?? "Sync failed.";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Sync failed.";
       setSyncError(msg);
       return { success: false, error: msg };
     } finally {
@@ -308,8 +394,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       save(cloudState);
       setLastSyncedAt(Date.now());
       return { success: true, error: null, hasData: true };
-    } catch (err: any) {
-      const msg = err?.message ?? "Load failed.";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Load failed.";
       setSyncError(msg);
       return { success: false, error: msg, hasData: false };
     } finally {
@@ -347,8 +433,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const updatedAt = data?.updated_at ? new Date(data.updated_at as string).getTime() : null;
       const cloudState = data?.game_state ? mergeGameState(defaultState, data.game_state as GameState) : null;
       return { state: cloudState, updatedAt, error: null };
-    } catch (err: any) {
-      return { state: null, updatedAt: null, error: err?.message ?? "Failed to fetch." };
+    } catch (err: unknown) {
+      return { state: null, updatedAt: null, error: err instanceof Error ? err.message : "Failed to fetch." };
     }
   }, [cloudUser]);
 
@@ -361,8 +447,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         await saveToCloud();
       }
       return { success: true, error: null };
-    } catch (err: any) {
-      return { success: false, error: err?.message ?? "Merge failed." };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "Merge failed." };
     }
   }, [saveLocalBackup, save, cloudUser, saveToCloud]);
 
@@ -550,6 +636,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       saveToCloud, loadFromCloud, mergeCloudSave, loadFromCloudWithBackup,
       saveLocalBackup, restoreLocalBackup,
       fetchCloudState, smartMergeWithCloud,
+      saveHealthStatus, saveHealthMessage, saveWasRepaired,
+      corruptedSaveBackedUpAt, resetCorruptedLocalSave, restoreCorruptedBackup,
     }}>
       {children}
     </GameContext.Provider>

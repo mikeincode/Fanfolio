@@ -13,16 +13,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { useGame } from "@/context/GameContext";
+import { useGame, CORRUPTED_BACKUP_KEY } from "@/context/GameContext";
 
 const FANFOLIO_KEYS = [
   "@fanfolio_game_state_v2",
   "@fanfolio_local_saved_at",
   "@fanfolio_local_backup_v1",
   "@fanfolio_onboarding_complete",
+  CORRUPTED_BACKUP_KEY,
 ];
 
 type Phase = "idle" | "confirm" | "resetting" | "done" | "error";
+type CorruptPhase = "idle" | "writing" | "done" | "error";
 
 export default function DevResetScreen() {
   const colors = useColors();
@@ -32,6 +34,20 @@ export default function DevResetScreen() {
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [corruptPhase, setCorruptPhase] = useState<CorruptPhase>("idle");
+
+  const handleWriteCorrupted = async () => {
+    setCorruptPhase("writing");
+    try {
+      await AsyncStorage.setItem(
+        "@fanfolio_game_state_v2",
+        "THIS IS NOT JSON {{{ intentionally corrupted for save-health testing }}}"
+      );
+      setCorruptPhase("done");
+    } catch {
+      setCorruptPhase("error");
+    }
+  };
 
   const handleReset = async () => {
     setPhase("resetting");
@@ -165,6 +181,64 @@ export default function DevResetScreen() {
           </View>
         )}
 
+        {/* ── Save Health Testing ────────────────────────────────────────── */}
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Feather name="activity" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+            Save-Health Recovery Testing
+          </Text>
+        </View>
+
+        <Text style={[styles.body2, { color: colors.mutedForeground }]}>
+          Write a corrupted save to AsyncStorage so you can verify recovery works on next reload.
+        </Text>
+
+        <View style={[styles.keysCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.keysTitle, { color: colors.mutedForeground }]}>WHAT THIS WRITES</Text>
+          <View style={styles.keyRow}>
+            <Feather name="edit-2" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>
+              @fanfolio_game_state_v2 → invalid JSON string
+            </Text>
+          </View>
+        </View>
+
+        {corruptPhase === "idle" && (
+          <Pressable
+            onPress={handleWriteCorrupted}
+            style={({ pressed }) => [
+              styles.dangerBtn,
+              { backgroundColor: "#7C3AED", opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="zap" size={16} color="#fff" />
+            <Text style={styles.dangerBtnText}>Write Corrupted Test Save</Text>
+          </Pressable>
+        )}
+
+        {corruptPhase === "writing" && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Writing corrupted data…</Text>
+          </View>
+        )}
+
+        {corruptPhase === "done" && (
+          <View style={[styles.resultRow, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED40" }]}>
+            <Feather name="check-circle" size={15} color="#7C3AED" />
+            <Text style={[styles.resultText, { color: "#7C3AED" }]}>
+              Corrupted save written. Reload the app — the recovery screen should appear.
+            </Text>
+          </View>
+        )}
+
+        {corruptPhase === "error" && (
+          <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
+            <Feather name="alert-circle" size={15} color="#EF4444" />
+            <Text style={[styles.resultText, { color: "#EF4444" }]}>Failed to write corrupted save.</Text>
+          </View>
+        )}
+
         {/* How to use this screen */}
         <View style={[styles.howToCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.howToTitle, { color: colors.foreground }]}>How to navigate here</Text>
@@ -251,4 +325,14 @@ const styles = StyleSheet.create({
   howToCard: { borderRadius: 12, borderWidth: 1, padding: 14, marginTop: 6 },
   howToTitle: { fontSize: 14, fontFamily: "Inter_700Bold", marginBottom: 8 },
   howToBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    borderTopWidth: 1,
+    paddingTop: 16,
+    marginTop: 6,
+  },
+  sectionHeaderText: { fontSize: 12, fontFamily: "Inter_600SemiBold", letterSpacing: 0.3 },
 });

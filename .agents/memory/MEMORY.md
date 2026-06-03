@@ -1,3 +1,4 @@
 - [Fanfolio stack conventions](fanfolio-stack.md) — Expo Router + AsyncStorage + useLiveAssets + useGame + useColors; safe-language rules enforced throughout.
 - [Fanfolio challenge system](fanfolio-challenges.md) — 17 challenges, 10 achievements, 7 levels; XP/flags persisted via GameContext; progress computed in useChallenges hook.
 - [Fanfolio routing conventions](fanfolio-routing.md) — app/index.tsx is the root redirect gate for onboarding; all stack screens must have explicit Stack.Screen entries with headerShown: false.
+- [Fanfolio save health](fanfolio-save-health.md) — lib/saveHealth.ts validates/repairs local saves; GameContext exposes saveHealthStatus/saveWasRepaired/corruptedSaveBackedUpAt; corrupted saves backed up to CORRUPTED_BACKUP_KEY before reset.
