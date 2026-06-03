@@ -465,6 +465,7 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         {[
+          { label: "Settings", icon: "settings" as const, onPress: () => router.push("/settings") },
           { label: "Trader Identity", icon: "user" as const, onPress: () => router.push("/strategy-profile") },
           { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach") },
           { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
