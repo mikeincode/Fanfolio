@@ -161,6 +161,7 @@ function ScanResultCard({
   isOwned,
   ownedQty,
   onWatchToggle,
+  compact,
 }: {
   asset: Asset;
   accentType: AccentType;
@@ -169,6 +170,7 @@ function ScanResultCard({
   isOwned: boolean;
   ownedQty: number;
   onWatchToggle: (id: string) => void;
+  compact?: boolean;
 }) {
   const isUp = asset.dailyChangePercent >= 0;
   const changeColor = isUp ? colors.green : colors.red;
@@ -184,7 +186,7 @@ function ScanResultCard({
       style={[styles.resultCard, { backgroundColor: colors.card, borderColor: colors.border }]}
     >
       <View style={[styles.cardAccent, { backgroundColor: accent }]} />
-      <View style={styles.cardBody}>
+      <View style={[styles.cardBody, compact && styles.cardBodyCompact]}>
         {/* Row 1: symbol + badges + sparkline + price */}
         <View style={styles.cardTop}>
           <View style={styles.cardLeft}>
@@ -193,9 +195,11 @@ function ScanResultCard({
               <View style={[styles.tagBadge, { backgroundColor: colors.border }]}>
                 <Text style={[styles.tagText, { color: colors.mutedForeground }]}>{typeLabel(asset.type)}</Text>
               </View>
-              <View style={[styles.tagBadge, { backgroundColor: colors.border }]}>
-                <Text style={[styles.tagText, { color: colors.mutedForeground }]}>{asset.sport}</Text>
-              </View>
+              {!compact && (
+                <View style={[styles.tagBadge, { backgroundColor: colors.border }]}>
+                  <Text style={[styles.tagText, { color: colors.mutedForeground }]}>{asset.sport}</Text>
+                </View>
+              )}
             </View>
             <Text style={[styles.assetName, { color: colors.mutedForeground }]} numberOfLines={1}>
               {asset.name}
@@ -204,8 +208,8 @@ function ScanResultCard({
           <View style={styles.cardRight}>
             <SparklineChart
               data={asset.chartData}
-              width={52}
-              height={24}
+              width={compact ? 40 : 52}
+              height={compact ? 18 : 24}
               positive={isUp}
             />
             <Text style={[styles.price, { color: colors.foreground }]}>
@@ -218,10 +222,12 @@ function ScanResultCard({
 
         {/* Row 2: risk + sentiment + owned + watch + change */}
         <View style={styles.cardBottom}>
-          <View style={[styles.riskPill, { backgroundColor: riskColor + "18" }]}>
-            <Feather name="shield" size={9} color={riskColor} />
-            <Text style={[styles.riskText, { color: riskColor }]}>Risk {asset.riskScore}</Text>
-          </View>
+          {!compact && (
+            <View style={[styles.riskPill, { backgroundColor: riskColor + "18" }]}>
+              <Feather name="shield" size={9} color={riskColor} />
+              <Text style={[styles.riskText, { color: riskColor }]}>Risk {asset.riskScore}</Text>
+            </View>
+          )}
           <View style={[styles.sentimentPill, { backgroundColor: (asset.bullish ? colors.green : colors.red) + "18" }]}>
             <Text style={[styles.sentimentText, { color: asset.bullish ? colors.green : colors.red }]}>
               {asset.bullish ? "Bullish" : "Bearish"}
@@ -500,6 +506,7 @@ export default function ScannerScreen() {
                 isOwned={!!holding}
                 ownedQty={holding?.quantity ?? 0}
                 onWatchToggle={handleWatchToggle}
+                compact={prefs.compactCardsEnabled}
               />
             </View>
           );
@@ -648,6 +655,10 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     paddingLeft: 10,
     gap: 7,
+  },
+  cardBodyCompact: {
+    paddingVertical: 6,
+    gap: 4,
   },
   cardTop: { flexDirection: "row", alignItems: "flex-start" },
   cardLeft: { flex: 1, gap: 2 },
