@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { useGame, AppliedEvent } from "@/context/GameContext";
+import { useGame, AppliedEvent, PortfolioSnapshot } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useTraderIdentity } from "@/hooks/useTraderIdentity";
@@ -529,12 +529,120 @@ function DecisionCoachCard({
 }
 
 // ────────────────────────────────────────────────────────────
+// Portfolio Recap Card (Home)
+// ────────────────────────────────────────────────────────────
+
+function PortfolioRecapCard({
+  totalValue,
+  portfolioSnapshots,
+  latestEvent,
+  colors,
+  educationalTipsEnabled,
+}: {
+  totalValue: number;
+  portfolioSnapshots: PortfolioSnapshot[];
+  latestEvent: AppliedEvent | null;
+  colors: ReturnType<typeof useColors>;
+  educationalTipsEnabled: boolean;
+}) {
+  const snaps = portfolioSnapshots ?? [];
+  const INITIAL = 10000;
+  const returnPct = ((totalValue - INITIAL) / INITIAL) * 100;
+  const returnColor = returnPct >= 0 ? colors.green : colors.red;
+
+  const latestSnap = snaps[0];
+  const latestChange = latestSnap?.dayChangeValue;
+  const latestChangePct = latestSnap?.dayChangePercent;
+  const changeColor = latestChange !== undefined
+    ? latestChange >= 0 ? colors.green : colors.red
+    : returnColor;
+
+  return (
+    <Pressable
+      onPress={() => router.push("/performance")}
+      style={({ pressed }) => [
+        recapStyles.card,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
+      <View style={recapStyles.header}>
+        <View style={[recapStyles.icon, { backgroundColor: returnColor + "18" }]}>
+          <Feather name="bar-chart-2" size={16} color={returnColor} />
+        </View>
+        <Text style={[recapStyles.title, { color: colors.foreground }]}>Portfolio Recap</Text>
+        <Feather name="chevron-right" size={14} color={colors.mutedForeground} style={{ marginLeft: "auto" as any }} />
+      </View>
+
+      <View style={recapStyles.row}>
+        <View style={recapStyles.col}>
+          <Text style={[recapStyles.label, { color: colors.mutedForeground }]}>Total Value</Text>
+          <Text style={[recapStyles.big, { color: colors.foreground }]}>
+            {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+          </Text>
+          <Text style={[recapStyles.unit, { color: colors.mutedForeground }]}>LC</Text>
+        </View>
+        <View style={recapStyles.divider} />
+        <View style={recapStyles.col}>
+          <Text style={[recapStyles.label, { color: colors.mutedForeground }]}>Total Return</Text>
+          <Text style={[recapStyles.big, { color: returnColor }]}>
+            {returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}%
+          </Text>
+        </View>
+        {latestChange !== undefined && (
+          <>
+            <View style={recapStyles.divider} />
+            <View style={recapStyles.col}>
+              <Text style={[recapStyles.label, { color: colors.mutedForeground }]}>Since Last</Text>
+              <Text style={[recapStyles.big, { color: changeColor }]}>
+                {latestChange >= 0 ? "+" : ""}{latestChangePct !== undefined ? `${latestChangePct.toFixed(1)}%` : "—"}
+              </Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      {latestEvent && (
+        <View style={[recapStyles.eventRow, { backgroundColor: colors.muted + "60", borderRadius: 8, padding: 8 }]}>
+          <Text style={recapStyles.eventEmoji}>{latestEvent.emoji}</Text>
+          <Text style={[recapStyles.eventText, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {latestEvent.biggestMove.symbol} {latestEvent.biggestMove.changePercent >= 0 ? "+" : ""}{latestEvent.biggestMove.changePercent.toFixed(0)}% · {latestEvent.title}
+          </Text>
+        </View>
+      )}
+
+      {educationalTipsEnabled && snaps.length === 0 && (
+        <Text style={[recapStyles.hint, { color: colors.mutedForeground }]}>
+          Make a trade or simulate an event to start tracking performance history.
+        </Text>
+      )}
+    </Pressable>
+  );
+}
+
+const recapStyles = StyleSheet.create({
+  card: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 16, gap: 12, marginBottom: 12 },
+  header: { flexDirection: "row", alignItems: "center", gap: 8 },
+  icon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 14, fontFamily: "Inter_600SemiBold" },
+  row: { flexDirection: "row", alignItems: "stretch", gap: 0 },
+  col: { flex: 1, alignItems: "center", gap: 2 },
+  divider: { width: 1, backgroundColor: "rgba(128,128,128,0.2)", marginHorizontal: 4 },
+  label: { fontSize: 10, fontFamily: "Inter_400Regular" },
+  big: { fontSize: 18, fontFamily: "Inter_700Bold" },
+  unit: { fontSize: 10, fontFamily: "Inter_400Regular" },
+  eventRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  eventEmoji: { fontSize: 14 },
+  eventText: { flex: 1, fontSize: 11, fontFamily: "Inter_400Regular" },
+  hint: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
+});
+
+// ────────────────────────────────────────────────────────────
 // Home Screen
 // ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
@@ -826,6 +934,15 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
+
+        {/* ── Portfolio Recap ───────────────────────────── */}
+        <PortfolioRecapCard
+          totalValue={totalValue}
+          portfolioSnapshots={portfolioSnapshots ?? []}
+          latestEvent={latestEvent}
+          colors={colors}
+          educationalTipsEnabled={prefs.educationalTipsEnabled}
+        />
 
         {/* ── Your Trader Style ─────────────────────────── */}
         {(transactions.length > 0 || holdings.length > 0 || watchlist.length >= 2) && (

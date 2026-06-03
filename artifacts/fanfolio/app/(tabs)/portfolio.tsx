@@ -11,15 +11,95 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
-import { useGame } from "@/context/GameContext";
+import { useGame, PortfolioSnapshot } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
 
+// ── Performance mini-card ─────────────────────────────────────────────────────
+
+function PerformanceCard({
+  totalValue,
+  portfolioSnapshots,
+  colors,
+}: {
+  totalValue: number;
+  portfolioSnapshots: PortfolioSnapshot[];
+  colors: ReturnType<typeof useColors>;
+}) {
+  const snaps = portfolioSnapshots ?? [];
+  const INITIAL = 10000;
+  const returnPct = ((totalValue - INITIAL) / INITIAL) * 100;
+  const returnColor = returnPct >= 0 ? colors.green : colors.red;
+  const earliest = snaps.length > 0 ? snaps[snaps.length - 1] : null;
+  const changeFromFirst = earliest ? totalValue - earliest.totalPortfolioValue : null;
+
+  const d = snaps.length > 0 ? new Date(snaps[0].timestamp) : null;
+  const lastSnap = d
+    ? (() => {
+        const diffMs = Date.now() - d.getTime();
+        const mins = Math.floor(diffMs / 60000);
+        if (mins < 1) return "just now";
+        if (mins < 60) return `${mins}m ago`;
+        const hrs = Math.floor(mins / 60);
+        if (hrs < 24) return `${hrs}h ago`;
+        return `${Math.floor(hrs / 24)}d ago`;
+      })()
+    : null;
+
+  return (
+    <Pressable
+      onPress={() => router.push("/performance")}
+      style={({ pressed }) => [
+        perfStyles.card,
+        { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+      ]}
+    >
+      <View style={[perfStyles.iconWrap, { backgroundColor: returnColor + "18" }]}>
+        <Feather name="bar-chart-2" size={18} color={returnColor} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[perfStyles.title, { color: colors.foreground }]}>Performance History</Text>
+        <View style={perfStyles.metaRow}>
+          <Text style={[perfStyles.value, { color: returnColor }]}>
+            {returnPct >= 0 ? "+" : ""}{returnPct.toFixed(2)}% return
+          </Text>
+          {changeFromFirst !== null && (
+            <Text style={[perfStyles.sub, { color: colors.mutedForeground }]}>
+              {" · "}{changeFromFirst >= 0 ? "+" : ""}{Math.round(changeFromFirst).toLocaleString()} LC since start
+            </Text>
+          )}
+        </View>
+        {lastSnap && (
+          <Text style={[perfStyles.snap, { color: colors.mutedForeground }]}>
+            {snaps.length} snapshot{snaps.length !== 1 ? "s" : ""} · last {lastSnap}
+          </Text>
+        )}
+        {snaps.length === 0 && (
+          <Text style={[perfStyles.snap, { color: colors.mutedForeground }]}>
+            No history yet — tap to start tracking
+          </Text>
+        )}
+      </View>
+      <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+    </Pressable>
+  );
+}
+
+const perfStyles = StyleSheet.create({
+  card: { flexDirection: "row", alignItems: "center", gap: 12, marginHorizontal: 20, marginBottom: 16, borderRadius: 14, borderWidth: 1, padding: 14 },
+  iconWrap: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", marginTop: 1 },
+  value: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  sub: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  snap: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
+});
+
 export default function PortfolioScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { holdings, luckyCoinBalance } = useGame();
+  const { holdings, luckyCoinBalance, portfolioSnapshots } = useGame();
   const liveAssets = useLiveAssets();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
@@ -152,6 +232,12 @@ export default function PortfolioScreen() {
         </View>
         <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
       </Pressable>
+
+      <PerformanceCard
+        totalValue={totalValue}
+        portfolioSnapshots={portfolioSnapshots}
+        colors={colors}
+      />
 
       <Pressable
         onPress={() => router.push("/journal")}

@@ -1,5 +1,5 @@
-import type { GameState } from "@/context/GameContext";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import type { GameState, PortfolioSnapshot } from "@/context/GameContext";
+import { getAllAssetById } from "@/data/assetUniverse";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Save Summary
@@ -18,6 +18,7 @@ export interface SaveSummary {
   claimedChallengeCount: number;
   lessonsOpened: number;
   hasCompletedOnboarding: boolean;
+  snapshotCount: number;
   updatedAt: number | null;
 }
 
@@ -26,7 +27,7 @@ export function summarizeState(
   updatedAt: number | null = null
 ): SaveSummary {
   const portfolioValue = state.holdings.reduce((sum, h) => {
-    const asset = MOCK_ASSETS.find(a => a.id === h.assetId);
+    const asset = getAllAssetById(h.assetId);
     return sum + (asset ? asset.price * h.quantity : 0);
   }, 0);
   return {
@@ -42,6 +43,7 @@ export function summarizeState(
     claimedChallengeCount: state.claimedChallenges.length,
     lessonsOpened: state.lessonsOpened,
     hasCompletedOnboarding: state.hasCompletedOnboarding,
+    snapshotCount: (state.portfolioSnapshots ?? []).length,
     updatedAt,
   };
 }
@@ -158,6 +160,13 @@ function mergeHoldings(
 }
 
 export function safeMerge(local: GameState, cloud: GameState): GameState {
+  const localSnaps = local.portfolioSnapshots ?? [];
+  const cloudSnaps = cloud.portfolioSnapshots ?? [];
+  const mergedSnaps = mergeByKey(
+    [...localSnaps, ...cloudSnaps],
+    (s: PortfolioSnapshot) => s.id
+  ).sort((a, b) => b.timestamp - a.timestamp).slice(0, 500);
+
   return {
     luckyCoinBalance: Math.max(local.luckyCoinBalance, cloud.luckyCoinBalance),
     watchlist: [...new Set([...local.watchlist, ...cloud.watchlist])],
@@ -179,6 +188,7 @@ export function safeMerge(local: GameState, cloud: GameState): GameState {
     joinDate: Math.min(local.joinDate, cloud.joinDate),
     priceOverrides: local.priceOverrides,
     lastDailyClaim: local.lastDailyClaim ?? cloud.lastDailyClaim,
+    portfolioSnapshots: mergedSnaps,
   };
 }
 

@@ -3,6 +3,7 @@ import type {
   Holding,
   Transaction,
   AppliedEvent,
+  PortfolioSnapshot,
 } from "@/context/GameContext";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,6 +38,7 @@ const REPAIR_DEFAULTS: Readonly<GameState> = {
   claimedChallenges: [],
   challengeFlags: [],
   lessonsOpened: 0,
+  portfolioSnapshots: [],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,6 +89,25 @@ function isValidAppliedEvent(e: unknown): e is AppliedEvent {
     typeof obj.eventId === "string" &&
     typeof obj.title === "string" &&
     typeof obj.appliedAt === "number"
+  );
+}
+
+function isValidPortfolioSnapshot(s: unknown): s is PortfolioSnapshot {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+  const obj = s as Record<string, unknown>;
+  return (
+    typeof obj.id === "string" &&
+    typeof obj.timestamp === "number" &&
+    isFinite(obj.timestamp as number) &&
+    typeof obj.totalPortfolioValue === "number" &&
+    isFinite(obj.totalPortfolioValue as number) &&
+    typeof obj.cashBalance === "number" &&
+    isFinite(obj.cashBalance as number) &&
+    typeof obj.holdingsValue === "number" &&
+    isFinite(obj.holdingsValue as number) &&
+    typeof obj.totalReturnPercent === "number" &&
+    isFinite(obj.totalReturnPercent as number) &&
+    (obj.trigger === "app_open" || obj.trigger === "trade" || obj.trigger === "market_event" || obj.trigger === "manual")
   );
 }
 
@@ -261,6 +282,18 @@ export function safeParseGameState(json: string): SaveHealthResult {
     if (obj.lessonsOpened !== undefined) repaired.push("lessonsOpened");
   }
 
+  // ── portfolioSnapshots ────────────────────────────────────────────────────
+  let portfolioSnapshots: PortfolioSnapshot[];
+  if (Array.isArray(obj.portfolioSnapshots)) {
+    portfolioSnapshots = (obj.portfolioSnapshots as unknown[]).filter(isValidPortfolioSnapshot);
+    if (portfolioSnapshots.length !== (obj.portfolioSnapshots as unknown[]).length) {
+      repaired.push("portfolioSnapshots (removed invalid entries)");
+    }
+  } else {
+    portfolioSnapshots = [];
+    if (obj.portfolioSnapshots !== undefined) repaired.push("portfolioSnapshots");
+  }
+
   const state: GameState = {
     luckyCoinBalance,
     holdings,
@@ -276,6 +309,7 @@ export function safeParseGameState(json: string): SaveHealthResult {
     claimedChallenges,
     challengeFlags,
     lessonsOpened,
+    portfolioSnapshots,
   };
 
   const status: SaveHealthStatus = repaired.length === 0 ? "ok" : "repaired";

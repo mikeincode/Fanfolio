@@ -95,7 +95,7 @@ function buildTips(p: {
 export default function PortfolioCoachScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { holdings, setChallengeFlag } = useGame();
+  const { holdings, setChallengeFlag, portfolioSnapshots, luckyCoinBalance } = useGame();
   const liveAssets = useLiveAssets();
 
   const { prefs } = useUserPreferences();
@@ -445,6 +445,37 @@ export default function PortfolioCoachScreen() {
               ))}
             </View>
           )}
+
+          {/* ── Snapshot Tips ─────────────────────────────── */}
+          {(() => {
+            const snaps = portfolioSnapshots ?? [];
+            const totalValue = portfolioValue + luckyCoinBalance;
+            const cashPct = totalValue > 0 ? (luckyCoinBalance / totalValue) * 100 : 100;
+            const latestSnap = snaps[0];
+            const recentDrop = latestSnap?.dayChangeValue !== undefined && (latestSnap.dayChangeValue ?? 0) < -500 && report.avgRisk > 6;
+            const tip = snaps.length === 0
+              ? { icon: "clock", text: "Build performance history by making a trade or simulating a market event. You can also tap the Performance button to start tracking." }
+              : cashPct > 80
+              ? { icon: "dollar-sign", text: "Most of your simulated portfolio is cash. Holding cash reduces volatility but may limit how much your portfolio grows in this simulator." }
+              : recentDrop
+              ? { icon: "alert-triangle", text: "Your portfolio dropped recently and has high-risk assets. High-risk assets can swing quickly in either direction — this is expected behavior in the simulation." }
+              : null;
+            if (!tip) return null;
+            return (
+              <View style={[styles.section, { marginTop: 0 }]}>
+                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Performance Insight</Text>
+                <Pressable
+                  onPress={() => router.push("/performance")}
+                  style={[styles.tipCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                >
+                  <View style={[styles.tipIcon, { backgroundColor: colors.coin + "18" }]}>
+                    <Feather name={tip.icon as any} size={16} color={colors.coin} />
+                  </View>
+                  <Text style={[styles.tipText, { color: colors.foreground }]}>{tip.text}</Text>
+                </Pressable>
+              </View>
+            );
+          })()}
 
           {/* ── Disclaimer ────────────────────────────────── */}
           <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>

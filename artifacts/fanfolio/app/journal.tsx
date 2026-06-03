@@ -318,6 +318,21 @@ export default function JournalScreen() {
               </View>
             )}
 
+            {/* Trades vs snapshots note */}
+            {!isEmpty && (
+              <Pressable
+                onPress={() => router.push("/performance")}
+                style={[styles.historyNote, { backgroundColor: colors.card, borderColor: colors.border }]}
+              >
+                <View style={styles.historyNoteLeft}>
+                  <Feather name="bar-chart-2" size={14} color={colors.primary} />
+                  <Text style={[styles.historyNoteText, { color: colors.foreground }]}>
+                    Journal tracks your trades. Tap to see portfolio value over time →
+                  </Text>
+                </View>
+              </Pressable>
+            )}
+
             {/* Filter chips */}
             {!isEmpty && (
               <View style={styles.filterSection}>
@@ -474,6 +489,10 @@ const styles = StyleSheet.create({
     marginHorizontal: 18, marginTop: 8, marginBottom: 4,
     fontSize: 12, fontFamily: "Inter_500Medium",
   },
+
+  historyNote: { flexDirection: "row", alignItems: "center", marginHorizontal: 16, marginBottom: 8, borderRadius: 10, borderWidth: 1, padding: 10 },
+  historyNoteLeft: { flexDirection: "row", alignItems: "center", gap: 8, flex: 1 },
+  historyNoteText: { flex: 1, fontSize: 12, fontFamily: "Inter_500Medium" },
 
   empty: { alignItems: "center", paddingTop: 48, paddingHorizontal: 32, gap: 10 },
   emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", borderWidth: 1 },

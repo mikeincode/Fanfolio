@@ -61,6 +61,20 @@ export interface AppliedEvent {
   biggestMove: { symbol: string; assetId: string; changePercent: number };
 }
 
+export interface PortfolioSnapshot {
+  id: string;
+  timestamp: number;
+  totalPortfolioValue: number;
+  cashBalance: number;
+  holdingsValue: number;
+  totalReturnPercent: number;
+  dayChangeValue?: number;
+  dayChangePercent?: number;
+  topHoldingId?: string;
+  topMoverId?: string;
+  trigger: "app_open" | "trade" | "market_event" | "manual";
+}
+
 export interface GameState {
   luckyCoinBalance: number;
   holdings: Holding[];
@@ -76,6 +90,7 @@ export interface GameState {
   claimedChallenges: string[];
   challengeFlags: string[];
   lessonsOpened: number;
+  portfolioSnapshots: PortfolioSnapshot[];
 }
 
 interface GameContextValue extends GameState {
@@ -123,6 +138,8 @@ interface GameContextValue extends GameState {
   corruptedSaveBackedUpAt: number | null;
   resetCorruptedLocalSave: () => void;
   restoreCorruptedBackup: () => Promise<{ success: boolean; error: string | null }>;
+  // ── Performance snapshots ────────────────────────────────────────────────
+  takeSnapshot: (trigger: PortfolioSnapshot["trigger"]) => void;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -142,6 +159,7 @@ const defaultState: GameState = {
   claimedChallenges: [],
   challengeFlags: [],
   lessonsOpened: 0,
+  portfolioSnapshots: [],
 };
 
 export function mergeGameState(base: GameState, partial: Partial<GameState>): GameState {
@@ -155,6 +173,78 @@ export function mergeGameState(base: GameState, partial: Partial<GameState>): Ga
     claimedChallenges: partial.claimedChallenges ?? base.claimedChallenges ?? [],
     challengeFlags: partial.challengeFlags ?? base.challengeFlags ?? [],
     lessonsOpened: partial.lessonsOpened ?? base.lessonsOpened ?? 0,
+    portfolioSnapshots: partial.portfolioSnapshots ?? base.portfolioSnapshots ?? [],
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Portfolio snapshot builder (pure, module-level)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildSnapshot(
+  params: {
+    holdings: Holding[];
+    luckyCoinBalance: number;
+    priceOverrides: Record<string, AssetPriceOverride>;
+    previousSnapshots: PortfolioSnapshot[];
+  },
+  trigger: PortfolioSnapshot["trigger"]
+): PortfolioSnapshot | null {
+  const now = Date.now();
+
+  let holdingsValue = 0;
+  let topHoldingId: string | undefined;
+  let topHoldingValue = 0;
+  let topMoverId: string | undefined;
+  let topMoverChange = 0;
+
+  for (const h of params.holdings) {
+    const base = getAllAssetById(h.assetId);
+    if (!base) continue;
+    const override = params.priceOverrides[h.assetId];
+    const price = override?.price ?? base.price;
+    const dailyChange = override?.dailyChangePercent ?? base.dailyChangePercent ?? 0;
+    const value = price * h.quantity;
+    holdingsValue += value;
+    if (value > topHoldingValue) { topHoldingValue = value; topHoldingId = h.assetId; }
+    if (Math.abs(dailyChange) > Math.abs(topMoverChange)) { topMoverChange = dailyChange; topMoverId = h.assetId; }
+  }
+
+  const totalPortfolioValue = holdingsValue + params.luckyCoinBalance;
+
+  // Dedup: skip if last snapshot is too recent with same trigger and identical value
+  const last = params.previousSnapshots[0];
+  if (last) {
+    const age = now - last.timestamp;
+    const dedupMs = trigger === "app_open" ? 5 * 60 * 1000 : 4000;
+    if (age < dedupMs && last.trigger === trigger && Math.abs(last.totalPortfolioValue - totalPortfolioValue) < 0.01) {
+      return null;
+    }
+  }
+
+  const totalReturnPercent = ((totalPortfolioValue - INITIAL_BALANCE) / INITIAL_BALANCE) * 100;
+
+  let dayChangeValue: number | undefined;
+  let dayChangePercent: number | undefined;
+  if (last) {
+    dayChangeValue = totalPortfolioValue - last.totalPortfolioValue;
+    dayChangePercent = last.totalPortfolioValue > 0
+      ? (dayChangeValue / last.totalPortfolioValue) * 100
+      : 0;
+  }
+
+  return {
+    id: `snap_${now}_${Math.random().toString(36).slice(2, 7)}`,
+    timestamp: now,
+    totalPortfolioValue,
+    cashBalance: params.luckyCoinBalance,
+    holdingsValue,
+    totalReturnPercent,
+    dayChangeValue,
+    dayChangePercent,
+    topHoldingId,
+    topMoverId,
+    trigger,
   };
 }
 
@@ -498,7 +588,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       assetId, assetName, assetSymbol, type: "buy", quantity, price, total, timestamp: Date.now(),
     };
-    save({ ...state, luckyCoinBalance: state.luckyCoinBalance - total, holdings: newHoldings, transactions: [tx, ...state.transactions] });
+    const newBalance = state.luckyCoinBalance - total;
+    const prevSnaps = state.portfolioSnapshots ?? [];
+    const snap = buildSnapshot({ holdings: newHoldings, luckyCoinBalance: newBalance, priceOverrides: state.priceOverrides, previousSnapshots: prevSnaps }, "trade");
+    const newSnaps = snap ? [snap, ...prevSnaps].slice(0, 500) : prevSnaps;
+    save({ ...state, luckyCoinBalance: newBalance, holdings: newHoldings, transactions: [tx, ...state.transactions], portfolioSnapshots: newSnaps });
     return { success: true, message: `Bought ${quantity} ${assetSymbol} for ${total.toLocaleString()} LC` };
   }, [state, save]);
 
@@ -526,7 +620,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
       assetId, assetName, assetSymbol, type: "sell", quantity, price, total, timestamp: Date.now(),
     };
-    save({ ...state, luckyCoinBalance: state.luckyCoinBalance + total, holdings: newHoldings, transactions: [tx, ...state.transactions] });
+    const newBalance = state.luckyCoinBalance + total;
+    const prevSnaps = state.portfolioSnapshots ?? [];
+    const snap = buildSnapshot({ holdings: newHoldings, luckyCoinBalance: newBalance, priceOverrides: state.priceOverrides, previousSnapshots: prevSnaps }, "trade");
+    const newSnaps = snap ? [snap, ...prevSnaps].slice(0, 500) : prevSnaps;
+    save({ ...state, luckyCoinBalance: newBalance, holdings: newHoldings, transactions: [tx, ...state.transactions], portfolioSnapshots: newSnaps });
     return { success: true, message: `Sold ${quantity} ${assetSymbol} for ${total.toLocaleString()} LC` };
   }, [state, save]);
 
@@ -580,7 +678,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       category: event.category, emoji: event.emoji, marketLesson: event.marketLesson,
       appliedAt: Date.now(), biggestMove,
     };
-    save({ ...state, priceOverrides: newOverrides, appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20) });
+    const prevSnaps = state.portfolioSnapshots ?? [];
+    const snap = buildSnapshot({ holdings: state.holdings, luckyCoinBalance: state.luckyCoinBalance, priceOverrides: newOverrides, previousSnapshots: prevSnaps }, "market_event");
+    const newSnaps = snap ? [snap, ...prevSnaps].slice(0, 500) : prevSnaps;
+    save({ ...state, priceOverrides: newOverrides, appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20), portfolioSnapshots: newSnaps });
     return { success: true, event, message: event.title };
   }, [state, save]);
 
@@ -617,6 +718,36 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return { success: true };
   }, [state, save]);
 
+  // ── App-open snapshot (once per 5 min) ──────────────────────────────────────
+  useEffect(() => {
+    if (!loaded) return;
+    const s = stateRef.current;
+    const snap = buildSnapshot({
+      holdings: s.holdings,
+      luckyCoinBalance: s.luckyCoinBalance,
+      priceOverrides: s.priceOverrides,
+      previousSnapshots: s.portfolioSnapshots ?? [],
+    }, "app_open");
+    if (!snap) return;
+    const next = { ...s, portfolioSnapshots: [snap, ...(s.portfolioSnapshots ?? [])].slice(0, 500) };
+    save(next);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded]);
+
+  // ── Manual snapshot ──────────────────────────────────────────────────────────
+  const takeSnapshot = useCallback((trigger: PortfolioSnapshot["trigger"]) => {
+    const s = stateRef.current;
+    const snap = buildSnapshot({
+      holdings: s.holdings,
+      luckyCoinBalance: s.luckyCoinBalance,
+      priceOverrides: s.priceOverrides,
+      previousSnapshots: s.portfolioSnapshots ?? [],
+    }, trigger);
+    if (!snap) return;
+    const next = { ...s, portfolioSnapshots: [snap, ...(s.portfolioSnapshots ?? [])].slice(0, 500) };
+    save(next);
+  }, [save]);
+
   const latestEvent = state.appliedEvents[0] ?? null;
   const canClaimDaily = state.lastDailyClaim !== new Date().toDateString();
 
@@ -638,6 +769,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       fetchCloudState, smartMergeWithCloud,
       saveHealthStatus, saveHealthMessage, saveWasRepaired,
       corruptedSaveBackedUpAt, resetCorruptedLocalSave, restoreCorruptedBackup,
+      takeSnapshot,
     }}>
       {children}
     </GameContext.Provider>

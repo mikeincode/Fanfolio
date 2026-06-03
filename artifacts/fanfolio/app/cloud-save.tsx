@@ -51,7 +51,7 @@ export default function CloudSaveScreen() {
     // local game state fields for summary
     luckyCoinBalance, holdings, transactions, watchlist, appliedEvents,
     xp, claimedChallenges, lessonsOpened, hasCompletedOnboarding, username,
-    priceOverrides, joinDate, lastDailyClaim, challengeFlags,
+    priceOverrides, joinDate, lastDailyClaim, challengeFlags, portfolioSnapshots,
   } = useGame();
 
   const { prefs } = useUserPreferences();
@@ -75,6 +75,7 @@ export default function CloudSaveScreen() {
     luckyCoinBalance, holdings, transactions, hasCompletedOnboarding,
     lastDailyClaim, username, joinDate, priceOverrides, appliedEvents,
     watchlist, xp, claimedChallenges, challengeFlags, lessonsOpened,
+    portfolioSnapshots: portfolioSnapshots ?? [],
   };
 
   const localSummary: SaveSummary = summarizeState(localState, localSavedAt);
