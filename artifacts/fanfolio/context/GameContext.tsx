@@ -91,6 +91,8 @@ export interface GameState {
   challengeFlags: string[];
   lessonsOpened: number;
   portfolioSnapshots: PortfolioSnapshot[];
+  lastAutoPulseDate: string | null;
+  pendingPulseId: string | null;
 }
 
 interface GameContextValue extends GameState {
@@ -101,7 +103,10 @@ interface GameContextValue extends GameState {
   getHolding: (assetId: string) => Holding | undefined;
   canClaimDaily: boolean;
   updateUsername: (username: string) => void;
-  applyMarketEvent: (eventId?: string) => { success: boolean; event: MarketEvent | null; message: string };
+  isLoaded: boolean;
+  applyMarketEvent: (eventId?: string, opts?: { clearPending?: boolean }) => { success: boolean; event: MarketEvent | null; message: string };
+  prepareDailyPulse: () => void;
+  reviewDailyPulse: () => { success: boolean; event: MarketEvent | null; message: string };
   latestEvent: AppliedEvent | null;
   addToWatchlist: (assetId: string) => void;
   removeFromWatchlist: (assetId: string) => void;
@@ -160,6 +165,8 @@ const defaultState: GameState = {
   challengeFlags: [],
   lessonsOpened: 0,
   portfolioSnapshots: [],
+  lastAutoPulseDate: null,
+  pendingPulseId: null,
 };
 
 export function mergeGameState(base: GameState, partial: Partial<GameState>): GameState {
@@ -174,6 +181,8 @@ export function mergeGameState(base: GameState, partial: Partial<GameState>): Ga
     challengeFlags: partial.challengeFlags ?? base.challengeFlags ?? [],
     lessonsOpened: partial.lessonsOpened ?? base.lessonsOpened ?? 0,
     portfolioSnapshots: partial.portfolioSnapshots ?? base.portfolioSnapshots ?? [],
+    lastAutoPulseDate: partial.lastAutoPulseDate ?? base.lastAutoPulseDate ?? null,
+    pendingPulseId: partial.pendingPulseId ?? base.pendingPulseId ?? null,
   };
 }
 
@@ -647,7 +656,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return state.holdings.find(h => h.assetId === assetId);
   }, [state.holdings]);
 
-  const applyMarketEvent = useCallback((eventId?: string): { success: boolean; event: MarketEvent | null; message: string } => {
+  const applyMarketEvent = useCallback((
+    eventId?: string,
+    opts?: { clearPending?: boolean }
+  ): { success: boolean; event: MarketEvent | null; message: string } => {
     const lastEventId = state.appliedEvents[0]?.eventId;
     const event = eventId ? getEventById(eventId) : getRandomEvent(lastEventId);
     if (!event) return { success: false, event: null, message: "Event not found" };
@@ -681,9 +693,30 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const prevSnaps = state.portfolioSnapshots ?? [];
     const snap = buildSnapshot({ holdings: state.holdings, luckyCoinBalance: state.luckyCoinBalance, priceOverrides: newOverrides, previousSnapshots: prevSnaps }, "market_event");
     const newSnaps = snap ? [snap, ...prevSnaps].slice(0, 500) : prevSnaps;
-    save({ ...state, priceOverrides: newOverrides, appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20), portfolioSnapshots: newSnaps });
+    save({
+      ...state,
+      priceOverrides: newOverrides,
+      appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20),
+      portfolioSnapshots: newSnaps,
+      ...(opts?.clearPending ? { pendingPulseId: null } : {}),
+    });
     return { success: true, event, message: event.title };
   }, [state, save]);
+
+  const prepareDailyPulse = useCallback(() => {
+    const today = new Date().toDateString();
+    if (state.lastAutoPulseDate === today) return;
+    const lastEventId = state.appliedEvents[0]?.eventId;
+    const event = getRandomEvent(lastEventId);
+    if (!event) return;
+    save({ ...state, lastAutoPulseDate: today, pendingPulseId: event.id });
+  }, [state, save]);
+
+  const reviewDailyPulse = useCallback((): { success: boolean; event: MarketEvent | null; message: string } => {
+    const pulseId = state.pendingPulseId;
+    if (!pulseId) return { success: false, event: null, message: "No pending pulse to review." };
+    return applyMarketEvent(pulseId, { clearPending: true });
+  }, [state.pendingPulseId, applyMarketEvent]);
 
   const addToWatchlist = useCallback((assetId: string) => {
     if (state.watchlist.includes(assetId)) return;
@@ -757,7 +790,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     <GameContext.Provider value={{
       ...state,
       buyAsset, sellAsset, claimDaily, completeOnboarding, getHolding, canClaimDaily,
-      updateUsername, applyMarketEvent, latestEvent, addToWatchlist, removeFromWatchlist,
+      updateUsername, applyMarketEvent, prepareDailyPulse, reviewDailyPulse, isLoaded: loaded, latestEvent, addToWatchlist, removeFromWatchlist,
       isWatched, setChallengeFlag, addLessonOpen, claimChallengeReward,
       cloudUser,
       cloudEmail: cloudUser?.email ?? null,

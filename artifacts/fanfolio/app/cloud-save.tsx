@@ -76,6 +76,8 @@ export default function CloudSaveScreen() {
     lastDailyClaim, username, joinDate, priceOverrides, appliedEvents,
     watchlist, xp, claimedChallenges, challengeFlags, lessonsOpened,
     portfolioSnapshots: portfolioSnapshots ?? [],
+    lastAutoPulseDate: null,
+    pendingPulseId: null,
   };
 
   const localSummary: SaveSummary = summarizeState(localState, localSavedAt);

@@ -189,6 +189,8 @@ export function safeMerge(local: GameState, cloud: GameState): GameState {
     priceOverrides: local.priceOverrides,
     lastDailyClaim: local.lastDailyClaim ?? cloud.lastDailyClaim,
     portfolioSnapshots: mergedSnaps,
+    lastAutoPulseDate: local.lastAutoPulseDate ?? cloud.lastAutoPulseDate ?? null,
+    pendingPulseId: local.pendingPulseId ?? cloud.pendingPulseId ?? null,
   };
 }
 

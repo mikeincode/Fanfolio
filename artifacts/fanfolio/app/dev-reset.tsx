@@ -25,16 +25,19 @@ const FANFOLIO_KEYS = [
 
 type Phase = "idle" | "confirm" | "resetting" | "done" | "error";
 type CorruptPhase = "idle" | "writing" | "done" | "error";
+type DemoPhase = "idle" | "applying" | "done" | "error";
 
 export default function DevResetScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { signOut, cloudUser } = useGame();
+  const { signOut, cloudUser, applyMarketEvent } = useGame();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [corruptPhase, setCorruptPhase] = useState<CorruptPhase>("idle");
+  const [demoPhase, setDemoPhase] = useState<DemoPhase>("idle");
+  const [demoEventTitle, setDemoEventTitle] = useState<string | null>(null);
 
   const handleWriteCorrupted = async () => {
     setCorruptPhase("writing");
@@ -236,6 +239,89 @@ export default function DevResetScreen() {
           <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
             <Feather name="alert-circle" size={15} color="#EF4444" />
             <Text style={[styles.resultText, { color: "#EF4444" }]}>Failed to write corrupted save.</Text>
+          </View>
+        )}
+
+        {/* ── Developer Demo Pulse ───────────────────────────────────── */}
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Feather name="zap" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+            Developer Demo Pulse
+          </Text>
+        </View>
+
+        <Text style={[styles.body2, { color: colors.mutedForeground }]}>
+          Apply a random market event immediately, bypassing the daily auto-pulse system. Tests Event Result modal, Market Decision Coach, performance snapshot, and News latest event.
+        </Text>
+
+        <View style={[styles.keysCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={[styles.keysTitle, { color: colors.mutedForeground }]}>WHAT THIS DOES</Text>
+          <View style={styles.keyRow}>
+            <Feather name="zap" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>Applies a random mock event, updates priceOverrides, creates a performance snapshot</Text>
+          </View>
+          <View style={styles.keyRow}>
+            <Feather name="info" size={12} color={colors.mutedForeground} />
+            <Text style={[styles.keyText, { color: colors.foreground }]}>Does NOT count as today's Market Pulse — auto-pulse system is unaffected</Text>
+          </View>
+        </View>
+
+        {demoPhase === "idle" && (
+          <Pressable
+            onPress={() => {
+              setDemoPhase("applying");
+              setTimeout(() => {
+                const result = applyMarketEvent();
+                if (result.success && result.event) {
+                  setDemoEventTitle(result.event.title);
+                  setDemoPhase("done");
+                } else {
+                  setDemoPhase("error");
+                }
+              }, 400);
+            }}
+            style={({ pressed }) => [
+              styles.dangerBtn,
+              { backgroundColor: "#7C3AED", opacity: pressed ? 0.8 : 1 },
+            ]}
+          >
+            <Feather name="zap" size={16} color="#fff" />
+            <Text style={styles.dangerBtnText}>Apply Developer Demo Pulse</Text>
+          </Pressable>
+        )}
+
+        {demoPhase === "applying" && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>Applying demo pulse…</Text>
+          </View>
+        )}
+
+        {demoPhase === "done" && (
+          <View style={{ gap: 8 }}>
+            <View style={[styles.resultRow, { backgroundColor: "#7C3AED18", borderColor: "#7C3AED40" }]}>
+              <Feather name="check-circle" size={15} color="#7C3AED" />
+              <Text style={[styles.resultText, { color: "#7C3AED" }]}>
+                Demo pulse applied{demoEventTitle ? `: "${demoEventTitle}"` : ""}. Check Home for Market Decision Coach.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => { setDemoPhase("idle"); setDemoEventTitle(null); }}
+              style={({ pressed }) => [
+                styles.dangerBtn,
+                { backgroundColor: "#7C3AED80", opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Feather name="refresh-cw" size={14} color="#fff" />
+              <Text style={styles.dangerBtnText}>Apply Another</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {demoPhase === "error" && (
+          <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
+            <Feather name="alert-circle" size={15} color="#EF4444" />
+            <Text style={[styles.resultText, { color: "#EF4444" }]}>Demo pulse failed.</Text>
           </View>
         )}
 

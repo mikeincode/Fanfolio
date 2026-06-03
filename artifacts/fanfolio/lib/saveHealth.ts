@@ -39,6 +39,8 @@ const REPAIR_DEFAULTS: Readonly<GameState> = {
   challengeFlags: [],
   lessonsOpened: 0,
   portfolioSnapshots: [],
+  lastAutoPulseDate: null,
+  pendingPulseId: null,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -294,6 +296,28 @@ export function safeParseGameState(json: string): SaveHealthResult {
     if (obj.portfolioSnapshots !== undefined) repaired.push("portfolioSnapshots");
   }
 
+  // ── lastAutoPulseDate ─────────────────────────────────────────────────────
+  let lastAutoPulseDate: string | null;
+  if (obj.lastAutoPulseDate === null || obj.lastAutoPulseDate === undefined) {
+    lastAutoPulseDate = null;
+  } else if (typeof obj.lastAutoPulseDate === "string") {
+    lastAutoPulseDate = obj.lastAutoPulseDate;
+  } else {
+    lastAutoPulseDate = null;
+    repaired.push("lastAutoPulseDate");
+  }
+
+  // ── pendingPulseId ────────────────────────────────────────────────────────
+  let pendingPulseId: string | null;
+  if (obj.pendingPulseId === null || obj.pendingPulseId === undefined) {
+    pendingPulseId = null;
+  } else if (typeof obj.pendingPulseId === "string") {
+    pendingPulseId = obj.pendingPulseId;
+  } else {
+    pendingPulseId = null;
+    repaired.push("pendingPulseId");
+  }
+
   const state: GameState = {
     luckyCoinBalance,
     holdings,
@@ -310,6 +334,8 @@ export function safeParseGameState(json: string): SaveHealthResult {
     challengeFlags,
     lessonsOpened,
     portfolioSnapshots,
+    lastAutoPulseDate,
+    pendingPulseId,
   };
 
   const status: SaveHealthStatus = repaired.length === 0 ? "ok" : "repaired";

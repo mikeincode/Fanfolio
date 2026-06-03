@@ -27,6 +27,12 @@ description: Key patterns and constraints for the Fanfolio Expo app to stay cons
 ```
 Transactions do NOT store asset type (Team Stock, etc.) — must look up via `getAllAssetById(assetId)` from `data/assetUniverse.ts`. Never use `getAssetById` from `mockAssets.ts` — it only covers the legacy 24 assets and misses the full universe.
 
+## Market Pulse Auto Mode (GameContext)
+- `prepareDailyPulse()` — idempotent, picks a random `pendingPulseId` once per day; call via `useFocusEffect` in HomeScreen.
+- `reviewDailyPulse()` — applies `pendingPulseId` event with `clearPending: true`; triggers the Event Result modal.
+- `applyMarketEvent(eventId?, opts?)` — raw apply, used in dev-reset Developer Demo Pulse; does NOT clear `pendingPulseId`.
+- `cloud-save.tsx` explicitly constructs `GameState` — always add new state fields there too (hardcoded `null` is fine for non-sync fields).
+
 ## Pre-existing TS errors (don't fix unless asked)
 - `SparklineChart` does not accept `color` prop (used in scanner.tsx + index.tsx scanner pick card)
 - `useColors.ts` cast error on `radius` key — runtime safe, TS only

@@ -10,7 +10,7 @@ import {
   Modal,
   ActivityIndicator,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
@@ -161,7 +161,7 @@ function EventResultModal({
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[evtStyles.container, { backgroundColor: colors.background }]}>
         <View style={[evtStyles.header, { borderBottomColor: colors.border }]}>
-          <Text style={[evtStyles.headerTitle, { color: colors.foreground }]}>Market Event Fired</Text>
+          <Text style={[evtStyles.headerTitle, { color: colors.foreground }]}>Today's Market Pulse</Text>
           <Pressable onPress={onClose} hitSlop={12}>
             <Feather name="x" size={22} color={colors.foreground} />
           </Pressable>
@@ -794,7 +794,7 @@ function RookiePlaybookCard({
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, prepareDailyPulse, reviewDailyPulse, pendingPulseId, isLoaded, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
@@ -819,7 +819,6 @@ export default function HomeScreen() {
     if (sports === 1) return "All your assets are in one sport. Adding another sport builds real portfolio habits.";
     return "Check your full Portfolio Coach report for a detailed breakdown.";
   }, [holdings, liveAssets]);
-  const [simulating, setSimulating] = useState(false);
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
   const [showCoach, setShowCoach] = useState(false);
@@ -891,24 +890,39 @@ export default function HomeScreen() {
     Alert.alert(result.success ? "Daily Claim!" : "Already Claimed", result.message);
   };
 
-  const handleSimulateEvent = () => {
-    setSimulating(true);
-    if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setTimeout(() => {
-      const result = applyMarketEvent();
-      setSimulating(false);
-      if (result.success) {
-        if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setShowCoach(false);
-        setShowEventModal(true);
-      }
-    }, 600);
-  };
-
   const handleEventModalClose = () => {
     setShowEventModal(false);
     setShowCoach(true);
   };
+
+  const handleReviewPulse = useCallback(() => {
+    if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const result = reviewDailyPulse();
+    if (result.success) {
+      if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setShowCoach(false);
+      setShowEventModal(true);
+    }
+  }, [reviewDailyPulse, prefs.hapticsEnabled]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isLoaded) {
+        prepareDailyPulse();
+      }
+    }, [isLoaded, prepareDailyPulse])
+  );
+
+  const pendingEvent = useMemo(() =>
+    pendingPulseId ? MARKET_EVENTS.find(e => e.id === pendingPulseId) ?? null : null,
+    [pendingPulseId]
+  );
+
+  const pulseReviewedToday = !!(
+    latestEvent &&
+    !pendingPulseId &&
+    new Date().toDateString() === (latestEvent ? new Date(latestEvent.appliedAt).toDateString() : null)
+  );
 
   const playbookSteps = useMemo<PlaybookStepDef[]>(() => [
     {
@@ -942,10 +956,10 @@ export default function HomeScreen() {
       id: "event",
       emoji: "⚡",
       title: "React to a Market Pulse",
-      desc: "Tap Simulate Event to see how a sports news story can move prices. In the final app, pulses appear automatically.",
+      desc: "Fanfolio prepares a daily market storyline for you. Tap 'Review Pulse' on the Home screen to see how sports news moves prices.",
       done: appliedEvents.length > 0,
-      actionLabel: "Simulate",
-      onAction: handleSimulateEvent,
+      actionLabel: pendingPulseId ? "Review Pulse" : "Home",
+      onAction: pendingPulseId ? handleReviewPulse : () => {},
     },
     {
       id: "portfolio",
@@ -1210,19 +1224,50 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Market Pulse ─────────────────────────────── */}
+        {/* ── Today's Market Pulse ──────────────────────── */}
         <View style={[styles.pulseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {/* Header */}
           <View style={styles.pulseHeader}>
             <View style={styles.pulseLeft}>
-              <View style={[styles.pulseDot, { backgroundColor: colors.green }]} />
-              <Text style={[styles.pulseTitle, { color: colors.foreground }]}>Market Pulse</Text>
+              <View style={[styles.pulseDot, { backgroundColor: pulseReviewedToday ? colors.green : colors.coin }]} />
+              <Text style={[styles.pulseTitle, { color: colors.foreground }]}>Today's Market Pulse</Text>
             </View>
-            <Text style={[styles.pulseCount, { color: colors.mutedForeground }]}>
-              {appliedEvents.length} event{appliedEvents.length !== 1 ? "s" : ""} simulated
-            </Text>
+            {pulseReviewedToday ? (
+              <View style={[styles.pulseReviewedBadge, { backgroundColor: colors.green + "20" }]}>
+                <Feather name="check" size={10} color={colors.green} />
+                <Text style={[styles.pulseReviewedText, { color: colors.green }]}>Reviewed</Text>
+              </View>
+            ) : pendingEvent ? (
+              <View style={[styles.pulseReviewedBadge, { backgroundColor: colors.coin + "20" }]}>
+                <View style={[styles.pulseLiveDot, { backgroundColor: colors.coin }]} />
+                <Text style={[styles.pulseReviewedText, { color: colors.coin }]}>Ready</Text>
+              </View>
+            ) : null}
           </View>
 
-          {latestEvent ? (
+          {/* Sub-label */}
+          <Text style={[styles.pulseSubLabel, { color: colors.mutedForeground }]}>
+            {pulseReviewedToday
+              ? `${appliedEvents.length} market event${appliedEvents.length !== 1 ? "s" : ""} reviewed this season`
+              : "Fanfolio has prepared today's market storyline."}
+          </Text>
+
+          {/* Pending pulse teaser */}
+          {pendingEvent && !pulseReviewedToday && (
+            <View style={[styles.pulseTeaserCard, { backgroundColor: colors.coin + "0D", borderColor: colors.coin + "30" }]}>
+              <Text style={styles.pulseTeaserEmoji}>{pendingEvent.emoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pulseTeaserTitle, { color: colors.foreground }]}>{pendingEvent.title}</Text>
+                <Text style={[styles.pulseTeaserMeta, { color: colors.mutedForeground }]}>
+                  {pendingEvent.sport} · {pendingEvent.category}
+                </Text>
+              </View>
+              <Feather name="lock" size={14} color={colors.mutedForeground} />
+            </View>
+          )}
+
+          {/* Latest reviewed event (after review or on subsequent opens) */}
+          {pulseReviewedToday && latestEvent && (
             <View style={styles.pulseEventBody}>
               <View style={styles.pulseEventRow}>
                 <Text style={styles.pulseEmoji}>{latestEvent.emoji}</Text>
@@ -1245,39 +1290,36 @@ export default function HomeScreen() {
                 {latestEvent.summary}
               </Text>
             </View>
-          ) : (
+          )}
+
+          {/* No events yet */}
+          {!pendingEvent && !pulseReviewedToday && !latestEvent && (
             <View style={styles.pulseEmptyRow}>
               <Feather name="activity" size={18} color={colors.mutedForeground} />
               <Text style={[styles.pulseEmptyText, { color: colors.mutedForeground }]}>
-                No events yet — simulate your first market event below
+                Preparing today's pulse…
               </Text>
             </View>
           )}
 
-          <Pressable
-            onPress={handleSimulateEvent}
-            disabled={simulating}
-            style={({ pressed }) => [
-              styles.simulateBtn,
-              {
-                backgroundColor: simulating ? colors.muted : colors.primary,
-                borderRadius: colors.radius - 2,
-                opacity: pressed ? 0.85 : 1,
-              },
-            ]}
-          >
-            {simulating ? (
-              <>
-                <ActivityIndicator size="small" color={colors.mutedForeground} />
-                <Text style={[styles.simulateBtnText, { color: colors.mutedForeground }]}>Simulating...</Text>
-              </>
-            ) : (
-              <>
-                <Feather name="zap" size={16} color={colors.primaryForeground} />
-                <Text style={[styles.simulateBtnText, { color: colors.primaryForeground }]}>Simulate Market Event</Text>
-              </>
-            )}
-          </Pressable>
+          {/* Action button */}
+          {!pulseReviewedToday && pendingEvent ? (
+            <Pressable
+              onPress={handleReviewPulse}
+              style={({ pressed }) => [
+                styles.simulateBtn,
+                { backgroundColor: colors.coin, borderRadius: colors.radius - 2, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <Feather name="zap" size={16} color="#0C0F14" />
+              <Text style={[styles.simulateBtnText, { color: "#0C0F14" }]}>Review Pulse</Text>
+            </Pressable>
+          ) : pulseReviewedToday ? (
+            <View style={[styles.simulateBtn, { backgroundColor: colors.green + "15", borderRadius: colors.radius - 2 }]}>
+              <Feather name="check-circle" size={16} color={colors.green} />
+              <Text style={[styles.simulateBtnText, { color: colors.green }]}>Pulse Reviewed</Text>
+            </View>
+          ) : null}
         </View>
 
         {/* ── Market Decision Coach ─────────────────────── */}
@@ -1643,12 +1685,20 @@ const styles = StyleSheet.create({
   claimBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   claimBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   // Market Pulse
-  pulseCard: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 16, gap: 14 },
+  pulseCard: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 16, gap: 12 },
   pulseHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   pulseLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
   pulseDot: { width: 8, height: 8, borderRadius: 4 },
+  pulseLiveDot: { width: 6, height: 6, borderRadius: 3 },
   pulseTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
   pulseCount: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  pulseSubLabel: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 17, marginTop: -4 },
+  pulseReviewedBadge: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
+  pulseReviewedText: { fontSize: 11, fontFamily: "Inter_700Bold" },
+  pulseTeaserCard: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, borderWidth: 1, padding: 12 },
+  pulseTeaserEmoji: { fontSize: 24 },
+  pulseTeaserTitle: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  pulseTeaserMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2 },
   pulseEventBody: { gap: 8 },
   pulseEventRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   pulseEmoji: { fontSize: 28 },
