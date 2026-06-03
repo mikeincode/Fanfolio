@@ -972,7 +972,7 @@ export default function HomeScreen() {
                     data={scannerPick.asset.chartData}
                     width={80}
                     height={36}
-                    color={scannerPick.isUp ? colors.green : colors.red}
+                    positive={scannerPick.isUp}
                   />
                 </View>
               </View>

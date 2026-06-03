@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
-import { MOCK_ASSETS } from "@/data/mockAssets";
+import { MOCK_ASSETS, type AssetType } from "@/data/mockAssets";
 
 export type TraderIdentityId =
   | "rookie_learner"
@@ -226,7 +226,7 @@ export function useTraderIdentity(): TraderIdentityResult {
       holdings.map(h => assetMap[h.assetId]?.sport).filter((s): s is string => Boolean(s))
     );
     const holdingTypes = new Set(
-      holdings.map(h => assetMap[h.assetId]?.type).filter((t): t is string => Boolean(t))
+      holdings.map(h => assetMap[h.assetId]?.type).filter((t): t is AssetType => Boolean(t))
     );
 
     const portfolioValue = holdings.reduce((s, h) => {

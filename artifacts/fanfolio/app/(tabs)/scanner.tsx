@@ -205,7 +205,7 @@ function ScanResultCard({
               data={asset.chartData}
               width={52}
               height={24}
-              color={isUp ? colors.green : colors.red}
+              positive={isUp}
             />
             <Text style={[styles.price, { color: colors.foreground }]}>
               {asset.price >= 1000
