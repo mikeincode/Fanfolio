@@ -56,26 +56,93 @@ const STEPS = [
 export default function OnboardingScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { completeOnboarding } = useGame();
+  const { completeOnboarding, isCloudReady } = useGame();
   const [step, setStep] = useState(0);
   const [username, setUsername] = useState("");
+  const [showCloudPrompt, setShowCloudPrompt] = useState(false);
+  const [pendingUsername, setPendingUsername] = useState("");
 
   const isLast = step === STEPS.length - 1;
   const current = STEPS[step];
+
+  const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+
+  const finishOnboarding = (name: string) => {
+    completeOnboarding(name);
+    router.replace("/(tabs)");
+  };
 
   const handleNext = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isLast) {
       const name = username.trim() || "TraderFan";
-      completeOnboarding(name);
-      router.replace("/(tabs)");
+      if (isCloudReady) {
+        setPendingUsername(name);
+        setShowCloudPrompt(true);
+      } else {
+        finishOnboarding(name);
+      }
     } else {
       setStep(s => s + 1);
     }
   };
 
-  const topPad = Platform.OS === "web" ? 67 : insets.top;
-  const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
+  // Cloud save optional prompt at end of onboarding
+  if (showCloudPrompt) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topPad }]}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: bottomPad + 100 }]} showsVerticalScrollIndicator={false}>
+          <View style={[styles.iconWrap, { backgroundColor: colors.primary + "20", borderColor: colors.primary + "40" }]}>
+            <Feather name="cloud" size={36} color={colors.primary} />
+          </View>
+
+          <Text style={[styles.title, { color: colors.foreground }]}>Want cloud save?</Text>
+          <Text style={[styles.subtitle, { color: colors.primary }]}>Keep your progress across devices</Text>
+          <Text style={[styles.body, { color: colors.mutedForeground }]}>
+            Cloud save is optional and free. It backs up your simulated Fanfolio portfolio so you can access it anywhere.
+          </Text>
+
+          <View style={[styles.safetyCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="shield" size={14} color={colors.primary} />
+            <Text style={[styles.safetyText, { color: colors.mutedForeground }]}>
+              Cloud save stores simulated progress only. LuckyCoin has no cash value.
+            </Text>
+          </View>
+        </ScrollView>
+
+        <View style={[styles.footer, { paddingBottom: bottomPad + 12, backgroundColor: colors.background }]}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              finishOnboarding(pendingUsername);
+              router.push("/auth");
+            }}
+            style={({ pressed }) => [
+              styles.button,
+              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, borderRadius: colors.radius, marginBottom: 10 },
+            ]}
+          >
+            <Feather name="cloud" size={18} color={colors.primaryForeground} />
+            <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>Set Up Cloud Save</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              finishOnboarding(pendingUsername);
+            }}
+            style={({ pressed }) => [
+              styles.skipButton,
+              { borderColor: colors.border, opacity: pressed ? 0.7 : 1, borderRadius: colors.radius },
+            ]}
+          >
+            <Text style={[styles.skipButtonText, { color: colors.mutedForeground }]}>Maybe Later</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: topPad }]}>
@@ -202,6 +269,21 @@ const styles = StyleSheet.create({
     fontFamily: "Inter_400Regular",
     lineHeight: 24,
   },
+  safetyCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginTop: 4,
+  },
+  safetyText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: "Inter_400Regular",
+    lineHeight: 18,
+  },
   usernameSection: {
     gap: 10,
     marginTop: 8,
@@ -243,6 +325,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 24,
     paddingTop: 12,
+    gap: 8,
   },
   button: {
     flexDirection: "row",
@@ -254,5 +337,16 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     fontFamily: "Inter_700Bold",
+  },
+  skipButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: 44,
+    borderWidth: 1,
+  },
+  skipButtonText: {
+    fontSize: 15,
+    fontFamily: "Inter_500Medium",
   },
 });

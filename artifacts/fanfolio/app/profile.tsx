@@ -8,6 +8,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,7 +26,12 @@ import { buildLeaderboard, getBestCategory, CATEGORIES, UserLeaderboardStats } f
 export default function ProfileScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents, challengeFlags, xp } = useGame();
+  const {
+    username, luckyCoinBalance, holdings, joinDate, transactions,
+    updateUsername, watchlist, appliedEvents, challengeFlags, xp,
+    cloudUser, cloudEmail, isCloudReady, isSyncing, lastSyncedAt, syncError,
+    signOut, saveToCloud, loadFromCloud, mergeCloudSave,
+  } = useGame();
   const { xpInfo, claimedCount, unlockedAchievementCount } = useChallenges();
   const liveAssets = useLiveAssets();
   const traderIdentity = useTraderIdentity();
@@ -101,6 +107,62 @@ export default function ProfileScreen() {
     setEditing(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
+
+  const handleSyncNow = async () => {
+    const result = await saveToCloud();
+    if (result.success) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("Synced", "Your progress has been saved to the cloud.");
+    } else {
+      Alert.alert("Sync Failed", result.error ?? "Something went wrong. Try again.");
+    }
+  };
+
+  const handleLoadCloud = () => {
+    Alert.alert(
+      "Load Cloud Save",
+      "This will replace your current device progress with your cloud save. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Load Cloud Save",
+          style: "destructive",
+          onPress: async () => {
+            const result = await loadFromCloud();
+            if (!result.success) {
+              Alert.alert("Error", result.error ?? "Failed to load cloud save.");
+            } else if (!result.hasData) {
+              Alert.alert("No Cloud Save", "No cloud save was found for your account. Use 'Sync Now' to upload your current progress.");
+            } else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              Alert.alert("Loaded", "Cloud save loaded successfully.");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      "Sign Out",
+      "You'll continue playing with your local save. Sign back in anytime to sync.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          onPress: async () => {
+            await signOut();
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          },
+        },
+      ]
+    );
+  };
+
+  const lastSyncLabel = lastSyncedAt
+    ? new Date(lastSyncedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : null;
 
   const stats = [
     { label: "Total Value", value: `${Math.round(totalValue).toLocaleString()} LC`, icon: "dollar-sign" as const },
@@ -182,7 +244,110 @@ export default function ProfileScreen() {
         })}
       </View>
 
-      {/* XP / Level card */}
+      {/* ── Cloud Save Card ──────────────────────────────────── */}
+      {!isCloudReady ? (
+        <View style={[styles.cloudCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.cloudHeader}>
+            <Feather name="cloud-off" size={16} color={colors.mutedForeground} />
+            <Text style={[styles.cloudTitle, { color: colors.foreground }]}>Cloud Save</Text>
+            <Text style={[styles.cloudStatus, { color: colors.mutedForeground }]}>Not configured</Text>
+          </View>
+          <Text style={[styles.cloudBody, { color: colors.mutedForeground }]}>
+            Cloud save is not set up in this environment. Your progress is saved locally on this device.
+          </Text>
+        </View>
+      ) : cloudUser ? (
+        <View style={[styles.cloudCard, { backgroundColor: colors.primary + "08", borderColor: colors.primary + "25" }]}>
+          <View style={styles.cloudHeader}>
+            <Feather name="cloud" size={16} color={colors.primary} />
+            <Text style={[styles.cloudTitle, { color: colors.foreground }]}>Cloud Save</Text>
+            <View style={[styles.cloudBadge, { backgroundColor: colors.green + "20" }]}>
+              <Text style={[styles.cloudBadgeText, { color: colors.green }]}>Active</Text>
+            </View>
+          </View>
+
+          <Text style={[styles.cloudEmail, { color: colors.foreground }]}>{cloudEmail}</Text>
+          {lastSyncLabel && (
+            <Text style={[styles.cloudSyncTime, { color: colors.mutedForeground }]}>Last synced: {lastSyncLabel}</Text>
+          )}
+          {syncError && (
+            <Text style={[styles.cloudSyncError, { color: "#FF4D4D" }]}>{syncError}</Text>
+          )}
+
+          <View style={styles.cloudActions}>
+            <Pressable
+              onPress={handleSyncNow}
+              disabled={isSyncing}
+              style={({ pressed }) => [
+                styles.cloudBtn,
+                { backgroundColor: colors.primary, opacity: pressed || isSyncing ? 0.7 : 1 },
+              ]}
+            >
+              {isSyncing ? (
+                <ActivityIndicator size="small" color={colors.primaryForeground} />
+              ) : (
+                <Feather name="upload-cloud" size={14} color={colors.primaryForeground} />
+              )}
+              <Text style={[styles.cloudBtnText, { color: colors.primaryForeground }]}>Sync Now</Text>
+            </Pressable>
+
+            <Pressable
+              onPress={handleLoadCloud}
+              disabled={isSyncing}
+              style={({ pressed }) => [
+                styles.cloudBtnOutline,
+                { borderColor: colors.border, opacity: pressed || isSyncing ? 0.7 : 1 },
+              ]}
+            >
+              <Feather name="download-cloud" size={14} color={colors.foreground} />
+              <Text style={[styles.cloudBtnOutlineText, { color: colors.foreground }]}>Load Cloud</Text>
+            </Pressable>
+          </View>
+
+          <Pressable onPress={handleSignOut} style={styles.signOutBtn}>
+            <Text style={[styles.signOutText, { color: colors.mutedForeground }]}>Sign Out</Text>
+          </Pressable>
+
+          <Text style={[styles.cloudDisclaimer, { color: colors.mutedForeground }]}>
+            Cloud save stores simulated progress only. LuckyCoin has no cash value.
+          </Text>
+        </View>
+      ) : (
+        <View style={[styles.cloudCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={styles.cloudHeader}>
+            <Feather name="cloud" size={16} color={colors.mutedForeground} />
+            <Text style={[styles.cloudTitle, { color: colors.foreground }]}>Cloud Save</Text>
+            <Text style={[styles.cloudStatus, { color: colors.mutedForeground }]}>Local save only</Text>
+          </View>
+          <Text style={[styles.cloudBody, { color: colors.mutedForeground }]}>
+            Cloud save lets you keep your simulated portfolio across devices. Free to set up — no payment needed.
+          </Text>
+          <View style={styles.cloudActions}>
+            <Pressable
+              onPress={() => router.push("/auth")}
+              style={({ pressed }) => [
+                styles.cloudBtn,
+                { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Feather name="user-plus" size={14} color={colors.primaryForeground} />
+              <Text style={[styles.cloudBtnText, { color: colors.primaryForeground }]}>Create Account</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push("/auth")}
+              style={({ pressed }) => [
+                styles.cloudBtnOutline,
+                { borderColor: colors.border, opacity: pressed ? 0.8 : 1 },
+              ]}
+            >
+              <Feather name="log-in" size={14} color={colors.foreground} />
+              <Text style={[styles.cloudBtnOutlineText, { color: colors.foreground }]}>Sign In</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* ── XP / Level card ─────────────────────────────────── */}
       <Pressable
         onPress={() => router.push("/challenges")}
         style={[styles.xpCard, { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "25" }]}
@@ -335,6 +500,26 @@ const styles = StyleSheet.create({
   statCard: { width: "47%", borderRadius: 14, borderWidth: 1, padding: 16, gap: 4, alignItems: "center" },
   statValue: { fontSize: 18, fontFamily: "Inter_700Bold", textAlign: "center" },
   statLabel: { fontSize: 11, fontFamily: "Inter_400Regular" },
+  // Cloud Save Card
+  cloudCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 16, marginBottom: 16, gap: 10 },
+  cloudHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+  cloudTitle: { fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },
+  cloudStatus: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  cloudBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
+  cloudBadgeText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  cloudEmail: { fontSize: 14, fontFamily: "Inter_500Medium" },
+  cloudSyncTime: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -4 },
+  cloudSyncError: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  cloudBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+  cloudActions: { flexDirection: "row", gap: 8 },
+  cloudBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 40, borderRadius: 10 },
+  cloudBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  cloudBtnOutline: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, height: 40, borderRadius: 10, borderWidth: 1 },
+  cloudBtnOutlineText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  signOutBtn: { alignSelf: "flex-start", paddingVertical: 2 },
+  signOutText: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  cloudDisclaimer: { fontSize: 11, fontFamily: "Inter_400Regular", lineHeight: 16 },
+  // rest unchanged
   watchlistCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 16, gap: 10, marginBottom: 16 },
   watchlistHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
   watchlistTitle: { fontSize: 14, fontFamily: "Inter_700Bold", flex: 1 },

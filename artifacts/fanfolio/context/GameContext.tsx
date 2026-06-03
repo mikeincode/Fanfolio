@@ -1,7 +1,16 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MOCK_ASSETS } from "@/data/mockAssets";
 import { getEventById, getRandomEvent, MarketEvent } from "@/data/mockMarketEvents";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "@fanfolio_game_state_v2";
 const INITIAL_BALANCE = 10000;
@@ -58,7 +67,6 @@ interface GameState {
   priceOverrides: Record<string, AssetPriceOverride>;
   appliedEvents: AppliedEvent[];
   watchlist: string[];
-  // Challenges & XP
   xp: number;
   claimedChallenges: string[];
   challengeFlags: string[];
@@ -78,10 +86,22 @@ interface GameContextValue extends GameState {
   addToWatchlist: (assetId: string) => void;
   removeFromWatchlist: (assetId: string) => void;
   isWatched: (assetId: string) => boolean;
-  // Challenges
   setChallengeFlag: (flagId: string) => void;
   addLessonOpen: () => void;
   claimChallengeReward: (challengeId: string, xpReward: number, lcReward: number) => { success: boolean };
+  // ── Cloud Save ─────────────────────────────────────────────────
+  cloudUser: User | null;
+  cloudEmail: string | null;
+  isCloudReady: boolean;
+  isSyncing: boolean;
+  lastSyncedAt: number | null;
+  syncError: string | null;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
+  signOut: () => Promise<void>;
+  saveToCloud: () => Promise<{ success: boolean; error: string | null }>;
+  loadFromCloud: () => Promise<{ success: boolean; error: string | null; hasData: boolean }>;
+  mergeCloudSave: (choice: "keep_local" | "load_cloud") => Promise<{ success: boolean; error: string | null }>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -103,26 +123,43 @@ const defaultState: GameState = {
   lessonsOpened: 0,
 };
 
+function mergeGameState(base: GameState, partial: Partial<GameState>): GameState {
+  return {
+    ...base,
+    ...partial,
+    priceOverrides: partial.priceOverrides ?? base.priceOverrides ?? {},
+    appliedEvents: partial.appliedEvents ?? base.appliedEvents ?? [],
+    watchlist: partial.watchlist ?? base.watchlist ?? [],
+    xp: partial.xp ?? base.xp ?? 0,
+    claimedChallenges: partial.claimedChallenges ?? base.claimedChallenges ?? [],
+    challengeFlags: partial.challengeFlags ?? base.challengeFlags ?? [],
+    lessonsOpened: partial.lessonsOpened ?? base.lessonsOpened ?? 0,
+  };
+}
+
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>(defaultState);
   const [loaded, setLoaded] = useState(false);
 
+  // ── Cloud state ─────────────────────────────────────────────
+  const [cloudUser, setCloudUser] = useState<User | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
+  // Keep a ref so callbacks can read the current state without stale closure
+  const stateRef = useRef<GameState>(defaultState);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  // ── Load local state ─────────────────────────────────────────
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then(raw => {
       if (raw) {
         try {
           const parsed = JSON.parse(raw) as GameState;
-          setState({
-            ...defaultState,
-            ...parsed,
-            priceOverrides: parsed.priceOverrides ?? {},
-            appliedEvents: parsed.appliedEvents ?? [],
-            watchlist: parsed.watchlist ?? [],
-            xp: parsed.xp ?? 0,
-            claimedChallenges: parsed.claimedChallenges ?? [],
-            challengeFlags: parsed.challengeFlags ?? [],
-            lessonsOpened: parsed.lessonsOpened ?? 0,
-          });
+          const merged = mergeGameState(defaultState, parsed);
+          setState(merged);
+          stateRef.current = merged;
         } catch {
           setState(defaultState);
         }
@@ -131,11 +168,144 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // ── Restore Supabase session ──────────────────────────────────
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    supabase.auth.getSession().then(({ data }) => {
+      setCloudUser(data.session?.user ?? null);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCloudUser(session?.user ?? null);
+    });
+
+    return () => { listener.subscription.unsubscribe(); };
+  }, []);
+
   const save = useCallback((newState: GameState) => {
     setState(newState);
+    stateRef.current = newState;
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
   }, []);
 
+  // ── Cloud helpers ─────────────────────────────────────────────
+  const saveToCloud = useCallback(async (): Promise<{ success: boolean; error: string | null }> => {
+    if (!isSupabaseConfigured || !supabase || !cloudUser) {
+      return { success: false, error: "Not signed in or cloud not configured." };
+    }
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      const s = stateRef.current;
+      const { error } = await supabase.from("user_game_state").upsert({
+        user_id: cloudUser.id,
+        balance: s.luckyCoinBalance,
+        holdings: s.holdings,
+        transactions: s.transactions,
+        watchlist: s.watchlist,
+        applied_events: s.appliedEvents,
+        claimed_challenges: s.claimedChallenges,
+        challenge_flags: s.challengeFlags,
+        lessons_opened: s.lessonsOpened,
+        xp: s.xp,
+        game_state: s,
+      }, { onConflict: "user_id" });
+
+      if (error) {
+        setSyncError(error.message);
+        return { success: false, error: error.message };
+      }
+
+      // Upsert profile
+      await supabase.from("user_profiles").upsert({
+        user_id: cloudUser.id,
+        email: cloudUser.email ?? "",
+        username: s.username,
+      }, { onConflict: "user_id" });
+
+      const now = Date.now();
+      setLastSyncedAt(now);
+      return { success: true, error: null };
+    } catch (err: any) {
+      const msg = err?.message ?? "Sync failed.";
+      setSyncError(msg);
+      return { success: false, error: msg };
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [cloudUser]);
+
+  const loadFromCloud = useCallback(async (): Promise<{ success: boolean; error: string | null; hasData: boolean }> => {
+    if (!isSupabaseConfigured || !supabase || !cloudUser) {
+      return { success: false, error: "Not signed in or cloud not configured.", hasData: false };
+    }
+    setIsSyncing(true);
+    setSyncError(null);
+    try {
+      const { data, error } = await supabase
+        .from("user_game_state")
+        .select("game_state")
+        .eq("user_id", cloudUser.id)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") {
+          return { success: true, error: null, hasData: false };
+        }
+        setSyncError(error.message);
+        return { success: false, error: error.message, hasData: false };
+      }
+
+      if (!data?.game_state) return { success: true, error: null, hasData: false };
+
+      const cloudState = mergeGameState(defaultState, data.game_state as GameState);
+      save(cloudState);
+      setLastSyncedAt(Date.now());
+      return { success: true, error: null, hasData: true };
+    } catch (err: any) {
+      const msg = err?.message ?? "Load failed.";
+      setSyncError(msg);
+      return { success: false, error: msg, hasData: false };
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [cloudUser, save]);
+
+  const mergeCloudSave = useCallback(async (choice: "keep_local" | "load_cloud"): Promise<{ success: boolean; error: string | null }> => {
+    if (choice === "keep_local") {
+      return saveToCloud();
+    } else {
+      const result = await loadFromCloud();
+      return { success: result.success, error: result.error };
+    }
+  }, [saveToCloud, loadFromCloud]);
+
+  // ── Auth ──────────────────────────────────────────────────────
+  const signIn = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+    if (!isSupabaseConfigured || !supabase) return { error: "Cloud save not configured." };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message };
+    return { error: null };
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string): Promise<{ error: string | null; needsConfirmation: boolean }> => {
+    if (!isSupabaseConfigured || !supabase) return { error: "Cloud save not configured.", needsConfirmation: false };
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error: error.message, needsConfirmation: false };
+    const needsConfirmation = !data.session;
+    return { error: null, needsConfirmation };
+  }, []);
+
+  const signOut = useCallback(async () => {
+    if (!isSupabaseConfigured || !supabase) return;
+    await supabase.auth.signOut();
+    setCloudUser(null);
+    setLastSyncedAt(null);
+    setSyncError(null);
+  }, []);
+
+  // ── Game actions ──────────────────────────────────────────────
   const buyAsset = useCallback((
     assetId: string,
     assetName: string,
@@ -343,6 +513,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setChallengeFlag,
       addLessonOpen,
       claimChallengeReward,
+      cloudUser,
+      cloudEmail: cloudUser?.email ?? null,
+      isCloudReady: isSupabaseConfigured,
+      isSyncing,
+      lastSyncedAt,
+      syncError,
+      signIn,
+      signUp,
+      signOut,
+      saveToCloud,
+      loadFromCloud,
+      mergeCloudSave,
     }}>
       {children}
     </GameContext.Provider>
