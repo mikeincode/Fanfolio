@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -52,7 +52,14 @@ function triggerLabel(t: PortfolioSnapshot["trigger"]): string {
 export default function PerformanceScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { portfolioSnapshots, takeSnapshot, holdings, luckyCoinBalance } = useGame();
+  const { portfolioSnapshots, takeSnapshot, holdings, luckyCoinBalance, setChallengeFlag, challengeFlags } = useGame();
+
+  useEffect(() => {
+    if (!challengeFlags.includes("hasViewedPerformance")) {
+      setChallengeFlag("hasViewedPerformance");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const liveAssets = useLiveAssets();
   const { prefs } = useUserPreferences();
 

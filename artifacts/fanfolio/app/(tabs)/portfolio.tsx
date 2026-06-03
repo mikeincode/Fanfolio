@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -99,8 +99,15 @@ const perfStyles = StyleSheet.create({
 export default function PortfolioScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { holdings, luckyCoinBalance, portfolioSnapshots } = useGame();
+  const { holdings, luckyCoinBalance, portfolioSnapshots, setChallengeFlag, challengeFlags } = useGame();
   const liveAssets = useLiveAssets();
+
+  useEffect(() => {
+    if (!challengeFlags.includes("hasViewedPortfolio")) {
+      setChallengeFlag("hasViewedPortfolio");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;

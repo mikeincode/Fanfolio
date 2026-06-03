@@ -3,3 +3,4 @@
 - [Fanfolio routing conventions](fanfolio-routing.md) — app/index.tsx is the root redirect gate for onboarding; all stack screens must have explicit Stack.Screen entries with headerShown: false.
 - [Fanfolio save health](fanfolio-save-health.md) — lib/saveHealth.ts validates/repairs local saves; GameContext exposes saveHealthStatus/saveWasRepaired/corruptedSaveBackedUpAt; corrupted saves backed up to CORRUPTED_BACKUP_KEY before reset.
 - [Fanfolio user preferences wiring](fanfolio-user-prefs.md) — all 4 prefs (haptics/eduTips/compactCards/safetyDisclaimers) wired into app behavior; use `const topPad = Platform.OS === "web"` as reliable anchor for hook insertion in screen functions.
+- [Fanfolio Rookie Playbook](fanfolio-rookie-playbook.md) — uses challengeFlags strings for new flags; declare playbookSteps useMemo AFTER handleSimulateEvent to avoid TDZ crash.

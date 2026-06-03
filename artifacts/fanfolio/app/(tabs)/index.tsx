@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
   View,
   Text,
@@ -637,12 +637,151 @@ const recapStyles = StyleSheet.create({
 });
 
 // ────────────────────────────────────────────────────────────
+// Rookie Playbook Card
+// ────────────────────────────────────────────────────────────
+interface PlaybookStepDef {
+  id: string;
+  emoji: string;
+  title: string;
+  desc: string;
+  done: boolean;
+  actionLabel: string;
+  onAction: () => void;
+}
+
+function RookiePlaybookCard({
+  colors,
+  steps,
+  allDone,
+  onDismiss,
+  educationalTipsEnabled,
+}: {
+  colors: ReturnType<typeof useColors>;
+  steps: PlaybookStepDef[];
+  allDone: boolean;
+  onDismiss: () => void;
+  educationalTipsEnabled: boolean;
+}) {
+  const completedCount = steps.filter(s => s.done).length;
+
+  if (allDone) {
+    return (
+      <View style={[rpStyles.completedCard, { backgroundColor: colors.green + "12", borderColor: colors.green + "35" }]}>
+        <Text style={{ fontSize: 22 }}>🏆</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={[rpStyles.completedTitle, { color: colors.green }]}>Rookie Playbook Complete!</Text>
+          <Text style={[rpStyles.completedSub, { color: colors.mutedForeground }]}>
+            You've covered the basics. Keep trading and learning.
+          </Text>
+        </View>
+        <Pressable onPress={onDismiss} hitSlop={12}>
+          <Feather name="x" size={17} color={colors.mutedForeground} />
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[rpStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Header */}
+      <View style={rpStyles.cardHeader}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <Text style={{ fontSize: 18 }}>🏈</Text>
+          <View>
+            <Text style={[rpStyles.cardTitle, { color: colors.foreground }]}>Rookie Playbook</Text>
+            <Text style={[rpStyles.cardSubtitle, { color: colors.mutedForeground }]}>
+              {completedCount} of {steps.length} steps done
+            </Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Pressable onPress={() => router.push("/rookie-playbook")} hitSlop={8}>
+            <Text style={[rpStyles.guideLink, { color: colors.primary }]}>Full Guide</Text>
+          </Pressable>
+          <Pressable onPress={onDismiss} hitSlop={12}>
+            <Feather name="x" size={16} color={colors.mutedForeground} />
+          </Pressable>
+        </View>
+      </View>
+
+      {/* Progress bar */}
+      <View style={[rpStyles.progressTrack, { backgroundColor: colors.border }]}>
+        <View
+          style={[
+            rpStyles.progressFill,
+            { backgroundColor: colors.primary, width: `${(completedCount / steps.length) * 100}%` as any },
+          ]}
+        />
+      </View>
+
+      {/* Safety blurb (tips) */}
+      {educationalTipsEnabled && (
+        <View style={[rpStyles.tipRow, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "22" }]}>
+          <Feather name="shield" size={11} color={colors.blue} />
+          <Text style={[rpStyles.tipText, { color: colors.blue }]}>
+            LuckyCoin is a simulated learning currency — no real money, no cash value.
+          </Text>
+        </View>
+      )}
+
+      {/* Steps */}
+      {steps.map((step, i) => (
+        <View
+          key={step.id}
+          style={[
+            rpStyles.stepRow,
+            i < steps.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
+          ]}
+        >
+          <View style={[rpStyles.stepIcon, { backgroundColor: step.done ? colors.green + "1A" : colors.muted }]}>
+            {step.done ? (
+              <Feather name="check" size={12} color={colors.green} />
+            ) : (
+              <Text style={{ fontSize: 13 }}>{step.emoji}</Text>
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                rpStyles.stepTitle,
+                {
+                  color: step.done ? colors.mutedForeground : colors.foreground,
+                  textDecorationLine: step.done ? "line-through" : "none",
+                },
+              ]}
+            >
+              {step.title}
+            </Text>
+            {!step.done && (
+              <Text style={[rpStyles.stepDesc, { color: colors.mutedForeground }]} numberOfLines={2}>
+                {step.desc}
+              </Text>
+            )}
+          </View>
+          {!step.done && (
+            <Pressable
+              onPress={step.onAction}
+              style={({ pressed }) => [
+                rpStyles.goBtn,
+                { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30", opacity: pressed ? 0.75 : 1 },
+              ]}
+            >
+              <Text style={[rpStyles.goBtnText, { color: colors.primary }]}>{step.actionLabel}</Text>
+            </Pressable>
+          )}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
 // Home Screen
 // ────────────────────────────────────────────────────────────
 export default function HomeScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots } = useGame();
+  const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
@@ -671,6 +810,12 @@ export default function HomeScreen() {
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
   const [showCoach, setShowCoach] = useState(false);
+
+  const handleDismissPlaybook = useCallback(() => {
+    setChallengeFlag("rookiePlaybookDismissed");
+  }, [setChallengeFlag]);
+
+  const playbookDismissed = challengeFlags.includes("rookiePlaybookDismissed");
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -751,6 +896,75 @@ export default function HomeScreen() {
     setShowEventModal(false);
     setShowCoach(true);
   };
+
+  const playbookSteps = useMemo<PlaybookStepDef[]>(() => [
+    {
+      id: "claim",
+      emoji: "🪙",
+      title: "Claim your LuckyCoin",
+      desc: "Tap the Daily Claim card to collect free LuckyCoin — your simulated learning currency.",
+      done: lastDailyClaim !== null,
+      actionLabel: "Claim",
+      onAction: () => {},
+    },
+    {
+      id: "watch",
+      emoji: "🔭",
+      title: "Watch an asset",
+      desc: "Open Market or Scanner and bookmark an asset to add it to your Watchlist.",
+      done: watchlist.length > 0,
+      actionLabel: "Market",
+      onAction: () => router.push("/(tabs)/market"),
+    },
+    {
+      id: "buy",
+      emoji: "💰",
+      title: "Buy your first asset",
+      desc: "Open any asset and tap Buy. Start small — 1–5 units is plenty to learn the mechanics.",
+      done: transactions.some(t => t.type === "buy") || holdings.length > 0,
+      actionLabel: "Market",
+      onAction: () => router.push("/(tabs)/market"),
+    },
+    {
+      id: "event",
+      emoji: "⚡",
+      title: "React to a Market Pulse",
+      desc: "Tap Simulate Event to see how a sports news story can move prices. In the final app, pulses appear automatically.",
+      done: appliedEvents.length > 0,
+      actionLabel: "Simulate",
+      onAction: handleSimulateEvent,
+    },
+    {
+      id: "portfolio",
+      emoji: "📊",
+      title: "Check your portfolio",
+      desc: "Open the Portfolio tab to see your holdings and how they're performing.",
+      done: challengeFlags.includes("hasViewedPortfolio"),
+      actionLabel: "Portfolio",
+      onAction: () => router.push("/(tabs)/portfolio"),
+    },
+    {
+      id: "performance",
+      emoji: "📈",
+      title: "Open Performance History",
+      desc: "In Portfolio, tap Performance History to see how your total value has changed over time.",
+      done: challengeFlags.includes("hasViewedPerformance"),
+      actionLabel: "Portfolio",
+      onAction: () => router.push("/(tabs)/portfolio"),
+    },
+    {
+      id: "lesson",
+      emoji: "📚",
+      title: "Complete one lesson",
+      desc: "Open the Learn tab and read any lesson to understand why markets move.",
+      done: lessonsOpened > 0,
+      actionLabel: "Learn",
+      onAction: () => router.push("/(tabs)/learn"),
+    },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [lastDailyClaim, watchlist.length, transactions, holdings.length, appliedEvents.length, challengeFlags, lessonsOpened]);
+
+  const playbookAllDone = playbookSteps.every(s => s.done);
 
   const recentTx = transactions.slice(0, 3);
   const recentEvents = appliedEvents.slice(0, 5);
@@ -836,6 +1050,19 @@ export default function HomeScreen() {
             </View>
           )}
         </Pressable>
+
+        {/* ── Rookie Playbook ──────────────────────────── */}
+        {!playbookDismissed && (
+          <View style={styles.section}>
+            <RookiePlaybookCard
+              colors={colors}
+              steps={playbookSteps}
+              allDone={playbookAllDone}
+              onDismiss={handleDismissPlaybook}
+              educationalTipsEnabled={prefs.educationalTipsEnabled}
+            />
+          </View>
+        )}
 
         {/* ── Next Challenge ───────────────────────────── */}
         {nextChallenge && (
@@ -1530,6 +1757,28 @@ const styles = StyleSheet.create({
   newsCardSymText: { fontSize: 10, fontFamily: "Inter_700Bold" },
   newsAllBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingVertical: 12 },
   newsAllBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+});
+
+// ── Rookie Playbook Styles ──────────────────────────────────
+const rpStyles = StyleSheet.create({
+  completedCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", gap: 10 },
+  completedTitle: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  completedSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 2 },
+  card: { borderRadius: 14, borderWidth: 1, overflow: "hidden" },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14 },
+  cardTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  cardSubtitle: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
+  guideLink: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  progressTrack: { height: 4, marginHorizontal: 14, marginBottom: 10, borderRadius: 2, overflow: "hidden" },
+  progressFill: { height: 4, borderRadius: 2 },
+  tipRow: { flexDirection: "row", alignItems: "center", gap: 6, marginHorizontal: 14, marginBottom: 8, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 7 },
+  tipText: { fontSize: 11, fontFamily: "Inter_400Regular", flex: 1 },
+  stepRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 11 },
+  stepIcon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  stepTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  stepDesc: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 2, lineHeight: 16 },
+  goBtn: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  goBtnText: { fontSize: 11, fontFamily: "Inter_700Bold" },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────
