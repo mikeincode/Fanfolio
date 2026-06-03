@@ -56,8 +56,10 @@ function getDivLabel(sports: number, types: number, indexPct: number) {
 function getCoachSummary(p: {
   memePct: number; largestPct: number; indexPct: number;
   avgRisk: number; uniqueSports: number; uniqueTypes: number;
+  futurePct?: number;
 }) {
   if (p.memePct > 50) return "Your portfolio is heavy on meme coins. These assets can spike fast, but they can also crash when hype cools. Adding an index or team stock would help balance things out.";
+  if ((p.futurePct ?? 0) > 40) return "Futures can move sharply because they depend on a single season outcome or storyline. Balancing them with stable indexes or team stocks keeps your portfolio more resilient.";
   if (p.largestPct > 75) return "One asset dominates your portfolio. Spreading your LuckyCoin across more assets teaches real diversification — like building a roster around more than one player.";
   if (p.indexPct === 0 && p.uniqueSports < 2) return "You do not own any indexes or assets across different sports yet. Indexes spread your risk across many assets at once — a great starting move.";
   if (p.avgRisk > 7.5) return "Your risk level is high. Your portfolio can move fast in either direction. Consider mixing in some stable indexes or team stocks to create balance.";
@@ -71,11 +73,13 @@ type Tip = { icon: string; text: string };
 function buildTips(p: {
   count: number; indexPct: number; memePct: number; largestPct: number;
   uniqueSports: number; avgRisk: number; uniqueTypes: number;
+  futurePct?: number;
 }): Tip[] {
   const tips: Tip[] = [];
   if (p.count === 0) return [{ icon: "shopping-bag", text: "Buy your first asset to start building your portfolio." }];
   if (p.indexPct === 0) tips.push({ icon: "layers", text: "You do not own any indexes yet. Indexes spread risk across multiple assets at once, making your portfolio more stable." });
   if (p.memePct > 40) tips.push({ icon: "alert-triangle", text: "Your portfolio is heavy on meme coins. Meme assets can spike fast, but they can also crash hard when hype cools off." });
+  if ((p.futurePct ?? 0) > 40) tips.push({ icon: "clock", text: "Futures can move sharply because they depend on one storyline or outcome. Balancing them with stable team stocks or indexes helps protect your portfolio." });
   if (p.largestPct > 50) tips.push({ icon: "pie-chart", text: `One asset makes up ${p.largestPct.toFixed(0)}% of your portfolio. That is concentration risk — like building your whole season strategy around a single player.` });
   if (p.uniqueSports === 1) tips.push({ icon: "flag", text: "All your assets are in one sport. Adding assets from another sport teaches real diversification principles." });
   if (p.avgRisk > 7.5) tips.push({ icon: "zap", text: "Your portfolio can move quickly. High risk can produce large simulated gains but also large simulated losses — it is a trade-off worth understanding." });
@@ -147,6 +151,10 @@ export default function PortfolioCoachScreen() {
       .filter(e => e.asset.type === "Meme Coin")
       .reduce((s, e) => s + e.currentValue, 0);
     const memePct = (memeValue / portfolioValue) * 100;
+    const futureValue = enriched
+      .filter(e => e.asset.type === "Future")
+      .reduce((s, e) => s + e.currentValue, 0);
+    const futurePct = (futureValue / portfolioValue) * 100;
     const avgRisk = enriched.reduce(
       (s, e) => s + e.asset.riskScore * (e.currentValue / portfolioValue),
       0
@@ -154,9 +162,9 @@ export default function PortfolioCoachScreen() {
     const healthScore = computeHealthScore({ count: enriched.length, uniqueSports, uniqueTypes, indexPct, memePct, avgRisk, largestPct });
     const riskInfo = getRiskInfo(avgRisk);
     const divLabel = getDivLabel(uniqueSports, uniqueTypes, indexPct);
-    const coachText = getCoachSummary({ memePct, largestPct, indexPct, avgRisk, uniqueSports, uniqueTypes });
-    const tips = buildTips({ count: enriched.length, indexPct, memePct, largestPct, uniqueSports, avgRisk, uniqueTypes });
-    return { uniqueSports, uniqueTypes, largestPct, indexPct, memePct, avgRisk, healthScore, riskInfo, divLabel, coachText, tips };
+    const coachText = getCoachSummary({ memePct, largestPct, indexPct, avgRisk, uniqueSports, uniqueTypes, futurePct });
+    const tips = buildTips({ count: enriched.length, indexPct, memePct, largestPct, uniqueSports, avgRisk, uniqueTypes, futurePct });
+    return { uniqueSports, uniqueTypes, largestPct, indexPct, memePct, futurePct, avgRisk, healthScore, riskInfo, divLabel, coachText, tips };
   }, [enriched, portfolioValue]);
 
   const scoreColor = report
@@ -175,6 +183,7 @@ export default function PortfolioCoachScreen() {
     if (type === "Sport Index") return colors.green;
     if (type === "Meme Coin") return colors.red;
     if (type === "Future") return colors.coin;
+    if (type === "Coach Stock") return "#06B6D4";
     return colors.primary;
   };
 

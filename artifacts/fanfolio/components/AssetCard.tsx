@@ -21,6 +21,7 @@ export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle, co
   const typeColor: Record<string, string> = {
     "Team Stock": colors.blue,
     "Player Coin": "#A78BFA",
+    "Coach Stock": "#06B6D4",
     "Sport Index": colors.green,
     "Meme Coin": "#F97316",
     "Future": "#EC4899",

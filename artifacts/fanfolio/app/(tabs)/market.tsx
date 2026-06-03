@@ -21,12 +21,13 @@ import { useUserPreferences } from "@/lib/userPreferences";
 
 type FilterTab = "All" | "Watchlist" | AssetType;
 
-const TABS: FilterTab[] = ["All", "Watchlist", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
+const TABS: FilterTab[] = ["All", "Watchlist", "Team Stock", "Player Coin", "Coach Stock", "Sport Index", "Meme Coin", "Future"];
 const TAB_LABELS: Record<FilterTab, string> = {
   "All": "All",
   "Watchlist": "Watchlist",
   "Team Stock": "Teams",
   "Player Coin": "Players",
+  "Coach Stock": "Coaches",
   "Sport Index": "Indexes",
   "Meme Coin": "Meme",
   "Future": "Futures",

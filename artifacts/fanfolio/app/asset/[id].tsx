@@ -204,6 +204,7 @@ export default function AssetDetailScreen() {
   const typeColor: Record<string, string> = {
     "Team Stock": colors.blue,
     "Player Coin": "#A78BFA",
+    "Coach Stock": "#06B6D4",
     "Sport Index": colors.green,
     "Meme Coin": "#F97316",
     "Future": "#EC4899",
@@ -273,6 +274,53 @@ export default function AssetDetailScreen() {
             </View>
             <Text style={[styles.cardBody, { color: colors.foreground }]}>{asset.marketLesson}</Text>
           </View>
+
+          {/* ── Futures education card ───────────────── */}
+          {asset.type === "Future" && (
+            <View style={[styles.card, { backgroundColor: "#EC4899" + "10", borderColor: "#EC4899" + "30" }]}>
+              <View style={styles.cardRow}>
+                <Feather name="clock" size={14} color="#EC4899" />
+                <Text style={[styles.cardLabel, { color: "#EC4899" }]}>About Futures</Text>
+              </View>
+              <Text style={[styles.cardBody, { color: colors.foreground }]}>
+                Futures in Fanfolio track a simulated season storyline or outcome — like an award race or championship run. They are not gambling, sportsbook odds, or real-money prediction markets. LuckyCoin has no cash value. This is for learning how expectation-based markets move over time.
+              </Text>
+              {asset.settlementRule ? (
+                <View style={[styles.cardRow, { marginTop: 4 }]}>
+                  <Feather name="check-square" size={12} color={colors.mutedForeground} />
+                  <Text style={[{ fontSize: 12, fontFamily: "Inter_400Regular", color: colors.mutedForeground, flex: 1 }]}>
+                    {asset.settlementRule}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          )}
+
+          {/* ── Coach Stock education card ───────────── */}
+          {asset.type === "Coach Stock" && (
+            <View style={[styles.card, { backgroundColor: "#06B6D4" + "10", borderColor: "#06B6D4" + "30" }]}>
+              <View style={styles.cardRow}>
+                <Feather name="user" size={14} color="#06B6D4" />
+                <Text style={[styles.cardLabel, { color: "#06B6D4" }]}>About Coach Stocks</Text>
+              </View>
+              <Text style={[styles.cardBody, { color: colors.foreground }]}>
+                Coach stocks track the simulated market confidence in a coaching staff's season performance — not real equity or salaries. Great coaching can lift an entire team's asset prices, making coach stocks a useful way to learn how leadership quality gets priced into markets.
+              </Text>
+            </View>
+          )}
+
+          {/* ── Index composition card ──────────────── */}
+          {asset.type === "Sport Index" && asset.indexComposition && asset.indexComposition.length > 0 && (
+            <View style={[styles.card, { backgroundColor: colors.green + "10", borderColor: colors.green + "30" }]}>
+              <View style={styles.cardRow}>
+                <Feather name="layers" size={14} color={colors.green} />
+                <Text style={[styles.cardLabel, { color: colors.green }]}>Index Composition</Text>
+              </View>
+              <Text style={[styles.cardBody, { color: colors.foreground }]}>
+                This index tracks {asset.indexComposition.length} underlying assets. When you buy an index, your risk is spread across all of them — one bad game or one dip cannot sink the whole position.
+              </Text>
+            </View>
+          )}
 
           {/* ── Related News ────────────────────────── */}
           {(() => {

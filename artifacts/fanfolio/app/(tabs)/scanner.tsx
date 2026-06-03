@@ -21,7 +21,7 @@ import { useUserPreferences } from "@/lib/userPreferences";
 // ── Types ──────────────────────────────────────────────────────
 
 type SportFilter = "All Sports" | "Football" | "Basketball" | "MMA" | "Baseball" | "Soccer" | "Hockey";
-type TypeFilter = "All Types" | "Team Stock" | "Player Coin" | "Sport Index" | "Meme Coin" | "Future";
+type TypeFilter = "All Types" | "Team Stock" | "Player Coin" | "Coach Stock" | "Sport Index" | "Meme Coin" | "Future";
 type AccentType = "green" | "red" | "yellow" | "primary" | "coin";
 
 interface ScanPreset {
@@ -119,11 +119,12 @@ const PRESETS: ScanPreset[] = [
 ];
 
 const SPORT_FILTERS: SportFilter[] = ["All Sports", "Football", "Basketball", "MMA", "Baseball", "Soccer", "Hockey"];
-const TYPE_FILTERS: TypeFilter[] = ["All Types", "Team Stock", "Player Coin", "Sport Index", "Meme Coin", "Future"];
+const TYPE_FILTERS: TypeFilter[] = ["All Types", "Team Stock", "Player Coin", "Coach Stock", "Sport Index", "Meme Coin", "Future"];
 const TYPE_LABELS: Record<TypeFilter, string> = {
   "All Types": "All Types",
   "Team Stock": "Teams",
   "Player Coin": "Players",
+  "Coach Stock": "Coaches",
   "Sport Index": "Indexes",
   "Meme Coin": "Meme",
   "Future": "Futures",
@@ -146,6 +147,7 @@ function typeLabel(type: Asset["type"]): string {
     case "Sport Index": return "Index";
     case "Team Stock": return "Team";
     case "Player Coin": return "Player";
+    case "Coach Stock": return "Coach";
     case "Meme Coin": return "Meme";
     case "Future": return "Future";
   }

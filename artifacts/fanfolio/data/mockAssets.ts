@@ -1,4 +1,10 @@
-export type AssetType = "Team Stock" | "Player Coin" | "Sport Index" | "Meme Coin" | "Future";
+export type AssetType =
+  | "Team Stock"
+  | "Player Coin"
+  | "Coach Stock"
+  | "Sport Index"
+  | "Meme Coin"
+  | "Future";
 
 export interface Asset {
   id: string;
@@ -15,6 +21,16 @@ export interface Asset {
   whyItMoved: string;
   chartData: number[];
   bullish: boolean;
+  // Optional extended fields for richer asset universe
+  league?: string;
+  team?: string;
+  position?: string;
+  tags?: string[];
+  relatedAssetIds?: string[];
+  indexComposition?: string[];
+  futureCategory?: string;
+  settlementRule?: string;
+  educationalNote?: string;
 }
 
 function generateChart(basePrice: number, trend: number, volatility: number): number[] {
