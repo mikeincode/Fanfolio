@@ -304,6 +304,17 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
 
+          <Pressable
+            onPress={() => router.push("/cloud-save")}
+            style={({ pressed }) => [
+              styles.cloudBtnOutline,
+              { borderColor: colors.primary + "50", opacity: pressed ? 0.75 : 1 },
+            ]}
+          >
+            <Feather name="settings" size={14} color={colors.primary} />
+            <Text style={[styles.cloudBtnOutlineText, { color: colors.primary }]}>Manage Cloud Save</Text>
+          </Pressable>
+
           <Pressable onPress={handleSignOut} style={styles.signOutBtn}>
             <Text style={[styles.signOutText, { color: colors.mutedForeground }]}>Sign Out</Text>
           </Pressable>

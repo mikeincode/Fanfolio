@@ -29,6 +29,7 @@ function RootLayoutNav() {
       <Stack.Screen name="asset/[id]" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="profile" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="auth" options={{ headerShown: false, presentation: "card" }} />
+      <Stack.Screen name="cloud-save" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="news" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="journal" options={{ headerShown: false, presentation: "card" }} />
       <Stack.Screen name="challenges" options={{ headerShown: false, presentation: "card" }} />

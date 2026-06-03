@@ -10,9 +10,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MOCK_ASSETS } from "@/data/mockAssets";
 import { getEventById, getRandomEvent, MarketEvent } from "@/data/mockMarketEvents";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { safeMerge } from "@/lib/cloudSaveUtils";
 import type { User } from "@supabase/supabase-js";
 
 const STORAGE_KEY = "@fanfolio_game_state_v2";
+const SAVED_AT_KEY = "@fanfolio_local_saved_at";
+const BACKUP_KEY = "@fanfolio_local_backup_v1";
 const INITIAL_BALANCE = 10000;
 const DAILY_CLAIM_AMOUNT = 1000;
 
@@ -56,7 +59,7 @@ export interface AppliedEvent {
   biggestMove: { symbol: string; assetId: string; changePercent: number };
 }
 
-interface GameState {
+export interface GameState {
   luckyCoinBalance: number;
   holdings: Holding[];
   transactions: Transaction[];
@@ -89,12 +92,14 @@ interface GameContextValue extends GameState {
   setChallengeFlag: (flagId: string) => void;
   addLessonOpen: () => void;
   claimChallengeReward: (challengeId: string, xpReward: number, lcReward: number) => { success: boolean };
-  // ── Cloud Save ─────────────────────────────────────────────────
+  // ── Cloud Save ─────────────────────────────────────────────────────────────
   cloudUser: User | null;
   cloudEmail: string | null;
   isCloudReady: boolean;
   isSyncing: boolean;
   lastSyncedAt: number | null;
+  localSavedAt: number | null;
+  localBackupAt: number | null;
   syncError: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null; needsConfirmation: boolean }>;
@@ -102,6 +107,13 @@ interface GameContextValue extends GameState {
   saveToCloud: () => Promise<{ success: boolean; error: string | null }>;
   loadFromCloud: () => Promise<{ success: boolean; error: string | null; hasData: boolean }>;
   mergeCloudSave: (choice: "keep_local" | "load_cloud") => Promise<{ success: boolean; error: string | null }>;
+  // ── Backup / Restore ──────────────────────────────────────────────────────
+  saveLocalBackup: () => Promise<void>;
+  restoreLocalBackup: () => Promise<{ success: boolean; error: string | null }>;
+  // ── Advanced cloud ops ────────────────────────────────────────────────────
+  fetchCloudState: () => Promise<{ state: GameState | null; updatedAt: number | null; error: string | null }>;
+  smartMergeWithCloud: (cloudState: GameState) => Promise<{ success: boolean; error: string | null }>;
+  loadFromCloudWithBackup: () => Promise<{ success: boolean; error: string | null; hasData: boolean }>;
 }
 
 const GameContext = createContext<GameContextValue | null>(null);
@@ -123,7 +135,7 @@ const defaultState: GameState = {
   lessonsOpened: 0,
 };
 
-function mergeGameState(base: GameState, partial: Partial<GameState>): GameState {
+export function mergeGameState(base: GameState, partial: Partial<GameState>): GameState {
   return {
     ...base,
     ...partial,
@@ -141,19 +153,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<GameState>(defaultState);
   const [loaded, setLoaded] = useState(false);
 
-  // ── Cloud state ─────────────────────────────────────────────
+  // ── Cloud state ─────────────────────────────────────────────────────────────
   const [cloudUser, setCloudUser] = useState<User | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [localSavedAt, setLocalSavedAt] = useState<number | null>(null);
+  const [localBackupAt, setLocalBackupAt] = useState<number | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Keep a ref so callbacks can read the current state without stale closure
   const stateRef = useRef<GameState>(defaultState);
   useEffect(() => { stateRef.current = state; }, [state]);
 
-  // ── Load local state ─────────────────────────────────────────
+  // ── Load local state ────────────────────────────────────────────────────────
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(raw => {
+    const load = async () => {
+      const [raw, savedAtRaw, backupRaw] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEY),
+        AsyncStorage.getItem(SAVED_AT_KEY),
+        AsyncStorage.getItem(BACKUP_KEY),
+      ]);
       if (raw) {
         try {
           const parsed = JSON.parse(raw) as GameState;
@@ -164,32 +182,64 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           setState(defaultState);
         }
       }
+      if (savedAtRaw) {
+        const n = parseInt(savedAtRaw, 10);
+        if (!isNaN(n)) setLocalSavedAt(n);
+      }
+      if (backupRaw) {
+        try {
+          const b = JSON.parse(backupRaw);
+          if (b?.savedAt) setLocalBackupAt(b.savedAt);
+        } catch {}
+      }
       setLoaded(true);
-    });
+    };
+    load();
   }, []);
 
-  // ── Restore Supabase session ──────────────────────────────────
+  // ── Restore Supabase session ─────────────────────────────────────────────────
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) return;
-
     supabase.auth.getSession().then(({ data }) => {
       setCloudUser(data.session?.user ?? null);
     });
-
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setCloudUser(session?.user ?? null);
     });
-
     return () => { listener.subscription.unsubscribe(); };
   }, []);
 
   const save = useCallback((newState: GameState) => {
     setState(newState);
     stateRef.current = newState;
+    const now = Date.now();
+    setLocalSavedAt(now);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    AsyncStorage.setItem(SAVED_AT_KEY, String(now));
   }, []);
 
-  // ── Cloud helpers ─────────────────────────────────────────────
+  // ── Backup / Restore ────────────────────────────────────────────────────────
+  const saveLocalBackup = useCallback(async () => {
+    const backup = { state: stateRef.current, savedAt: Date.now() };
+    await AsyncStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    setLocalBackupAt(backup.savedAt);
+  }, []);
+
+  const restoreLocalBackup = useCallback(async (): Promise<{ success: boolean; error: string | null }> => {
+    try {
+      const raw = await AsyncStorage.getItem(BACKUP_KEY);
+      if (!raw) return { success: false, error: "No backup found." };
+      const { state: backupState } = JSON.parse(raw);
+      if (!backupState) return { success: false, error: "Backup data is invalid." };
+      const restored = mergeGameState(defaultState, backupState as GameState);
+      save(restored);
+      return { success: true, error: null };
+    } catch (err: any) {
+      return { success: false, error: err?.message ?? "Restore failed." };
+    }
+  }, [save]);
+
+  // ── Cloud helpers ────────────────────────────────────────────────────────────
   const saveToCloud = useCallback(async (): Promise<{ success: boolean; error: string | null }> => {
     if (!isSupabaseConfigured || !supabase || !cloudUser) {
       return { success: false, error: "Not signed in or cloud not configured." };
@@ -217,15 +267,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: error.message };
       }
 
-      // Upsert profile
       await supabase.from("user_profiles").upsert({
         user_id: cloudUser.id,
         email: cloudUser.email ?? "",
         username: s.username,
       }, { onConflict: "user_id" });
 
-      const now = Date.now();
-      setLastSyncedAt(now);
+      setLastSyncedAt(Date.now());
       return { success: true, error: null };
     } catch (err: any) {
       const msg = err?.message ?? "Sync failed.";
@@ -250,13 +298,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        if (error.code === "PGRST116") {
-          return { success: true, error: null, hasData: false };
-        }
+        if (error.code === "PGRST116") return { success: true, error: null, hasData: false };
         setSyncError(error.message);
         return { success: false, error: error.message, hasData: false };
       }
-
       if (!data?.game_state) return { success: true, error: null, hasData: false };
 
       const cloudState = mergeGameState(defaultState, data.game_state as GameState);
@@ -272,16 +317,56 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [cloudUser, save]);
 
-  const mergeCloudSave = useCallback(async (choice: "keep_local" | "load_cloud"): Promise<{ success: boolean; error: string | null }> => {
-    if (choice === "keep_local") {
-      return saveToCloud();
-    } else {
-      const result = await loadFromCloud();
-      return { success: result.success, error: result.error };
-    }
-  }, [saveToCloud, loadFromCloud]);
+  const loadFromCloudWithBackup = useCallback(async (): Promise<{ success: boolean; error: string | null; hasData: boolean }> => {
+    await saveLocalBackup();
+    return loadFromCloud();
+  }, [saveLocalBackup, loadFromCloud]);
 
-  // ── Auth ──────────────────────────────────────────────────────
+  const mergeCloudSave = useCallback(async (choice: "keep_local" | "load_cloud"): Promise<{ success: boolean; error: string | null }> => {
+    if (choice === "keep_local") return saveToCloud();
+    const result = await loadFromCloudWithBackup();
+    return { success: result.success, error: result.error };
+  }, [saveToCloud, loadFromCloudWithBackup]);
+
+  const fetchCloudState = useCallback(async (): Promise<{ state: GameState | null; updatedAt: number | null; error: string | null }> => {
+    if (!isSupabaseConfigured || !supabase || !cloudUser) {
+      return { state: null, updatedAt: null, error: null };
+    }
+    try {
+      const { data, error } = await supabase
+        .from("user_game_state")
+        .select("game_state, updated_at")
+        .eq("user_id", cloudUser.id)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116") return { state: null, updatedAt: null, error: null };
+        return { state: null, updatedAt: null, error: error.message };
+      }
+
+      const updatedAt = data?.updated_at ? new Date(data.updated_at as string).getTime() : null;
+      const cloudState = data?.game_state ? mergeGameState(defaultState, data.game_state as GameState) : null;
+      return { state: cloudState, updatedAt, error: null };
+    } catch (err: any) {
+      return { state: null, updatedAt: null, error: err?.message ?? "Failed to fetch." };
+    }
+  }, [cloudUser]);
+
+  const smartMergeWithCloud = useCallback(async (cloudState: GameState): Promise<{ success: boolean; error: string | null }> => {
+    try {
+      await saveLocalBackup();
+      const merged = safeMerge(stateRef.current, cloudState);
+      save(merged);
+      if (cloudUser) {
+        await saveToCloud();
+      }
+      return { success: true, error: null };
+    } catch (err: any) {
+      return { success: false, error: err?.message ?? "Merge failed." };
+    }
+  }, [saveLocalBackup, save, cloudUser, saveToCloud]);
+
+  // ── Auth ─────────────────────────────────────────────────────────────────────
   const signIn = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
     if (!isSupabaseConfigured || !supabase) return { error: "Cloud save not configured." };
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -293,8 +378,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!isSupabaseConfigured || !supabase) return { error: "Cloud save not configured.", needsConfirmation: false };
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return { error: error.message, needsConfirmation: false };
-    const needsConfirmation = !data.session;
-    return { error: null, needsConfirmation };
+    return { error: null, needsConfirmation: !data.session };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -305,18 +389,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setSyncError(null);
   }, []);
 
-  // ── Game actions ──────────────────────────────────────────────
+  // ── Game actions ──────────────────────────────────────────────────────────────
   const buyAsset = useCallback((
-    assetId: string,
-    assetName: string,
-    assetSymbol: string,
-    price: number,
-    quantity: number
+    assetId: string, assetName: string, assetSymbol: string, price: number, quantity: number
   ): { success: boolean; message: string } => {
     const total = price * quantity;
-    if (state.luckyCoinBalance < total) {
-      return { success: false, message: "Not enough LuckyCoin" };
-    }
+    if (state.luckyCoinBalance < total) return { success: false, message: "Not enough LuckyCoin" };
 
     const existingIdx = state.holdings.findIndex(h => h.assetId === assetId);
     const newHoldings = [...state.holdings];
@@ -325,33 +403,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const existing = newHoldings[existingIdx];
       const newQty = existing.quantity + quantity;
       const newInvested = existing.totalInvested + total;
-      newHoldings[existingIdx] = {
-        ...existing,
-        quantity: newQty,
-        totalInvested: newInvested,
-        averageCost: newInvested / newQty,
-      };
+      newHoldings[existingIdx] = { ...existing, quantity: newQty, totalInvested: newInvested, averageCost: newInvested / newQty };
     } else {
       newHoldings.push({ assetId, quantity, averageCost: price, totalInvested: total });
     }
 
     const tx: Transaction = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      assetId, assetName, assetSymbol,
-      type: "buy", quantity, price, total,
-      timestamp: Date.now(),
+      assetId, assetName, assetSymbol, type: "buy", quantity, price, total, timestamp: Date.now(),
     };
-
     save({ ...state, luckyCoinBalance: state.luckyCoinBalance - total, holdings: newHoldings, transactions: [tx, ...state.transactions] });
     return { success: true, message: `Bought ${quantity} ${assetSymbol} for ${total.toLocaleString()} LC` };
   }, [state, save]);
 
   const sellAsset = useCallback((
-    assetId: string,
-    assetName: string,
-    assetSymbol: string,
-    price: number,
-    quantity: number
+    assetId: string, assetName: string, assetSymbol: string, price: number, quantity: number
   ): { success: boolean; message: string } => {
     const existingIdx = state.holdings.findIndex(h => h.assetId === assetId);
     if (existingIdx < 0) return { success: false, message: "You do not own this asset" };
@@ -372,11 +438,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const tx: Transaction = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-      assetId, assetName, assetSymbol,
-      type: "sell", quantity, price, total,
-      timestamp: Date.now(),
+      assetId, assetName, assetSymbol, type: "sell", quantity, price, total, timestamp: Date.now(),
     };
-
     save({ ...state, luckyCoinBalance: state.luckyCoinBalance + total, holdings: newHoldings, transactions: [tx, ...state.transactions] });
     return { success: true, message: `Sold ${quantity} ${assetSymbol} for ${total.toLocaleString()} LC` };
   }, [state, save]);
@@ -411,45 +474,27 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     for (const impact of event.impacts) {
       const base = MOCK_ASSETS.find(a => a.id === impact.assetId);
       if (!base) continue;
-
       const existing = newOverrides[impact.assetId];
       const currentPrice = existing?.price ?? base.price;
       const currentChart = existing?.chartData ?? base.chartData;
       const newPrice = Math.max(0.01, currentPrice * (1 + impact.impactPercent / 100));
       const newChartData = [...currentChart, newPrice].slice(-25);
-
       newOverrides[impact.assetId] = {
-        price: Math.round(newPrice * 100) / 100,
-        previousPrice: currentPrice,
-        dailyChangePercent: impact.impactPercent,
-        whyItMoved: event.summary,
-        chartData: newChartData,
-        bullish: impact.impactPercent >= 0,
+        price: Math.round(newPrice * 100) / 100, previousPrice: currentPrice,
+        dailyChangePercent: impact.impactPercent, whyItMoved: event.summary,
+        chartData: newChartData, bullish: impact.impactPercent >= 0,
       };
-
       if (Math.abs(impact.impactPercent) > Math.abs(biggestMove.changePercent)) {
         biggestMove = { symbol: impact.symbol, assetId: impact.assetId, changePercent: impact.impactPercent };
       }
     }
 
     const appliedEvent: AppliedEvent = {
-      eventId: event.id,
-      title: event.title,
-      summary: event.summary,
-      sport: event.sport,
-      category: event.category,
-      emoji: event.emoji,
-      marketLesson: event.marketLesson,
-      appliedAt: Date.now(),
-      biggestMove,
+      eventId: event.id, title: event.title, summary: event.summary, sport: event.sport,
+      category: event.category, emoji: event.emoji, marketLesson: event.marketLesson,
+      appliedAt: Date.now(), biggestMove,
     };
-
-    save({
-      ...state,
-      priceOverrides: newOverrides,
-      appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20),
-    });
-
+    save({ ...state, priceOverrides: newOverrides, appliedEvents: [appliedEvent, ...state.appliedEvents].slice(0, 20) });
     return { success: true, event, message: event.title };
   }, [state, save]);
 
@@ -462,9 +507,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     save({ ...state, watchlist: state.watchlist.filter(id => id !== assetId) });
   }, [state, save]);
 
-  const isWatched = useCallback((assetId: string): boolean => {
-    return state.watchlist.includes(assetId);
-  }, [state.watchlist]);
+  const isWatched = useCallback((assetId: string): boolean => state.watchlist.includes(assetId), [state.watchlist]);
 
   const setChallengeFlag = useCallback((flagId: string) => {
     if (state.challengeFlags.includes(flagId)) return;
@@ -476,9 +519,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [state, save]);
 
   const claimChallengeReward = useCallback((
-    challengeId: string,
-    xpReward: number,
-    lcReward: number
+    challengeId: string, xpReward: number, lcReward: number
   ): { success: boolean } => {
     if (state.claimedChallenges.includes(challengeId)) return { success: false };
     save({
@@ -498,33 +539,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   return (
     <GameContext.Provider value={{
       ...state,
-      buyAsset,
-      sellAsset,
-      claimDaily,
-      completeOnboarding,
-      getHolding,
-      canClaimDaily,
-      updateUsername,
-      applyMarketEvent,
-      latestEvent,
-      addToWatchlist,
-      removeFromWatchlist,
-      isWatched,
-      setChallengeFlag,
-      addLessonOpen,
-      claimChallengeReward,
+      buyAsset, sellAsset, claimDaily, completeOnboarding, getHolding, canClaimDaily,
+      updateUsername, applyMarketEvent, latestEvent, addToWatchlist, removeFromWatchlist,
+      isWatched, setChallengeFlag, addLessonOpen, claimChallengeReward,
       cloudUser,
       cloudEmail: cloudUser?.email ?? null,
       isCloudReady: isSupabaseConfigured,
-      isSyncing,
-      lastSyncedAt,
-      syncError,
-      signIn,
-      signUp,
-      signOut,
-      saveToCloud,
-      loadFromCloud,
-      mergeCloudSave,
+      isSyncing, lastSyncedAt, localSavedAt, localBackupAt, syncError,
+      signIn, signUp, signOut,
+      saveToCloud, loadFromCloud, mergeCloudSave, loadFromCloudWithBackup,
+      saveLocalBackup, restoreLocalBackup,
+      fetchCloudState, smartMergeWithCloud,
     }}>
       {children}
     </GameContext.Provider>

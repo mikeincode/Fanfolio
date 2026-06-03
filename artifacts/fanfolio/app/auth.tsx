@@ -18,7 +18,7 @@ import { useGame } from "@/context/GameContext";
 export default function AuthScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, isCloudReady } = useGame();
+  const { signIn, signUp, isCloudReady, fetchCloudState } = useGame();
 
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -54,14 +54,16 @@ export default function AuthScreen() {
         } else if (result.needsConfirmation) {
           setSuccessMsg("Check your email to confirm your account, then sign in.");
         } else {
-          router.back();
+          // Signed up and confirmed — go to cloud-save manager
+          router.replace("/cloud-save");
         }
       } else {
         const result = await signIn(trimmedEmail, trimmedPassword);
         if (result.error) {
           setErrorMsg(result.error);
         } else {
-          router.back();
+          // Route to cloud-save manager so user can compare before overwriting anything
+          router.replace("/cloud-save");
         }
       }
     } finally {
@@ -119,7 +121,7 @@ export default function AuthScreen() {
         </Text>
         <Text style={[styles.subheading, { color: colors.mutedForeground }]}>
           {mode === "signin"
-            ? "Sign in to sync your simulated portfolio across devices."
+            ? "Sign in to compare and sync your simulated portfolio across devices."
             : "Create a free account to back up your Fanfolio progress."}
         </Text>
 
