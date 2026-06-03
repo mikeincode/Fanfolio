@@ -20,6 +20,7 @@ import { useGame } from "@/context/GameContext";
 import { SparklineChart } from "@/components/SparklineChart";
 import { RiskBar } from "@/components/RiskBar";
 import { CoinBadge } from "@/components/CoinBadge";
+import { getNewsForAsset, SENTIMENT_CONFIG } from "@/data/mockNews";
 
 type TradeMode = "buy" | "sell";
 
@@ -270,6 +271,57 @@ export default function AssetDetailScreen() {
             <Text style={[styles.cardBody, { color: colors.foreground }]}>{asset.marketLesson}</Text>
           </View>
 
+          {/* ── Related News ────────────────────────── */}
+          {(() => {
+            const relatedNews = id ? getNewsForAsset(id).slice(0, 2) : [];
+            if (!relatedNews.length) return null;
+            return (
+              <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, gap: 10 }]}>
+                <View style={styles.cardRow}>
+                  <Feather name="rss" size={14} color={colors.foreground} />
+                  <Text style={[styles.cardLabel, { color: colors.foreground }]}>Related News</Text>
+                </View>
+                {relatedNews.map(item => {
+                  const sentCfg = SENTIMENT_CONFIG[item.sentiment];
+                  return (
+                    <Pressable
+                      key={item.id}
+                      onPress={() => router.push("/news")}
+                      style={({ pressed }) => [
+                        styles.newsItem,
+                        { backgroundColor: colors.background, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+                      ]}
+                    >
+                      <View style={styles.newsItemTop}>
+                        <View style={[styles.newsItemCat, { backgroundColor: colors.primary + "15" }]}>
+                          <Text style={[styles.newsItemCatText, { color: colors.primary }]}>{item.category}</Text>
+                        </View>
+                        <View style={[styles.newsItemSent, { backgroundColor: sentCfg.color + "22" }]}>
+                          <Text style={[styles.newsItemSentText, { color: sentCfg.color }]}>{sentCfg.label}</Text>
+                        </View>
+                        <Text style={[styles.newsItemTs, { color: colors.mutedForeground }]}>{item.timestampLabel}</Text>
+                      </View>
+                      <Text style={[styles.newsItemTitle, { color: colors.foreground }]} numberOfLines={2}>{item.title}</Text>
+                      <Text style={[styles.newsItemSummary, { color: colors.mutedForeground }]} numberOfLines={1}>{item.summary}</Text>
+                      <View style={styles.newsItemBottom}>
+                        <Text style={[styles.newsItemLesson, { color: colors.blue }]}>{item.lessonTitle}</Text>
+                        <Feather name="chevron-right" size={13} color={colors.primary} />
+                      </View>
+                    </Pressable>
+                  );
+                })}
+                <Pressable
+                  onPress={() => router.push("/news")}
+                  style={({ pressed }) => [styles.newsMoreBtn, { borderColor: colors.border, opacity: pressed ? 0.8 : 1 }]}
+                >
+                  <Feather name="rss" size={12} color={colors.primary} />
+                  <Text style={[styles.newsMoreBtnText, { color: colors.primary }]}>See all market news</Text>
+                  <Feather name="arrow-right" size={12} color={colors.primary} />
+                </Pressable>
+              </View>
+            );
+          })()}
+
           {/* Watchlist education card */}
           <View style={[styles.card, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
             <View style={styles.cardRow}>
@@ -391,6 +443,19 @@ const styles = StyleSheet.create({
   watchFooterText: { fontSize: 13, fontFamily: "Inter_700Bold" },
   tradeBtn: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, height: 52 },
   tradeBtnText: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  newsItem: { borderRadius: 10, borderWidth: 1, padding: 10, gap: 6 },
+  newsItemTop: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" as const },
+  newsItemCat: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  newsItemCatText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  newsItemSent: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  newsItemSentText: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  newsItemTs: { fontSize: 10, fontFamily: "Inter_400Regular", marginLeft: "auto" as any },
+  newsItemTitle: { fontSize: 13, fontFamily: "Inter_700Bold", lineHeight: 20 },
+  newsItemSummary: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  newsItemBottom: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  newsItemLesson: { fontSize: 11, fontFamily: "Inter_600SemiBold", flex: 1 },
+  newsMoreBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 9, borderWidth: 1, paddingVertical: 9 },
+  newsMoreBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });
 
 const tradeStyles = StyleSheet.create({

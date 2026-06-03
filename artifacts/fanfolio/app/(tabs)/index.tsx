@@ -23,6 +23,7 @@ import { MARKET_EVENTS } from "@/data/mockMarketEvents";
 import { LESSONS, Lesson } from "@/data/mockLessons";
 import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
+import { MOCK_NEWS, SENTIMENT_CONFIG } from "@/data/mockNews";
 
 function timeAgo(ts: number): string {
   const secs = Math.floor((Date.now() - ts) / 1000);
@@ -1170,6 +1171,69 @@ export default function HomeScreen() {
             <Feather name="arrow-right" size={18} color={colors.primary} />
           </Pressable>
         )}
+
+        {/* ── Market News ───────────────────────────── */}
+        <View style={styles.newsSection}>
+          <View style={styles.newsSectionHeader}>
+            <View style={styles.newsSectionLeft}>
+              <Feather name="rss" size={15} color={colors.foreground} />
+              <Text style={[styles.newsSectionTitle, { color: colors.foreground }]}>Market News</Text>
+            </View>
+            <Pressable
+              onPress={() => router.push("/news")}
+              style={({ pressed }) => [styles.newsViewAll, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              <Text style={[styles.newsViewAllText, { color: colors.primary }]}>View All</Text>
+              <Feather name="chevron-right" size={13} color={colors.primary} />
+            </Pressable>
+          </View>
+          <Text style={[styles.newsSectionSub, { color: colors.mutedForeground }]}>Simulated headlines that move the market.</Text>
+          <View style={styles.newsCards}>
+            {MOCK_NEWS.slice(0, 3).map(item => {
+              const sent = SENTIMENT_CONFIG[item.sentiment];
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => router.push("/news")}
+                  style={({ pressed }) => [
+                    styles.newsCard,
+                    { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.88 : 1 },
+                  ]}
+                >
+                  <View style={styles.newsCardTop}>
+                    <View style={[styles.newsCardCat, { backgroundColor: colors.primary + "15" }]}>
+                      <Text style={[styles.newsCardCatText, { color: colors.primary }]}>{item.category}</Text>
+                    </View>
+                    <View style={[styles.newsCardSent, { backgroundColor: sent.color + "20" }]}>
+                      <Text style={[styles.newsCardSentText, { color: sent.color }]}>{sent.label}</Text>
+                    </View>
+                    <Text style={[styles.newsCardTs, { color: colors.mutedForeground }]}>{item.timestampLabel}</Text>
+                  </View>
+                  <Text style={[styles.newsCardTitle, { color: colors.foreground }]} numberOfLines={2}>{item.title}</Text>
+                  <Text style={[styles.newsCardSummary, { color: colors.mutedForeground }]} numberOfLines={1}>{item.summary}</Text>
+                  <View style={styles.newsCardSymbols}>
+                    {item.relatedAssetSymbols.slice(0, 3).map(sym => (
+                      <View key={sym} style={[styles.newsCardSym, { backgroundColor: colors.muted + "50" }]}>
+                        <Text style={[styles.newsCardSymText, { color: colors.mutedForeground }]}>{sym}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Pressable
+            onPress={() => router.push("/news")}
+            style={({ pressed }) => [
+              styles.newsAllBtn,
+              { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+            ]}
+          >
+            <Feather name="rss" size={14} color={colors.primary} />
+            <Text style={[styles.newsAllBtnText, { color: colors.primary }]}>View All {MOCK_NEWS.length} Headlines</Text>
+            <Feather name="arrow-right" size={14} color={colors.primary} />
+          </Pressable>
+        </View>
       </ScrollView>
 
       <EventResultModal
@@ -1315,6 +1379,29 @@ const styles = StyleSheet.create({
   scanPickSymbol: { fontSize: 18, fontFamily: "Inter_700Bold" },
   scanPickName: { fontSize: 12, fontFamily: "Inter_400Regular" },
   scanPickPrice: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 2 },
+  // News section
+  newsSection: { marginHorizontal: 20, marginBottom: 24, marginTop: 16, gap: 12 },
+  newsSectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  newsSectionLeft: { flexDirection: "row", alignItems: "center", gap: 7 },
+  newsSectionTitle: { fontSize: 17, fontFamily: "Inter_700Bold" },
+  newsSectionSub: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: -6 },
+  newsViewAll: { flexDirection: "row", alignItems: "center", gap: 3 },
+  newsViewAllText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  newsCards: { gap: 10 },
+  newsCard: { borderRadius: 14, borderWidth: 1, padding: 12, gap: 8 },
+  newsCardTop: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" as const },
+  newsCardCat: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  newsCardCatText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
+  newsCardSent: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  newsCardSentText: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  newsCardTs: { fontSize: 10, fontFamily: "Inter_400Regular", marginLeft: "auto" as any },
+  newsCardTitle: { fontSize: 14, fontFamily: "Inter_700Bold", lineHeight: 21 },
+  newsCardSummary: { fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 18 },
+  newsCardSymbols: { flexDirection: "row", gap: 5, flexWrap: "wrap" as const },
+  newsCardSym: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  newsCardSymText: { fontSize: 10, fontFamily: "Inter_700Bold" },
+  newsAllBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingVertical: 12 },
+  newsAllBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────

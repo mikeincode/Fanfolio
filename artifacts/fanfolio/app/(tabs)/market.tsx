@@ -16,6 +16,7 @@ import { AssetType } from "@/data/mockAssets";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { AssetCard } from "@/components/AssetCard";
 import { useGame } from "@/context/GameContext";
+import { MOCK_NEWS } from "@/data/mockNews";
 
 type FilterTab = "All" | "Watchlist" | AssetType;
 
@@ -102,6 +103,28 @@ export default function MarketScreen() {
             </Text>
           </View>
         )}
+
+        {/* ── News Banner ────────────────────────────── */}
+        <Pressable
+          onPress={() => router.push("/news")}
+          style={({ pressed }) => [
+            styles.newsBanner,
+            { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.88 : 1 },
+          ]}
+        >
+          <View style={[styles.newsBannerIcon, { backgroundColor: colors.primary + "15" }]}>
+            <Feather name="rss" size={14} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.newsBannerHeadline, { color: colors.foreground }]} numberOfLines={1}>
+              {MOCK_NEWS[0].title}
+            </Text>
+            <Text style={[styles.newsBannerMeta, { color: colors.mutedForeground }]}>
+              {MOCK_NEWS[0].category} · {MOCK_NEWS[0].timestampLabel} · {MOCK_NEWS.length} headlines
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+        </Pressable>
 
         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Feather name="search" size={16} color={colors.mutedForeground} />
@@ -223,4 +246,8 @@ const styles = StyleSheet.create({
   emptyText: { fontSize: 14, fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 21 },
   emptyBtn: { marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 },
   emptyBtnText: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  newsBanner: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 10, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 10 },
+  newsBannerIcon: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  newsBannerHeadline: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  newsBannerMeta: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
 });
