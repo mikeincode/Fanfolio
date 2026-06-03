@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame, Transaction } from "@/context/GameContext";
 import { getAssetById } from "@/data/mockAssets";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 type KindFilter = "All" | "Buys" | "Sells" | "Team Stock" | "Player Coin" | "Sport Index" | "Meme Coin" | "Future";
 type SortOption = "Newest" | "Oldest" | "Largest";
@@ -133,6 +134,7 @@ export default function JournalScreen() {
   const [filter, setFilter] = useState<KindFilter>("All");
   const [sort, setSort] = useState<SortOption>("Newest");
 
+  const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -240,15 +242,17 @@ export default function JournalScreen() {
         ListHeaderComponent={
           <View>
             {/* Educational intro */}
-            <View style={[styles.introCard, { backgroundColor: colors.primary + "0D", borderColor: colors.primary + "30" }]}>
-              <View style={styles.introHeader}>
-                <Feather name="book-open" size={15} color={colors.primary} />
-                <Text style={[styles.introTitle, { color: colors.primary }]}>Why keep a trading journal?</Text>
+            {prefs.educationalTipsEnabled && (
+              <View style={[styles.introCard, { backgroundColor: colors.primary + "0D", borderColor: colors.primary + "30" }]}>
+                <View style={styles.introHeader}>
+                  <Feather name="book-open" size={15} color={colors.primary} />
+                  <Text style={[styles.introTitle, { color: colors.primary }]}>Why keep a trading journal?</Text>
+                </View>
+                <Text style={[styles.introText, { color: colors.foreground }]}>
+                  Real traders review past decisions to spot patterns. Fanfolio shows your simulated trades so you can learn timing, risk, and portfolio habits without real money.
+                </Text>
               </View>
-              <Text style={[styles.introText, { color: colors.foreground }]}>
-                Real traders review past decisions to spot patterns. Fanfolio shows your simulated trades so you can learn timing, risk, and portfolio habits without real money.
-              </Text>
-            </View>
+            )}
 
             {/* Stats grid */}
             {!isEmpty && (
@@ -287,7 +291,7 @@ export default function JournalScreen() {
             )}
 
             {/* Insights */}
-            {insights.length > 0 && (
+            {insights.length > 0 && prefs.educationalTipsEnabled && (
               <View style={styles.insightSection}>
                 <Text style={[styles.sectionLabel, { color: colors.mutedForeground }]}>JOURNAL INSIGHTS</Text>
                 {insights.map((insight, i) => (
@@ -300,15 +304,17 @@ export default function JournalScreen() {
             )}
 
             {/* Realized vs Unrealized education */}
-            <View style={[styles.rvuCard, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "25" }]}>
-              <View style={styles.rvuHeader}>
-                <Feather name="info" size={13} color={colors.blue} />
-                <Text style={[styles.rvuTitle, { color: colors.blue }]}>Realized vs Unrealized</Text>
+            {prefs.educationalTipsEnabled && (
+              <View style={[styles.rvuCard, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "25" }]}>
+                <View style={styles.rvuHeader}>
+                  <Feather name="info" size={13} color={colors.blue} />
+                  <Text style={[styles.rvuTitle, { color: colors.blue }]}>Realized vs Unrealized</Text>
+                </View>
+                <Text style={[styles.rvuText, { color: colors.foreground }]}>
+                  Unrealized gains or losses are changes in assets you still hold. Realized results happen when you sell. Fanfolio uses LuckyCoin only, with no cash value.
+                </Text>
               </View>
-              <Text style={[styles.rvuText, { color: colors.foreground }]}>
-                Unrealized gains or losses are changes in assets you still hold. Realized results happen when you sell. Fanfolio uses LuckyCoin only, with no cash value.
-              </Text>
-            </View>
+            )}
 
             {/* Filter chips */}
             {!isEmpty && (

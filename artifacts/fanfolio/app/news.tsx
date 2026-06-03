@@ -24,6 +24,7 @@ import {
   getNewsByCategory,
   getNewsForAssets,
 } from "@/data/mockNews";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 // ─── News Detail Modal ────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ function NewsDetailModal({
   onClose: () => void;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { prefs } = useUserPreferences();
   if (!item) return null;
   const sent = SENTIMENT_CONFIG[item.sentiment];
   const catIcon = CATEGORY_ICONS[item.category] as any;
@@ -102,13 +104,15 @@ function NewsDetailModal({
           )}
 
           {/* Lesson */}
-          <View style={[nd.lessonCard, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "28" }]}>
-            <View style={nd.lessonHeader}>
-              <Feather name="book-open" size={14} color={colors.blue} />
-              <Text style={[nd.lessonTitle, { color: colors.blue }]}>{item.lessonTitle}</Text>
+          {prefs.educationalTipsEnabled && (
+            <View style={[nd.lessonCard, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "28" }]}>
+              <View style={nd.lessonHeader}>
+                <Feather name="book-open" size={14} color={colors.blue} />
+                <Text style={[nd.lessonTitle, { color: colors.blue }]}>{item.lessonTitle}</Text>
+              </View>
+              <Text style={[nd.lessonBody, { color: colors.foreground }]}>{item.lessonCopy}</Text>
             </View>
-            <Text style={[nd.lessonBody, { color: colors.foreground }]}>{item.lessonCopy}</Text>
-          </View>
+          )}
 
           {/* Action buttons */}
           <Text style={[nd.actionsLabel, { color: colors.mutedForeground }]}>EXPLORE</Text>
@@ -140,10 +144,11 @@ function NewsDetailModal({
             </Pressable>
           )}
 
-          {/* Disclaimer */}
-          <Text style={[nd.disclaimer, { color: colors.mutedForeground }]}>
-            Simulated headline. LuckyCoin has no cash value. Educational simulator only.
-          </Text>
+          {prefs.showSafetyDisclaimers && (
+            <Text style={[nd.disclaimer, { color: colors.mutedForeground }]}>
+              Simulated headline. LuckyCoin has no cash value. Educational simulator only.
+            </Text>
+          )}
         </ScrollView>
       </View>
     </Modal>

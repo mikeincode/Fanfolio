@@ -24,6 +24,7 @@ import {
   type ConflictInfo,
   type SummaryDiff,
 } from "@/lib/cloudSaveUtils";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -53,6 +54,7 @@ export default function CloudSaveScreen() {
     priceOverrides, joinDate, lastDailyClaim, challengeFlags,
   } = useGame();
 
+  const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -117,7 +119,7 @@ export default function CloudSaveScreen() {
   const openConfirm = (action: ConfirmAction) => {
     setActionResult(null);
     setConfirmAction(action);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
   const closeConfirm = () => { setConfirmAction(null); setActionResult(null); };
 
@@ -150,7 +152,7 @@ export default function CloudSaveScreen() {
     setActionLoading(false);
 
     if (result.success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setActionResult({ success: true, message: getSuccessMessage(confirmAction.type) });
       if (confirmAction.type !== "restore_backup") {
         fetchedOnce.current = false;

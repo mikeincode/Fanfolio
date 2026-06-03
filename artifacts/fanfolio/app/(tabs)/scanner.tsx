@@ -16,6 +16,7 @@ import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useGame } from "@/context/GameContext";
 import { Asset } from "@/data/mockAssets";
 import { SparklineChart } from "@/components/SparklineChart";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -326,6 +327,8 @@ export default function ScannerScreen() {
     return base;
   }, [activePreset, sportFilter, typeFilter, liveAssets, watchlist, holdings]);
 
+  const { prefs } = useUserPreferences();
+
   const handleWatchToggle = (assetId: string) => {
     if (isWatched(assetId)) removeFromWatchlist(assetId);
     else addToWatchlist(assetId);
@@ -355,12 +358,14 @@ export default function ScannerScreen() {
         ListHeaderComponent={
           <View>
             {/* Education banner */}
-            <View style={[styles.educationBanner, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "25" }]}>
-              <Feather name="info" size={14} color={colors.blue} />
-              <Text style={[styles.educationText, { color: colors.foreground }]}>
-                Scanner helps you find assets that match a strategy. Real traders use scanners to filter markets. Fanfolio uses sports assets so you can learn the idea without real money.
-              </Text>
-            </View>
+            {prefs.educationalTipsEnabled && (
+              <View style={[styles.educationBanner, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "25" }]}>
+                <Feather name="info" size={14} color={colors.blue} />
+                <Text style={[styles.educationText, { color: colors.foreground }]}>
+                  Scanner helps you find assets that match a strategy. Real traders use scanners to filter markets. Fanfolio uses sports assets so you can learn the idea without real money.
+                </Text>
+              </View>
+            )}
 
             {/* Preset chips */}
             <ScrollView
@@ -465,13 +470,15 @@ export default function ScannerScreen() {
                   <Text style={styles.countText}>{results.length}</Text>
                 </View>
               </View>
-              <View style={[styles.lessonBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.lessonRow}>
-                  <Feather name="book-open" size={11} color={colors.primary} />
-                  <Text style={[styles.lessonTitle, { color: colors.primary }]}>{preset.lessonTitle}</Text>
+              {prefs.educationalTipsEnabled && (
+                <View style={[styles.lessonBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.lessonRow}>
+                    <Feather name="book-open" size={11} color={colors.primary} />
+                    <Text style={[styles.lessonTitle, { color: colors.primary }]}>{preset.lessonTitle}</Text>
+                  </View>
+                  <Text style={[styles.lessonText, { color: colors.mutedForeground }]}>{preset.lesson}</Text>
                 </View>
-                <Text style={[styles.lessonText, { color: colors.mutedForeground }]}>{preset.lesson}</Text>
-              </View>
+              )}
             </View>
 
             {results.length > 0 && (

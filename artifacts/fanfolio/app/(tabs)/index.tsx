@@ -24,6 +24,7 @@ import { LESSONS, Lesson } from "@/data/mockLessons";
 import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
 import { MOCK_NEWS, SENTIMENT_CONFIG } from "@/data/mockNews";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 function timeAgo(ts: number): string {
   const secs = Math.floor((Date.now() - ts) / 1000);
@@ -148,6 +149,7 @@ function EventResultModal({
   event: AppliedEvent | null;
   colors: ReturnType<typeof useColors>;
 }) {
+  const { prefs } = useUserPreferences();
   if (!event) return null;
   const isPositive = event.biggestMove.changePercent >= 0;
   const moveColor = isPositive ? colors.green : colors.red;
@@ -184,13 +186,15 @@ function EventResultModal({
             </Text>
           </View>
 
-          <View style={[evtStyles.lessonCard, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
-            <View style={evtStyles.lessonRow}>
-              <Feather name="book-open" size={14} color={colors.blue} />
-              <Text style={[evtStyles.lessonLabel, { color: colors.blue }]}>Market Lesson</Text>
+          {prefs.educationalTipsEnabled && (
+            <View style={[evtStyles.lessonCard, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
+              <View style={evtStyles.lessonRow}>
+                <Feather name="book-open" size={14} color={colors.blue} />
+                <Text style={[evtStyles.lessonLabel, { color: colors.blue }]}>Market Lesson</Text>
+              </View>
+              <Text style={[evtStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
             </View>
-            <Text style={[evtStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
-          </View>
+          )}
 
           <Pressable
             onPress={onClose}
@@ -235,6 +239,7 @@ function DecisionCoachCard({
 }) {
   const { holdings, priceOverrides, watchlist } = useGame();
   const liveAssets = useLiveAssets();
+  const { prefs } = useUserPreferences();
   const [chosenAction, setChosenAction] = useState<"hold" | "buy" | "trim" | null>(null);
   const [lessonVisible, setLessonVisible] = useState(false);
 
@@ -292,7 +297,7 @@ function DecisionCoachCard({
   const hasWatchlist = affectedWatchlist.length > 0;
 
   const handleAction = (action: "hold" | "buy" | "trim") => {
-    Haptics.selectionAsync();
+    if (prefs.hapticsEnabled) Haptics.selectionAsync();
     if (chosenAction === action) {
       setChosenAction(null);
     } else {
@@ -420,13 +425,15 @@ function DecisionCoachCard({
             )}
 
             {/* Market Lesson */}
-            <View style={[coachStyles.lessonBox, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
-              <View style={coachStyles.lessonRow}>
-                <Feather name="book-open" size={13} color={colors.blue} />
-                <Text style={[coachStyles.lessonLabel, { color: colors.blue }]}>What This Teaches</Text>
+            {prefs.educationalTipsEnabled && (
+              <View style={[coachStyles.lessonBox, { backgroundColor: colors.blue + "10", borderColor: colors.blue + "30" }]}>
+                <View style={coachStyles.lessonRow}>
+                  <Feather name="book-open" size={13} color={colors.blue} />
+                  <Text style={[coachStyles.lessonLabel, { color: colors.blue }]}>What This Teaches</Text>
+                </View>
+                <Text style={[coachStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
               </View>
-              <Text style={[coachStyles.lessonText, { color: colors.foreground }]}>{event.marketLesson}</Text>
-            </View>
+            )}
 
             {/* Action Buttons — only shown when user has affected holdings */}
             {hasHoldings && (
@@ -528,6 +535,7 @@ export default function HomeScreen() {
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
   const traderIdentity = useTraderIdentity();
+  const { prefs } = useUserPreferences();
 
   const coachTip = useMemo(() => {
     if (holdings.length === 0) return null;
@@ -610,18 +618,18 @@ export default function HomeScreen() {
 
   const handleClaim = () => {
     const result = claimDaily();
-    Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
+    if (prefs.hapticsEnabled) Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning);
     Alert.alert(result.success ? "Daily Claim!" : "Already Claimed", result.message);
   };
 
   const handleSimulateEvent = () => {
     setSimulating(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setTimeout(() => {
       const result = applyMarketEvent();
       setSimulating(false);
       if (result.success) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setShowCoach(false);
         setShowEventModal(true);
       }
@@ -798,7 +806,7 @@ export default function HomeScreen() {
         )}
 
         {/* ── Coach Tip ────────────────────────────────── */}
-        {coachTip && (
+        {coachTip && prefs.educationalTipsEnabled && (
           <View style={styles.section}>
             <View style={[styles.coachTipCard, { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "28" }]}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>

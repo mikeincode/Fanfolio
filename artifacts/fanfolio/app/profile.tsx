@@ -22,6 +22,7 @@ import { useTraderIdentity } from "@/hooks/useTraderIdentity";
 import { CoinBadge } from "@/components/CoinBadge";
 import { MOCK_ASSETS } from "@/data/mockAssets";
 import { buildLeaderboard, getBestCategory, CATEGORIES, UserLeaderboardStats } from "@/data/mockLeaderboard";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(username);
 
+  const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -105,13 +107,13 @@ export default function ProfileScreen() {
     const name = draftName.trim() || username;
     updateUsername(name);
     setEditing(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleSyncNow = async () => {
     const result = await saveToCloud();
     if (result.success) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert("Synced", "Your progress has been saved to the cloud.");
     } else {
       Alert.alert("Sync Failed", result.error ?? "Something went wrong. Try again.");
@@ -134,7 +136,7 @@ export default function ProfileScreen() {
             } else if (!result.hasData) {
               Alert.alert("No Cloud Save", "No cloud save was found for your account. Use 'Sync Now' to upload your current progress.");
             } else {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert("Loaded", "Cloud save loaded successfully.");
             }
           },
@@ -153,7 +155,7 @@ export default function ProfileScreen() {
           text: "Sign Out",
           onPress: async () => {
             await signOut();
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            if (prefs.hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           },
         },
       ]

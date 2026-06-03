@@ -17,6 +17,7 @@ import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { AssetCard } from "@/components/AssetCard";
 import { useGame } from "@/context/GameContext";
 import { MOCK_NEWS } from "@/data/mockNews";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 type FilterTab = "All" | "Watchlist" | AssetType;
 
@@ -38,6 +39,7 @@ export default function MarketScreen() {
   const [search, setSearch] = useState("");
   const liveAssets = useLiveAssets();
   const { latestEvent, watchlist, addToWatchlist, removeFromWatchlist, isWatched } = useGame();
+  const { prefs } = useUserPreferences();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -192,6 +194,7 @@ export default function MarketScreen() {
             asset={item}
             isWatched={isWatched(item.id)}
             onWatchToggle={handleWatchToggle}
+            compact={prefs.compactCardsEnabled}
             onPress={() => router.push({ pathname: "/asset/[id]", params: { id: item.id } })}
           />
         )}

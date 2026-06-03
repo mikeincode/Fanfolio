@@ -21,6 +21,7 @@ import { SparklineChart } from "@/components/SparklineChart";
 import { RiskBar } from "@/components/RiskBar";
 import { CoinBadge } from "@/components/CoinBadge";
 import { getNewsForAsset, SENTIMENT_CONFIG } from "@/data/mockNews";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 type TradeMode = "buy" | "sell";
 
@@ -47,6 +48,7 @@ function TradeModal({
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
   const topPad = Platform.OS === "web" ? 67 : insets.top;
 
+  const { prefs } = useUserPreferences();
   const holding = getHolding(assetId);
   const qty = parseInt(quantity) || 0;
   const total = qty * price;
@@ -63,7 +65,7 @@ function TradeModal({
       ? buyAsset(assetId, assetName, assetSymbol, price, qty)
       : sellAsset(assetId, assetName, assetSymbol, price, qty);
 
-    Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
+    if (prefs.hapticsEnabled) Haptics.notificationAsync(result.success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
 
     if (result.success) {
       const lesson = isBuy
@@ -169,6 +171,7 @@ export default function AssetDetailScreen() {
   const insets = useSafeAreaInsets();
   const { getHolding, isWatched, addToWatchlist, removeFromWatchlist } = useGame();
   const [tradeMode, setTradeMode] = useState<TradeMode | null>(null);
+  const { prefs } = useUserPreferences();
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
@@ -179,7 +182,7 @@ export default function AssetDetailScreen() {
 
   const handleWatchToggle = () => {
     if (!id) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (watched) {
       removeFromWatchlist(id);
     } else {
@@ -323,17 +326,19 @@ export default function AssetDetailScreen() {
           })()}
 
           {/* Watchlist education card */}
-          <View style={[styles.card, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
-            <View style={styles.cardRow}>
-              <Feather name="bookmark" size={14} color={colors.coin} />
-              <Text style={[styles.cardLabel, { color: colors.coin }]}>Watching This Asset</Text>
+          {prefs.educationalTipsEnabled && (
+            <View style={[styles.card, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "30" }]}>
+              <View style={styles.cardRow}>
+                <Feather name="bookmark" size={14} color={colors.coin} />
+                <Text style={[styles.cardLabel, { color: colors.coin }]}>Watching This Asset</Text>
+              </View>
+              <Text style={[styles.cardBody, { color: colors.foreground }]}>
+                {watched
+                  ? "You are watching this asset. You will see it in your Watchlist and the coach will alert you when market events affect it."
+                  : "Watching an asset means you are following it without buying yet. This is like scouting a player before drafting them onto your roster."}
+              </Text>
             </View>
-            <Text style={[styles.cardBody, { color: colors.foreground }]}>
-              {watched
-                ? "You are watching this asset. You will see it in your Watchlist and the coach will alert you when market events affect it."
-                : "Watching an asset means you are following it without buying yet. This is like scouting a player before drafting them onto your roster."}
-            </Text>
-          </View>
+          )}
 
           {holding && (
             <View style={[styles.card, { backgroundColor: colors.primary + "10", borderColor: colors.primary + "30" }]}>

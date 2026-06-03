@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 // ─── pure helpers ─────────────────────────────────────────────────────────────
 
@@ -93,6 +94,7 @@ export default function PortfolioCoachScreen() {
   const { holdings, setChallengeFlag } = useGame();
   const liveAssets = useLiveAssets();
 
+  const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -359,17 +361,19 @@ export default function PortfolioCoachScreen() {
           </View>
 
           {/* ── Coach Tips ────────────────────────────────── */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Coach Tips</Text>
-            {report.tips.map((tip, i) => (
-              <View key={i} style={[styles.tipCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={[styles.tipIcon, { backgroundColor: colors.primary + "15" }]}>
-                  <Feather name={tip.icon as any} size={16} color={colors.primary} />
+          {prefs.educationalTipsEnabled && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Coach Tips</Text>
+              {report.tips.map((tip, i) => (
+                <View key={i} style={[styles.tipCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={[styles.tipIcon, { backgroundColor: colors.primary + "15" }]}>
+                    <Feather name={tip.icon as any} size={16} color={colors.primary} />
+                  </View>
+                  <Text style={[styles.tipText, { color: colors.foreground }]}>{tip.text}</Text>
                 </View>
-                <Text style={[styles.tipText, { color: colors.foreground }]}>{tip.text}</Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
 
           {/* ── Recommended Actions ───────────────────────── */}
           <View style={styles.section}>
@@ -400,36 +404,38 @@ export default function PortfolioCoachScreen() {
           </View>
 
           {/* ── Education Cards ───────────────────────────── */}
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Learn the Concepts</Text>
-            {[
-              {
-                icon: "alert-circle",
-                title: "What is concentration risk?",
-                body: "Concentration risk means too much of your portfolio depends on one asset, sport, or idea. In sports terms, it is like building a roster around only one player.",
-              },
-              {
-                icon: "layers",
-                title: "Why indexes help",
-                body: "An index is a basket of assets. It usually moves less wildly because one bad asset does not ruin the whole basket. One bad game does not sink the whole index.",
-              },
-              {
-                icon: "zap",
-                title: "Risk is not bad",
-                body: "Risk is not always bad. It just means bigger swings are possible. The goal is knowing how much risk you are taking — not eliminating it entirely.",
-              },
-            ].map(card => (
-              <View key={card.title} style={[styles.eduCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.eduTop}>
-                  <View style={[styles.eduIcon, { backgroundColor: colors.primary + "15" }]}>
-                    <Feather name={card.icon as any} size={15} color={colors.primary} />
+          {prefs.educationalTipsEnabled && (
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Learn the Concepts</Text>
+              {[
+                {
+                  icon: "alert-circle",
+                  title: "What is concentration risk?",
+                  body: "Concentration risk means too much of your portfolio depends on one asset, sport, or idea. In sports terms, it is like building a roster around only one player.",
+                },
+                {
+                  icon: "layers",
+                  title: "Why indexes help",
+                  body: "An index is a basket of assets. It usually moves less wildly because one bad asset does not ruin the whole basket. One bad game does not sink the whole index.",
+                },
+                {
+                  icon: "zap",
+                  title: "Risk is not bad",
+                  body: "Risk is not always bad. It just means bigger swings are possible. The goal is knowing how much risk you are taking — not eliminating it entirely.",
+                },
+              ].map(card => (
+                <View key={card.title} style={[styles.eduCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.eduTop}>
+                    <View style={[styles.eduIcon, { backgroundColor: colors.primary + "15" }]}>
+                      <Feather name={card.icon as any} size={15} color={colors.primary} />
+                    </View>
+                    <Text style={[styles.eduTitle, { color: colors.foreground }]}>{card.title}</Text>
                   </View>
-                  <Text style={[styles.eduTitle, { color: colors.foreground }]}>{card.title}</Text>
+                  <Text style={[styles.eduBody, { color: colors.mutedForeground }]}>{card.body}</Text>
                 </View>
-                <Text style={[styles.eduBody, { color: colors.mutedForeground }]}>{card.body}</Text>
-              </View>
-            ))}
-          </View>
+              ))}
+            </View>
+          )}
 
           {/* ── Disclaimer ────────────────────────────────── */}
           <Text style={[styles.disclaimer, { color: colors.mutedForeground }]}>

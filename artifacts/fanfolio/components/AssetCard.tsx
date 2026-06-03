@@ -10,9 +10,10 @@ interface AssetCardProps {
   onPress: () => void;
   isWatched?: boolean;
   onWatchToggle?: (assetId: string) => void;
+  compact?: boolean;
 }
 
-export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle }: AssetCardProps) {
+export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle, compact = false }: AssetCardProps) {
   const colors = useColors();
   const isUp = asset.dailyChangePercent >= 0;
   const changeColor = isUp ? colors.green : colors.red;
@@ -30,6 +31,7 @@ export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle }: 
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
+        compact && styles.cardCompact,
         {
           backgroundColor: colors.card,
           borderColor: isWatched ? colors.coin + "50" : colors.border,
@@ -39,7 +41,7 @@ export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle }: 
     >
       <View style={styles.left}>
         <View style={styles.topRow}>
-          <Text style={[styles.symbol, { color: colors.foreground }]}>{asset.symbol}</Text>
+          <Text style={[styles.symbol, compact && styles.symbolCompact, { color: colors.foreground }]}>{asset.symbol}</Text>
           <View style={[styles.typeBadge, { backgroundColor: typeColor[asset.type] + "20" }]}>
             <Text style={[styles.typeText, { color: typeColor[asset.type] }]}>{asset.type}</Text>
           </View>
@@ -50,17 +52,21 @@ export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle }: 
             </View>
           )}
         </View>
-        <Text style={[styles.name, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
-        <View style={[styles.sentimentBadge, { backgroundColor: isUp ? colors.green + "20" : colors.red + "20" }]}>
-          <Text style={[styles.sentimentText, { color: changeColor }]}>
-            {asset.bullish ? "Bullish" : "Bearish"}
-          </Text>
-        </View>
+        <Text style={[styles.name, compact && styles.nameCompact, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
+        {!compact && (
+          <View style={[styles.sentimentBadge, { backgroundColor: isUp ? colors.green + "20" : colors.red + "20" }]}>
+            <Text style={[styles.sentimentText, { color: changeColor }]}>
+              {asset.bullish ? "Bullish" : "Bearish"}
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.right}>
         <View style={styles.chartRow}>
-          <SparklineChart data={asset.chartData} width={62} height={28} positive={isUp} />
+          {!compact && (
+            <SparklineChart data={asset.chartData} width={62} height={28} positive={isUp} />
+          )}
           {onWatchToggle && (
             <Pressable
               onPress={() => onWatchToggle(asset.id)}
@@ -74,14 +80,14 @@ export function AssetCard({ asset, onPress, isWatched = false, onWatchToggle }: 
               ]}
             >
               <Feather
-                name={isWatched ? "bookmark" : "bookmark"}
+                name="bookmark"
                 size={13}
                 color={isWatched ? colors.coin : colors.mutedForeground}
               />
             </Pressable>
           )}
         </View>
-        <Text style={[styles.price, { color: colors.foreground }]}>
+        <Text style={[styles.price, compact && styles.priceCompact, { color: colors.foreground }]}>
           {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </Text>
         <Text style={[styles.change, { color: changeColor }]}>
@@ -103,19 +109,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
+  cardCompact: {
+    paddingVertical: 7,
+  },
   left: { flex: 1, gap: 4 },
   right: { alignItems: "flex-end", gap: 2, marginLeft: 8 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   symbol: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  symbolCompact: { fontSize: 13 },
   typeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   typeText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   watchingPill: { flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 5, paddingVertical: 2, borderRadius: 4 },
   watchingText: { fontSize: 9, fontFamily: "Inter_600SemiBold" },
   name: { fontSize: 12, fontFamily: "Inter_400Regular" },
+  nameCompact: { fontSize: 11 },
   sentimentBadge: { alignSelf: "flex-start", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   sentimentText: { fontSize: 10, fontFamily: "Inter_600SemiBold" },
   chartRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   watchBtn: { width: 26, height: 26, borderRadius: 6, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   price: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  priceCompact: { fontSize: 13 },
   change: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });

@@ -13,6 +13,7 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useTraderIdentity, StyleBars, TRADER_IDENTITIES, TraderIdentityId } from "@/hooks/useTraderIdentity";
+import { useUserPreferences } from "@/lib/userPreferences";
 
 const BAR_LABELS: Array<{ key: keyof StyleBars; label: string }> = [
   { key: "momentum",      label: "Momentum"        },
@@ -67,6 +68,7 @@ export default function StrategyProfileScreen() {
   const { setChallengeFlag, transactions, holdings, watchlist } = useGame();
   const identity = useTraderIdentity();
 
+  const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -221,13 +223,15 @@ export default function StrategyProfileScreen() {
           </View>
 
           {/* ── Market Lesson ────────────────────────────── */}
-          <View style={[styles.lessonCard, { backgroundColor: colors.blue + "0E", borderColor: colors.blue + "28" }]}>
-            <View style={styles.cardHeader}>
-              <Feather name="book-open" size={14} color={colors.blue} />
-              <Text style={[styles.lessonLabel, { color: colors.blue }]}>What This Style Teaches</Text>
+          {prefs.educationalTipsEnabled && (
+            <View style={[styles.lessonCard, { backgroundColor: colors.blue + "0E", borderColor: colors.blue + "28" }]}>
+              <View style={styles.cardHeader}>
+                <Feather name="book-open" size={14} color={colors.blue} />
+                <Text style={[styles.lessonLabel, { color: colors.blue }]}>What This Style Teaches</Text>
+              </View>
+              <Text style={[styles.lessonText, { color: colors.foreground }]}>{primary.marketLesson}</Text>
             </View>
-            <Text style={[styles.lessonText, { color: colors.foreground }]}>{primary.marketLesson}</Text>
-          </View>
+          )}
 
           {/* ── Suggested Next Moves ─────────────────────── */}
           <View style={styles.sectionWrap}>
@@ -283,23 +287,27 @@ export default function StrategyProfileScreen() {
           </View>
 
           {/* ── Educational Card ─────────────────────────── */}
-          <View style={[styles.eduCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.cardHeader}>
-              <Feather name="info" size={14} color={colors.mutedForeground} />
-              <Text style={[styles.eduTitle, { color: colors.foreground }]}>Your identity changes as you play</Text>
+          {prefs.educationalTipsEnabled && (
+            <View style={[styles.eduCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.cardHeader}>
+                <Feather name="info" size={14} color={colors.mutedForeground} />
+                <Text style={[styles.eduTitle, { color: colors.foreground }]}>Your identity changes as you play</Text>
+              </View>
+              <Text style={[styles.eduBody, { color: colors.mutedForeground }]}>
+                Fanfolio uses your simulated trades, watchlist, scanner use, and portfolio mix to help you understand your style. As your habits change, your identity updates. There is no right or wrong style — just patterns worth understanding.
+              </Text>
             </View>
-            <Text style={[styles.eduBody, { color: colors.mutedForeground }]}>
-              Fanfolio uses your simulated trades, watchlist, scanner use, and portfolio mix to help you understand your style. As your habits change, your identity updates. There is no right or wrong style — just patterns worth understanding.
-            </Text>
-          </View>
+          )}
 
           {/* ── Disclaimer ───────────────────────────────── */}
-          <View style={[styles.disclaimerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Feather name="shield" size={14} color={colors.mutedForeground} />
-            <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>
-              Fanfolio is a fake-money educational simulator. All trades use LuckyCoin — no cash value, no real investments.
-            </Text>
-          </View>
+          {prefs.showSafetyDisclaimers && (
+            <View style={[styles.disclaimerCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Feather name="shield" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.disclaimerText, { color: colors.mutedForeground }]}>
+                Fanfolio is a fake-money educational simulator. All trades use LuckyCoin — no cash value, no real investments.
+              </Text>
+            </View>
+          )}
         </>
       )}
     </ScrollView>
