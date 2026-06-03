@@ -17,6 +17,7 @@ import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useTraderIdentity } from "@/hooks/useTraderIdentity";
 import { CoinBadge } from "@/components/CoinBadge";
 
 export default function ProfileScreen() {
@@ -25,6 +26,7 @@ export default function ProfileScreen() {
   const { username, luckyCoinBalance, holdings, joinDate, transactions, updateUsername, watchlist, appliedEvents } = useGame();
   const { xpInfo, claimedCount, unlockedAchievementCount } = useChallenges();
   const liveAssets = useLiveAssets();
+  const traderIdentity = useTraderIdentity();
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState(username);
 
@@ -185,8 +187,30 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
+      {/* ── Trader Identity Card ───────────────────────── */}
+      <Pressable
+        onPress={() => router.push("/strategy-profile")}
+        style={({ pressed }) => [
+          styles.identityCard,
+          { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "28", opacity: pressed ? 0.85 : 1 },
+        ]}
+      >
+        <View style={[styles.identityIconWrap, { backgroundColor: colors.primary + "18" }]}>
+          <Text style={styles.identityEmoji}>{traderIdentity.primary.emoji}</Text>
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.identityLabel, { color: colors.mutedForeground }]}>Trader Identity</Text>
+          <Text style={[styles.identityTitle, { color: colors.foreground }]}>{traderIdentity.primary.title}</Text>
+          <Text style={[styles.identityDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
+            {traderIdentity.primary.shortDesc}
+          </Text>
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+      </Pressable>
+
       <View style={styles.menuSection}>
         {[
+          { label: "Trader Identity", icon: "user" as const, onPress: () => router.push("/strategy-profile") },
           { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach") },
           { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
           { label: "View Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
@@ -247,6 +271,12 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 14 },
   menuIcon: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
+  identityCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
+  identityIconWrap: { width: 50, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  identityEmoji: { fontSize: 26 },
+  identityLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  identityTitle: { fontSize: 16, fontFamily: "Inter_700Bold" },
+  identityDesc: { fontSize: 12, fontFamily: "Inter_400Regular", marginTop: 1 },
   xpCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, marginBottom: 16, gap: 8 },
   xpCardTop: { flexDirection: "row", alignItems: "center", gap: 10 },
   xpLevelBadge: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

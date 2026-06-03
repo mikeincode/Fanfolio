@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/useColors";
 import { useGame, AppliedEvent } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useTraderIdentity } from "@/hooks/useTraderIdentity";
 import { MARKET_EVENTS } from "@/data/mockMarketEvents";
 import { LESSONS, Lesson } from "@/data/mockLessons";
 import { SparklineChart } from "@/components/SparklineChart";
@@ -525,6 +526,7 @@ export default function HomeScreen() {
   const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, applyMarketEvent, latestEvent, appliedEvents, watchlist } = useGame();
   const liveAssets = useLiveAssets();
   const { nextChallenge, xpInfo, claimedCount } = useChallenges();
+  const traderIdentity = useTraderIdentity();
 
   const coachTip = useMemo(() => {
     if (holdings.length === 0) return null;
@@ -810,6 +812,31 @@ export default function HomeScreen() {
                 <Text style={[styles.coachTipBtnText, { color: colors.primaryForeground }]}>View Report</Text>
               </Pressable>
             </View>
+          </View>
+        )}
+
+        {/* ── Your Trader Style ─────────────────────────── */}
+        {(transactions.length > 0 || holdings.length > 0 || watchlist.length >= 2) && (
+          <View style={styles.section}>
+            <Pressable
+              onPress={() => router.push("/strategy-profile")}
+              style={({ pressed }) => [
+                styles.styleCard,
+                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+              ]}
+            >
+              <View style={[styles.styleIconWrap, { backgroundColor: colors.primary + "15" }]}>
+                <Text style={styles.styleEmoji}>{traderIdentity.primary.emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.styleLabel, { color: colors.mutedForeground }]}>Your Trader Style</Text>
+                <Text style={[styles.styleTitle, { color: colors.foreground }]}>{traderIdentity.primary.title}</Text>
+                <Text style={[styles.styleSub, { color: colors.mutedForeground }]} numberOfLines={1}>
+                  {traderIdentity.confidenceLabel} · Tap to view full profile
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
+            </Pressable>
           </View>
         )}
 
@@ -1266,6 +1293,13 @@ const styles = StyleSheet.create({
   coachTipText: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
   coachTipBtn: { alignSelf: "flex-start" as const, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   coachTipBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  // Trader Style card
+  styleCard: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 14, borderWidth: 1, padding: 14 },
+  styleIconWrap: { width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  styleEmoji: { fontSize: 24 },
+  styleLabel: { fontSize: 11, fontFamily: "Inter_500Medium" },
+  styleTitle: { fontSize: 15, fontFamily: "Inter_700Bold" },
+  styleSub: { fontSize: 11, fontFamily: "Inter_400Regular", marginTop: 1 },
   // Scanner Pick card
   scanPickCard: { flexDirection: "row", borderRadius: 14, borderWidth: 1, overflow: "hidden" },
   scanPickAccent: { width: 3, alignSelf: "stretch" },

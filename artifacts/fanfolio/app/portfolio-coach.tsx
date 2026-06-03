@@ -376,6 +376,7 @@ export default function PortfolioCoachScreen() {
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recommended Actions</Text>
             <View style={styles.actionsGrid}>
               {([
+                { icon: "user",       label: "Trader Identity",       action: () => router.push("/strategy-profile") },
                 { icon: "layers",     label: "Browse Indexes",        action: () => { router.back(); router.push("/(tabs)/market"); } },
                 { icon: "filter",     label: "Open Scanner",          action: () => { router.back(); router.push("/(tabs)/scanner"); } },
                 { icon: "bookmark",   label: "View Watchlist",        action: () => { router.back(); router.push("/(tabs)/market"); } },
