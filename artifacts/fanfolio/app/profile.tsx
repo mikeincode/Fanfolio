@@ -33,7 +33,7 @@ export default function ProfileScreen() {
     cloudUser, cloudEmail, isCloudReady, isSyncing, lastSyncedAt, syncError,
     signOut, saveToCloud, loadFromCloud, mergeCloudSave,
   } = useGame();
-  const { xpInfo, claimedCount, unlockedAchievementCount } = useChallenges();
+  const { xpInfo, claimedCount, claimableCount, unlockedAchievementCount } = useChallenges();
   const liveAssets = useLiveAssets();
   const traderIdentity = useTraderIdentity();
   const [editing, setEditing] = useState(false);
@@ -376,6 +376,11 @@ export default function ProfileScreen() {
           <View style={styles.xpRightPills}>
             <Text style={[styles.xpPillText, { color: colors.green }]}>✓ {claimedCount} done</Text>
             <Text style={[styles.xpPillText, { color: colors.coin }]}>🏅 {unlockedAchievementCount} achievements</Text>
+            {claimableCount > 0 && (
+              <View style={[styles.claimablePill, { backgroundColor: colors.coin }]}>
+                <Text style={[styles.claimablePillText, { color: "#0C0F14" }]}>⚡ {claimableCount} to claim</Text>
+              </View>
+            )}
           </View>
           <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
         </View>
@@ -467,10 +472,10 @@ export default function ProfileScreen() {
 
       <View style={styles.menuSection}>
         {[
-          { label: "Settings", icon: "settings" as const, onPress: () => router.push("/settings") },
-          { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach") },
-          { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
-          { label: "Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
+          { label: "Settings", icon: "settings" as const, onPress: () => router.push("/settings"), badge: undefined as number | undefined },
+          { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach"), badge: undefined as number | undefined },
+          { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges"), badge: claimableCount > 0 ? claimableCount : undefined },
+          { label: "Trading Journal", icon: "book" as const, onPress: () => router.push("/journal"), badge: undefined as number | undefined },
         ].map(item => (
           <Pressable
             key={item.label}
@@ -484,6 +489,11 @@ export default function ProfileScreen() {
               <Feather name={item.icon} size={18} color={colors.primary} />
             </View>
             <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
+            {item.badge != null && (
+              <View style={[styles.menuBadge, { backgroundColor: colors.coin }]}>
+                <Text style={[styles.menuBadgeText, { color: "#0C0F14" }]}>{item.badge}</Text>
+              </View>
+            )}
             <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
           </Pressable>
         ))}
@@ -545,6 +555,8 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: "row", alignItems: "center", gap: 14, borderRadius: 14, borderWidth: 1, padding: 14 },
   menuIcon: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, fontSize: 15, fontFamily: "Inter_500Medium" },
+  menuBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 10, marginRight: 4 },
+  menuBadgeText: { fontSize: 11, fontFamily: "Inter_700Bold" },
   identityCard: { marginHorizontal: 20, borderRadius: 14, borderWidth: 1, padding: 14, flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
   identityIconWrap: { width: 50, height: 50, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   identityEmoji: { fontSize: 26 },
@@ -559,6 +571,8 @@ const styles = StyleSheet.create({
   xpTotalText: { fontSize: 16, fontFamily: "Inter_700Bold" },
   xpRightPills: { alignItems: "flex-end", gap: 2, marginRight: 4 },
   xpPillText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  claimablePill: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8 },
+  claimablePillText: { fontSize: 10, fontFamily: "Inter_700Bold" },
   xpTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
   xpFill: { height: 6, borderRadius: 3 },
   xpProgress: { fontSize: 11, fontFamily: "Inter_400Regular" },

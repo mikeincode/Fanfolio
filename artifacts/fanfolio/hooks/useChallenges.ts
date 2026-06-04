@@ -162,6 +162,7 @@ export function useChallenges() {
   }, [challengesWithProgress]);
 
   const claimedCount = challengesWithProgress.filter(c => c.isClaimed).length;
+  const claimableCount = challengesWithProgress.filter(c => c.isComplete && !c.isClaimed).length;
   const unlockedAchievementCount = achievementsWithStatus.filter(a => a.unlocked).length;
 
   return {
@@ -170,6 +171,7 @@ export function useChallenges() {
     xpInfo,
     nextChallenge,
     claimedCount,
+    claimableCount,
     unlockedAchievementCount,
   };
 }

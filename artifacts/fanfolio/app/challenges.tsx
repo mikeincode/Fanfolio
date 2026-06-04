@@ -135,14 +135,12 @@ export default function ChallengesScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { claimChallengeReward } = useGame();
-  const { challengesWithProgress, achievementsWithStatus, xpInfo, claimedCount } = useChallenges();
+  const { challengesWithProgress, achievementsWithStatus, xpInfo, claimedCount, claimableCount } = useChallenges();
 
   const [showClaimed, setShowClaimed] = useState(false);
 
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
-
-  const claimableCount = challengesWithProgress.filter(c => c.isComplete && !c.isClaimed).length;
 
   function handleClaim(challenge: ChallengeWithProgress) {
     const result = claimChallengeReward(challenge.id, challenge.xpReward, challenge.lcReward);
@@ -222,7 +220,7 @@ export default function ChallengesScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Feather name="gift" size={14} color={colors.coin} />
-            <Text style={[styles.sectionTitle, { color: colors.coin }]}>Ready to Claim</Text>
+            <Text style={[styles.sectionTitle, { color: colors.coin }]}>Ready to Claim ({claimableCount})</Text>
           </View>
           {challengesWithProgress
             .filter(c => c.isComplete && !c.isClaimed)

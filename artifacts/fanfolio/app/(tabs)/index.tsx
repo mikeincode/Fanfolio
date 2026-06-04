@@ -754,7 +754,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, prepareDailyPulse, reviewDailyPulse, pendingPulseId, pendingGeneratedPulse, isLoaded, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
   const liveAssets = useLiveAssets();
-  useChallenges();
+  const { claimableCount } = useChallenges();
   const { prefs } = useUserPreferences();
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
@@ -1012,6 +1012,22 @@ export default function HomeScreen() {
             </View>
           )}
         </Pressable>
+
+        {/* ── Challenge rewards ready chip ─────────────── */}
+        {claimableCount > 0 && (
+          <Pressable
+            onPress={() => router.push("/challenges")}
+            style={[styles.rewardsChip, { backgroundColor: colors.coin + "18", borderColor: colors.coin + "40" }]}
+          >
+            <View style={[styles.rewardsChipIcon, { backgroundColor: colors.coin + "30" }]}>
+              <Feather name="gift" size={16} color={colors.coin} />
+            </View>
+            <Text style={[styles.rewardsChipText, { color: colors.coin }]}>
+              {claimableCount} challenge reward{claimableCount !== 1 ? "s" : ""} ready to claim
+            </Text>
+            <Feather name="chevron-right" size={14} color={colors.coin} />
+          </Pressable>
+        )}
 
         {/* ── Compact Rookie Playbook ──────────────────── */}
         {!playbookDismissed && (
@@ -1306,6 +1322,9 @@ const styles = StyleSheet.create({
   claimSub: { fontSize: 12, fontFamily: "Inter_400Regular" },
   claimBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   claimBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  rewardsChip: { marginHorizontal: 20, borderRadius: 12, borderWidth: 1, padding: 12, flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  rewardsChipIcon: { width: 30, height: 30, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  rewardsChipText: { flex: 1, fontSize: 13, fontFamily: "Inter_600SemiBold" },
   // Market Pulse
   pulseCard: { marginHorizontal: 20, borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 16, gap: 12 },
   pulseHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
