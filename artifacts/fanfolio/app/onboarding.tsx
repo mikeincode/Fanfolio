@@ -25,7 +25,7 @@ const STEPS = [
   },
   {
     id: "luckcoin",
-    icon: "dollar-sign" as const,
+    icon: "zap" as const,
     title: "Meet LuckyCoin",
     subtitle: "Your virtual trading currency",
     body: "You start with 10,000 LuckyCoin to build your portfolio. Claim 1,000 more every day. LuckyCoin has no cash value — this is an educational simulation only.",
@@ -196,7 +196,7 @@ export default function OnboardingScreen() {
 
         {step === 1 && (
           <View style={[styles.rewardCard, { backgroundColor: colors.coin + "15", borderColor: colors.coin + "40" }]}>
-            <Feather name="dollar-sign" size={20} color={colors.coin} />
+            <Feather name="gift" size={20} color={colors.coin} />
             <View style={styles.rewardText}>
               <Text style={[styles.rewardTitle, { color: colors.coin }]}>Starting Bonus</Text>
               <Text style={[styles.rewardValue, { color: colors.foreground }]}>10,000 LuckyCoin</Text>

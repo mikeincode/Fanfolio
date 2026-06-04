@@ -88,9 +88,27 @@ export default function SettingsScreen() {
         transactions,
       };
       const json = JSON.stringify(exportData, null, 2);
+      const dateStr = new Date().toISOString().split("T")[0];
+      const filename = `fanfolio-local-save-${dateStr}.json`;
 
       if (Platform.OS === "web") {
-        Alert.alert("Export Unavailable", "Save export is not available in the web preview. On a real device, this would open the system share sheet.");
+        try {
+          const blob = new Blob([json], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = filename;
+          document.body.appendChild(anchor);
+          anchor.click();
+          document.body.removeChild(anchor);
+          URL.revokeObjectURL(url);
+          Alert.alert("Export Complete", `Your save file "${filename}" has been downloaded.`);
+        } catch {
+          Alert.alert(
+            "Export — Copy Your Save",
+            "Tap OK then paste the text to save your Fanfolio progress:\n\n" + json.slice(0, 1200),
+          );
+        }
         return;
       }
 

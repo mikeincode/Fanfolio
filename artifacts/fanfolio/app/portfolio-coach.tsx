@@ -456,7 +456,7 @@ export default function PortfolioCoachScreen() {
             const tip = snaps.length === 0
               ? { icon: "clock", text: "Build performance history by making a trade or simulating a market event. You can also tap the Performance button to start tracking." }
               : cashPct > 80
-              ? { icon: "dollar-sign", text: "Most of your simulated portfolio is cash. Holding cash reduces volatility but may limit how much your portfolio grows in this simulator." }
+              ? { icon: "layers", text: "Most of your simulated portfolio is cash. Holding cash reduces volatility but may limit how much your portfolio grows in this simulator." }
               : recentDrop
               ? { icon: "alert-triangle", text: "Your portfolio dropped recently and has high-risk assets. High-risk assets can swing quickly in either direction — this is expected behavior in the simulation." }
               : null;

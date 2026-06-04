@@ -17,7 +17,7 @@ export function CoinBadge({ amount, size = "md", showLabel = true }: CoinBadgePr
 
   return (
     <View style={styles.row}>
-      <Feather name="dollar-sign" size={iconSize} color={colors.coin} />
+      <Feather name="zap" size={iconSize} color={colors.coin} />
       <Text style={[styles.amount, { fontSize, color: colors.coin, fontFamily: "Inter_600SemiBold" }]}>
         {amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
       </Text>

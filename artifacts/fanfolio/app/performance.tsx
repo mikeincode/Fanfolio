@@ -379,7 +379,7 @@ export default function PerformanceScreen() {
             <Text style={[styles.tipLabel, { color: colors.mutedForeground }]}>How this works</Text>
           </View>
           <Text style={[styles.tipBody, { color: colors.foreground }]}>
-            A snapshot is a saved record of your portfolio value at a specific moment. Snapshots are taken automatically after trades and market events, and when you open the app. You can also tap Snapshot above to record one manually. Over time, the chart shows how your simulated decisions affected your net worth.
+            A snapshot is a saved record of your portfolio value at a specific moment. Snapshots are taken automatically after trades and market events, and when you open the app. You can also tap Snapshot above to record one manually. Over time, the chart shows how your simulated decisions affected your account value.
           </Text>
         </View>
       )}

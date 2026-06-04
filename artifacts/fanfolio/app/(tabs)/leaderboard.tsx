@@ -180,7 +180,7 @@ function RivalModal({
           {/* Stats grid */}
           <View style={modal.statsGrid}>
             {[
-              { label: "Portfolio", value: `${(rival.stats.totalValue / 1000).toFixed(0)}K LC`, icon: "dollar-sign" as const },
+              { label: "Portfolio", value: `${(rival.stats.totalValue / 1000).toFixed(0)}K LC`, icon: "layers" as const },
               { label: "XP", value: rival.stats.xp.toLocaleString(), icon: "star" as const },
               { label: "Trades", value: rival.stats.tradeCount.toString(), icon: "repeat" as const },
               { label: "Badges", value: rival.stats.badgesCount.toString(), icon: "award" as const },
