@@ -85,7 +85,7 @@ export default function AuthScreen() {
           <Feather name="cloud-off" size={40} color={colors.mutedForeground} />
           <Text style={[styles.notConfiguredTitle, { color: colors.foreground }]}>Cloud save not configured.</Text>
           <Text style={[styles.notConfiguredBody, { color: colors.mutedForeground }]}>
-            Supabase environment variables are not set. The app will continue to work locally.
+            Cloud save is not available in this version. Your progress is saved locally on this device.
           </Text>
           <Pressable onPress={() => router.back()} style={[styles.submitBtn, { backgroundColor: colors.primary }]}>
             <Text style={[styles.submitBtnText, { color: colors.primaryForeground }]}>Go Back</Text>

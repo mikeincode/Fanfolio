@@ -213,7 +213,7 @@ export default function CloudSaveScreen() {
           <Feather name="cloud-off" size={44} color={colors.mutedForeground} />
           <Text style={[styles.centeredTitle, { color: colors.foreground }]}>Cloud save not configured</Text>
           <Text style={[styles.centeredBody, { color: colors.mutedForeground }]}>
-            Supabase environment variables are not set. Your progress is saved locally on this device and will not be lost.
+            Cloud save is not available in this version. Your progress is saved locally on this device and will not be lost.
           </Text>
           <Pressable onPress={() => router.back()} style={[styles.btnPrimary, { backgroundColor: colors.primary }]}>
             <Text style={[styles.btnPrimaryText, { color: colors.primaryForeground }]}>Go Back</Text>

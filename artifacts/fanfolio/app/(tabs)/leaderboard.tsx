@@ -183,7 +183,7 @@ function RivalModal({
               { label: "Portfolio", value: `${(rival.stats.totalValue / 1000).toFixed(0)}K LC`, icon: "layers" as const },
               { label: "XP", value: rival.stats.xp.toLocaleString(), icon: "star" as const },
               { label: "Trades", value: rival.stats.tradeCount.toString(), icon: "repeat" as const },
-              { label: "Badges", value: rival.stats.badgesCount.toString(), icon: "award" as const },
+              { label: "Achievements", value: rival.stats.badgesCount.toString(), icon: "award" as const },
               { label: "Avg Risk", value: `${rival.stats.avgRisk.toFixed(1)}/10`, icon: "zap" as const },
               { label: "Div. Score", value: `${rival.stats.diversificationScore}`, icon: "pie-chart" as const },
             ].map(s => (
