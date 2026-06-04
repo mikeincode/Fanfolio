@@ -317,9 +317,10 @@ export default function PortfolioScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Sport Allocation</Text>
           {Object.entries(sportMap).map(([sport, value]) => {
             const pct = portfolioValue > 0 ? (value / portfolioValue) * 100 : 0;
+            const sportLabel = sport === "All Sports" ? "Broad Market" : sport;
             return (
               <View key={sport} style={styles.allocationRow}>
-                <Text style={[styles.allocationLabel, { color: colors.foreground }]}>{sport}</Text>
+                <Text style={[styles.allocationLabel, { color: colors.foreground }]}>{sportLabel}</Text>
                 <View style={[styles.allocationTrack, { backgroundColor: colors.border }]}>
                   <View style={[styles.allocationFill, { width: `${pct}%` as any, backgroundColor: colors.primary }]} />
                 </View>

@@ -84,7 +84,7 @@ export function detectConflict(params: {
     return { status: "not_configured", emoji: "🔌", label: "Not Configured", color: "#888", description: "Cloud save is not set up in this environment." };
   }
   if (!isSignedIn) {
-    return { status: "signed_out", emoji: "🔓", label: "Signed Out", color: "#888", description: "Sign in to compare and sync your saves." };
+    return { status: "signed_out", emoji: "🔓", label: "Signed Out", color: "#888", description: "Sign in to back up and sync your saves." };
   }
   if (!cloudSummary) {
     return { status: "no_cloud_save", emoji: "☁️", label: "No Cloud Save", color: "#F59E0B", description: "No cloud save found. Upload this device to back up your progress." };

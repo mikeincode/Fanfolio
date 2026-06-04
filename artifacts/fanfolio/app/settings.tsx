@@ -332,7 +332,7 @@ export default function SettingsScreen() {
         <ToggleRow
           icon="layout"
           label="Compact Cards"
-          sublabel="Smaller asset cards in the market"
+          sublabel="Smaller asset cards in Market and Scanner"
           value={prefs.compactCardsEnabled}
           onValueChange={(v) => updatePref("compactCardsEnabled", v)}
           colors={colors}
@@ -340,7 +340,7 @@ export default function SettingsScreen() {
         <Divider colors={colors} />
         <ToggleRow
           icon="shield"
-          label="Safety Disclaimers"
+          label="Extra Safety Reminders"
           sublabel="Show reminders that LuckyCoin has no cash value"
           value={prefs.showSafetyDisclaimers}
           onValueChange={(v) => updatePref("showSafetyDisclaimers", v)}
@@ -368,7 +368,7 @@ export default function SettingsScreen() {
             <Text style={[styles.legalBody, { color: colors.mutedForeground }]}>
               LuckyCoin has no cash value and cannot be exchanged for real money, prizes, or goods.
               {"\n\n"}Fanfolio does not involve real money, gambling, deposits, withdrawals, brokerage services, odds, parlays, or cash prizes.
-              {"\n\n"}Cloud save stores simulated game progress only. No financial data is collected.
+              {"\n\n"}Cloud save stores simulated game progress only. No payment or financial account data is collected.
             </Text>
           </View>
         </View>

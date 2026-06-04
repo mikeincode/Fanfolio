@@ -232,7 +232,7 @@ export default function CloudSaveScreen() {
           <Feather name="log-in" size={44} color={colors.primary} />
           <Text style={[styles.centeredTitle, { color: colors.foreground }]}>Sign in to manage cloud save</Text>
           <Text style={[styles.centeredBody, { color: colors.mutedForeground }]}>
-            Create a free account or sign in to compare and sync your simulated portfolio across devices.
+            Create a free account or sign in to back up and sync your simulated portfolio across devices.
           </Text>
           <Pressable onPress={() => router.push("/auth")} style={[styles.btnPrimary, { backgroundColor: colors.primary }]}>
             <Text style={[styles.btnPrimaryText, { color: colors.primaryForeground }]}>Sign In / Create Account</Text>

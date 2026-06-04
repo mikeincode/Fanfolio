@@ -265,7 +265,7 @@ export default function JournalScreen() {
                   <StatCard label="Buys" value={stats.buys.toString()} accent={colors.green} colors={colors} />
                   <StatCard label="Sells" value={stats.sells.toString()} accent={colors.primary} colors={colors} />
                   <StatCard
-                    label="Net"
+                    label="Net Cash Flow"
                     value={`${stats.net >= 0 ? "+" : ""}${Math.round(stats.net).toLocaleString()} LC`}
                     accent={stats.net >= 0 ? colors.green : colors.red}
                     colors={colors}
@@ -365,6 +365,7 @@ export default function JournalScreen() {
 
                 {/* Sort */}
                 <View style={styles.sortRow}>
+                  <Text style={[styles.sortLabel, { color: colors.mutedForeground }]}>Sort</Text>
                   {SORT_OPTIONS.map(s => {
                     const isActive = sort === s;
                     return (
@@ -385,7 +386,6 @@ export default function JournalScreen() {
                       </Pressable>
                     );
                   })}
-                  <Text style={[styles.sortLabel, { color: colors.mutedForeground }]}>Sort</Text>
                 </View>
               </View>
             )}

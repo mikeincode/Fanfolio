@@ -167,7 +167,7 @@ export default function ProfileScreen() {
     : null;
 
   const stats = [
-    { label: "Total Value", value: `${Math.round(totalValue).toLocaleString()} LC`, icon: "dollar-sign" as const },
+    { label: "Total Value", value: `${Math.round(totalValue).toLocaleString()} LC`, icon: "layers" as const },
     { label: "Holdings", value: holdings.length.toString(), icon: "briefcase" as const },
     { label: "Trades", value: transactions.length.toString(), icon: "repeat" as const },
     { label: "Watching", value: `${watchlist.length} asset${watchlist.length !== 1 ? "s" : ""}`, icon: "bookmark" as const },
@@ -375,7 +375,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.xpRightPills}>
             <Text style={[styles.xpPillText, { color: colors.green }]}>✓ {claimedCount} done</Text>
-            <Text style={[styles.xpPillText, { color: colors.coin }]}>🏅 {unlockedAchievementCount} badges</Text>
+            <Text style={[styles.xpPillText, { color: colors.coin }]}>🏅 {unlockedAchievementCount} achievements</Text>
           </View>
           <Feather name="chevron-right" size={15} color={colors.mutedForeground} />
         </View>
@@ -468,13 +468,9 @@ export default function ProfileScreen() {
       <View style={styles.menuSection}>
         {[
           { label: "Settings", icon: "settings" as const, onPress: () => router.push("/settings") },
-          { label: "Trader Identity", icon: "user" as const, onPress: () => router.push("/strategy-profile") },
           { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach") },
           { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges") },
-          { label: "View Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
-          { label: "Learn Market Basics", icon: "book-open" as const, onPress: () => { router.back(); router.push("/(tabs)/learn"); } },
-          { label: "View Leaderboard", icon: "award" as const, onPress: () => { router.back(); router.push("/(tabs)/leaderboard"); } },
-          { label: "Browse Market", icon: "trending-up" as const, onPress: () => { router.back(); router.push("/(tabs)/market"); } },
+          { label: "Trading Journal", icon: "book" as const, onPress: () => router.push("/journal") },
         ].map(item => (
           <Pressable
             key={item.label}

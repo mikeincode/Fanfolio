@@ -207,7 +207,7 @@ export default function ChallengesScreen() {
             <Text style={[styles.pillText, { color: colors.green }]}>{claimedCount} completed</Text>
           </View>
           <View style={[styles.pill, { backgroundColor: colors.coin + "18" }]}>
-            <Text style={[styles.pillText, { color: colors.coin }]}>🏅 {unlockedCount}/{achievementsWithStatus.length} badges</Text>
+            <Text style={[styles.pillText, { color: colors.coin }]}>🏅 {unlockedCount}/{achievementsWithStatus.length} achievements</Text>
           </View>
           {claimableCount > 0 && (
             <View style={[styles.pill, { backgroundColor: colors.coin + "25" }]}>

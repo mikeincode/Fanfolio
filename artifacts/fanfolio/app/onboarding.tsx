@@ -35,7 +35,7 @@ const STEPS = [
     icon: "activity" as const,
     title: "The Market",
     subtitle: "Stocks, coins, indexes, and futures",
-    body: "Browse Team Stocks, Player Coins, Sport Indexes, Meme Coins, and Futures. Each asset has a Risk Score from 1 (safe) to 10 (extreme chaos). You decide how to balance your portfolio.",
+    body: "Browse Team Stocks, Player Coins, Coach Stocks, Sport Indexes, Meme Coins, and Futures. Each asset has a Risk Score from 1 (lower volatility) to 10 (extreme chaos). You decide how to balance your portfolio.",
   },
   {
     id: "learn",
@@ -218,7 +218,7 @@ export default function OnboardingScreen() {
           ]}
         >
           <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-            {isLast ? "Start Trading" : "Next"}
+            {isLast ? "Enter Fanfolio" : "Next"}
           </Text>
           <Feather name={isLast ? "zap" : "arrow-right"} size={18} color={colors.primaryForeground} />
         </Pressable>

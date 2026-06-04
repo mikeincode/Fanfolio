@@ -121,7 +121,7 @@ export default function AuthScreen() {
         </Text>
         <Text style={[styles.subheading, { color: colors.mutedForeground }]}>
           {mode === "signin"
-            ? "Sign in to compare and sync your simulated portfolio across devices."
+            ? "Sign in to back up and sync your simulated portfolio across devices."
             : "Create a free account to back up your Fanfolio progress."}
         </Text>
 

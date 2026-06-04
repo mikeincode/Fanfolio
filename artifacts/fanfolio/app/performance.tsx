@@ -196,7 +196,7 @@ export default function PerformanceScreen() {
           </Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: currentReturnPct >= 0 ? colors.green + "40" : colors.red + "40" }]}>
-          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Return</Text>
+          <Text style={[styles.statLabel, { color: colors.mutedForeground }]}>Growth</Text>
           <Text style={[styles.statValue, { color: changeColor }]}>
             {currentReturnPct >= 0 ? "+" : ""}{currentReturnPct.toFixed(1)}%
           </Text>
@@ -313,7 +313,7 @@ export default function PerformanceScreen() {
           <Feather name="clock" size={28} color={colors.mutedForeground} />
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No history yet</Text>
           <Text style={[styles.emptySub, { color: colors.mutedForeground }]}>
-            Make a trade or simulate a market event to start building your performance history.
+            Make a trade or review a Market Pulse to start building your performance history.
           </Text>
           <Pressable
             onPress={() => takeSnapshot("manual")}
