@@ -18,7 +18,7 @@ import { useColors } from "@/hooks/useColors";
 import { useGame, AppliedEvent, PortfolioSnapshot } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useChallenges } from "@/hooks/useChallenges";
-import { useTraderIdentity } from "@/hooks/useTraderIdentity";
+
 import { MARKET_EVENTS } from "@/data/mockMarketEvents";
 import { LESSONS, Lesson } from "@/data/mockLessons";
 import { SparklineChart } from "@/components/SparklineChart";
@@ -649,22 +649,21 @@ interface PlaybookStepDef {
   onAction: () => void;
 }
 
-function RookiePlaybookCard({
+function CompactPlaybookCard({
   colors,
   steps,
   allDone,
   onDismiss,
-  educationalTipsEnabled,
   rewardClaimed,
 }: {
   colors: ReturnType<typeof useColors>;
   steps: PlaybookStepDef[];
   allDone: boolean;
   onDismiss: () => void;
-  educationalTipsEnabled: boolean;
   rewardClaimed: boolean;
 }) {
   const completedCount = steps.filter(s => s.done).length;
+  const nextStep = steps.find(s => !s.done);
 
   if (allDone) {
     return (
@@ -682,7 +681,7 @@ function RookiePlaybookCard({
               style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
             >
               <Text style={[rpStyles.claimPrompt, { color: colors.coin }]}>
-                🎁 Claim 250 LC + 150 XP in Challenges →
+                🎁 Claim reward in Challenges →
               </Text>
             </Pressable>
           )}
@@ -695,11 +694,11 @@ function RookiePlaybookCard({
   }
 
   return (
-    <View style={[rpStyles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      {/* Header */}
-      <View style={rpStyles.cardHeader}>
+    <View style={[rpStyles.compactCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+      {/* Header row */}
+      <View style={rpStyles.compactHeader}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <Text style={{ fontSize: 18 }}>🏈</Text>
+          <Text style={{ fontSize: 16 }}>🏈</Text>
           <View>
             <Text style={[rpStyles.cardTitle, { color: colors.foreground }]}>Rookie Playbook</Text>
             <Text style={[rpStyles.cardSubtitle, { color: colors.mutedForeground }]}>
@@ -707,83 +706,42 @@ function RookiePlaybookCard({
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Pressable onPress={() => router.push("/rookie-playbook")} hitSlop={8}>
-            <Text style={[rpStyles.guideLink, { color: colors.primary }]}>Full Guide</Text>
-          </Pressable>
-          <Pressable onPress={onDismiss} hitSlop={12}>
-            <Feather name="x" size={16} color={colors.mutedForeground} />
-          </Pressable>
-        </View>
+        <Pressable onPress={onDismiss} hitSlop={12}>
+          <Feather name="x" size={16} color={colors.mutedForeground} />
+        </Pressable>
       </View>
 
       {/* Progress bar */}
-      <View style={[rpStyles.progressTrack, { backgroundColor: colors.border }]}>
-        <View
-          style={[
-            rpStyles.progressFill,
-            { backgroundColor: colors.primary, width: `${(completedCount / steps.length) * 100}%` as any },
-          ]}
-        />
+      <View style={[rpStyles.progressTrack, { backgroundColor: colors.border, marginHorizontal: 14, marginBottom: 0 }]}>
+        <View style={[rpStyles.progressFill, { backgroundColor: colors.primary, width: `${(completedCount / steps.length) * 100}%` as any }]} />
       </View>
 
-      {/* Safety blurb (tips) */}
-      {educationalTipsEnabled && (
-        <View style={[rpStyles.tipRow, { backgroundColor: colors.blue + "0D", borderColor: colors.blue + "22" }]}>
-          <Feather name="shield" size={11} color={colors.blue} />
-          <Text style={[rpStyles.tipText, { color: colors.blue }]}>
-            LuckyCoin is a simulated learning currency — no real money, no cash value.
-          </Text>
+      {/* Next step */}
+      {nextStep && (
+        <View style={[rpStyles.compactNext, { borderTopColor: colors.border }]}>
+          <View style={[rpStyles.compactNextIcon, { backgroundColor: colors.primary + "15" }]}>
+            <Text style={{ fontSize: 14 }}>{nextStep.emoji}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[rpStyles.compactNextLabel, { color: colors.mutedForeground }]}>Next step</Text>
+            <Text style={[rpStyles.compactNextTitle, { color: colors.foreground }]} numberOfLines={1}>{nextStep.title}</Text>
+          </View>
+          <Pressable
+            onPress={nextStep.onAction}
+            style={({ pressed }) => [rpStyles.compactBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
+          >
+            <Text style={[rpStyles.compactBtnText, { color: colors.primaryForeground }]}>Go</Text>
+          </Pressable>
         </View>
       )}
 
-      {/* Steps */}
-      {steps.map((step, i) => (
-        <View
-          key={step.id}
-          style={[
-            rpStyles.stepRow,
-            i < steps.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.border },
-          ]}
-        >
-          <View style={[rpStyles.stepIcon, { backgroundColor: step.done ? colors.green + "1A" : colors.muted }]}>
-            {step.done ? (
-              <Feather name="check" size={12} color={colors.green} />
-            ) : (
-              <Text style={{ fontSize: 13 }}>{step.emoji}</Text>
-            )}
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text
-              style={[
-                rpStyles.stepTitle,
-                {
-                  color: step.done ? colors.mutedForeground : colors.foreground,
-                  textDecorationLine: step.done ? "line-through" : "none",
-                },
-              ]}
-            >
-              {step.title}
-            </Text>
-            {!step.done && (
-              <Text style={[rpStyles.stepDesc, { color: colors.mutedForeground }]} numberOfLines={2}>
-                {step.desc}
-              </Text>
-            )}
-          </View>
-          {!step.done && (
-            <Pressable
-              onPress={step.onAction}
-              style={({ pressed }) => [
-                rpStyles.goBtn,
-                { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30", opacity: pressed ? 0.75 : 1 },
-              ]}
-            >
-              <Text style={[rpStyles.goBtnText, { color: colors.primary }]}>{step.actionLabel}</Text>
-            </Pressable>
-          )}
-        </View>
-      ))}
+      {/* Full guide link */}
+      <Pressable
+        onPress={() => router.push("/rookie-playbook")}
+        style={({ pressed }) => [rpStyles.compactLink, { borderTopColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+      >
+        <Text style={[rpStyles.compactLinkText, { color: colors.primary }]}>View full guide →</Text>
+      </Pressable>
     </View>
   );
 }
@@ -796,29 +754,8 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { luckyCoinBalance, holdings, username, canClaimDaily, claimDaily, transactions, prepareDailyPulse, reviewDailyPulse, pendingPulseId, pendingGeneratedPulse, isLoaded, latestEvent, appliedEvents, watchlist, portfolioSnapshots, challengeFlags, lessonsOpened, lastDailyClaim, setChallengeFlag, claimedChallenges } = useGame();
   const liveAssets = useLiveAssets();
-  const { nextChallenge, xpInfo, claimedCount } = useChallenges();
-  const traderIdentity = useTraderIdentity();
+  useChallenges();
   const { prefs } = useUserPreferences();
-
-  const coachTip = useMemo(() => {
-    if (holdings.length === 0) return null;
-    const pv = holdings.reduce((s, h) => {
-      const a = liveAssets.find(x => x.id === h.assetId);
-      return s + (a ? a.price * h.quantity : 0);
-    }, 0);
-    if (pv === 0) return null;
-    const memePct = holdings.reduce((s, h) => {
-      const a = liveAssets.find(x => x.id === h.assetId);
-      return s + (a?.type === "Meme Coin" ? a.price * h.quantity : 0);
-    }, 0) / pv * 100;
-    const hasIndex = holdings.some(h => liveAssets.find(x => x.id === h.assetId)?.type === "Sport Index");
-    const sports = new Set(holdings.map(h => liveAssets.find(x => x.id === h.assetId)?.sport).filter(Boolean)).size;
-    if (!hasIndex) return "You own no indexes yet. Indexes can help spread risk across many assets.";
-    if (memePct > 50) return `Your portfolio is ${memePct.toFixed(0)}% meme coins. Expect bigger simulated swings.`;
-    if (sports >= 3) return `Nice diversification — you own assets across ${sports} sports.`;
-    if (sports === 1) return "All your assets are in one sport. Adding another sport builds real portfolio habits.";
-    return "Check your full Portfolio Coach report for a detailed breakdown.";
-  }, [holdings, liveAssets]);
   const [showEventModal, setShowEventModal] = useState(false);
   const [coachDismissedId, setCoachDismissedId] = useState<string | null>(null);
   const [showCoach, setShowCoach] = useState(false);
@@ -994,9 +931,6 @@ export default function HomeScreen() {
 
   const playbookAllDone = playbookSteps.every(s => s.done);
 
-  const recentTx = transactions.slice(0, 3);
-  const recentEvents = appliedEvents.slice(0, 5);
-
   return (
     <>
       <ScrollView
@@ -1079,155 +1013,21 @@ export default function HomeScreen() {
           )}
         </Pressable>
 
-        {/* ── Rookie Playbook ──────────────────────────── */}
+        {/* ── Compact Rookie Playbook ──────────────────── */}
         {!playbookDismissed && (
           <View style={styles.section}>
-            <RookiePlaybookCard
+            <CompactPlaybookCard
               colors={colors}
               steps={playbookSteps}
               allDone={playbookAllDone}
               onDismiss={handleDismissPlaybook}
-              educationalTipsEnabled={prefs.educationalTipsEnabled}
               rewardClaimed={claimedChallenges.includes("rookie_playbook_complete")}
             />
           </View>
         )}
 
-        {/* ── Next Challenge ───────────────────────────── */}
-        {nextChallenge && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <Feather name="target" size={15} color={colors.coin} />
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  {nextChallenge.isComplete ? "Reward Ready!" : "Next Challenge"}
-                </Text>
-              </View>
-              <Pressable onPress={() => router.push("/challenges")}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>All Challenges</Text>
-              </Pressable>
-            </View>
-
-            <Pressable
-              onPress={() => router.push("/challenges")}
-              style={({ pressed }) => [
-                styles.challengeCard,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: nextChallenge.isComplete ? colors.coin + "60" : colors.border,
-                  opacity: pressed ? 0.88 : 1,
-                },
-              ]}
-            >
-              {nextChallenge.isComplete && (
-                <View style={[styles.challengeReadyStripe, { backgroundColor: colors.coin + "18" }]}>
-                  <Feather name="gift" size={12} color={colors.coin} />
-                  <Text style={[styles.challengeReadyText, { color: colors.coin }]}>Tap to claim your reward</Text>
-                </View>
-              )}
-              <View style={styles.challengeCardBody}>
-                <View style={[styles.challengeIcon, { backgroundColor: (nextChallenge.isComplete ? colors.coin : colors.primary) + "18" }]}>
-                  <Feather name={nextChallenge.icon as any} size={18} color={nextChallenge.isComplete ? colors.coin : colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.challengeTitle, { color: colors.foreground }]}>{nextChallenge.title}</Text>
-                  <Text style={[styles.challengeDesc, { color: colors.mutedForeground }]} numberOfLines={1}>
-                    {nextChallenge.description}
-                  </Text>
-                </View>
-                <View style={styles.challengeRewardCol}>
-                  {nextChallenge.xpReward > 0 && (
-                    <Text style={[styles.challengeRewardText, { color: colors.primary }]}>+{nextChallenge.xpReward} XP</Text>
-                  )}
-                  {nextChallenge.lcReward > 0 && (
-                    <Text style={[styles.challengeRewardText, { color: colors.coin }]}>+{nextChallenge.lcReward} LC</Text>
-                  )}
-                </View>
-              </View>
-              <View style={styles.challengeProgressRow}>
-                <View style={[styles.challengeTrack, { backgroundColor: colors.border }]}>
-                  <View style={[
-                    styles.challengeFill,
-                    {
-                      width: `${Math.min(100, (nextChallenge.current / nextChallenge.total) * 100)}%` as any,
-                      backgroundColor: nextChallenge.isComplete ? colors.coin : colors.primary,
-                    },
-                  ]} />
-                </View>
-                <Text style={[styles.challengeProgressLabel, { color: colors.mutedForeground }]}>
-                  {nextChallenge.current}/{nextChallenge.total}
-                </Text>
-              </View>
-
-              {/* XP level mini row */}
-              <View style={[styles.challengeLevelRow, { borderTopColor: colors.border }]}>
-                <Text style={[styles.challengeLevelText, { color: colors.mutedForeground }]}>
-                  Lv.{xpInfo.level} {xpInfo.levelTitle}
-                </Text>
-                <Text style={[styles.challengeLevelText, { color: colors.mutedForeground }]}>
-                  {xpInfo.totalXP} XP · {claimedCount} done
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-        )}
-
-        {/* ── Coach Tip ────────────────────────────────── */}
-        {coachTip && prefs.educationalTipsEnabled && (
-          <View style={styles.section}>
-            <View style={[styles.coachTipCard, { backgroundColor: colors.primary + "0E", borderColor: colors.primary + "28" }]}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-                <Feather name="activity" size={13} color={colors.primary} />
-                <Text style={[styles.coachTipLabel, { color: colors.primary }]}>Coach Tip</Text>
-              </View>
-              <Text style={[styles.coachTipText, { color: colors.foreground }]}>{coachTip}</Text>
-              <Pressable
-                onPress={() => router.push("/portfolio-coach")}
-                style={[styles.coachTipBtn, { backgroundColor: colors.primary }]}
-              >
-                <Text style={[styles.coachTipBtnText, { color: colors.primaryForeground }]}>View Report</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-
-        {/* ── Portfolio Recap ───────────────────────────── */}
-        <PortfolioRecapCard
-          totalValue={totalValue}
-          portfolioSnapshots={portfolioSnapshots ?? []}
-          latestEvent={latestEvent}
-          colors={colors}
-          educationalTipsEnabled={prefs.educationalTipsEnabled}
-        />
-
-        {/* ── Your Trader Style ─────────────────────────── */}
-        {(transactions.length > 0 || holdings.length > 0 || watchlist.length >= 2) && (
-          <View style={styles.section}>
-            <Pressable
-              onPress={() => router.push("/strategy-profile")}
-              style={({ pressed }) => [
-                styles.styleCard,
-                { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-              ]}
-            >
-              <View style={[styles.styleIconWrap, { backgroundColor: colors.primary + "15" }]}>
-                <Text style={styles.styleEmoji}>{traderIdentity.primary.emoji}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.styleLabel, { color: colors.mutedForeground }]}>Your Trader Style</Text>
-                <Text style={[styles.styleTitle, { color: colors.foreground }]}>{traderIdentity.primary.title}</Text>
-                <Text style={[styles.styleSub, { color: colors.mutedForeground }]} numberOfLines={1}>
-                  {traderIdentity.confidenceLabel} · Tap to view full profile
-                </Text>
-              </View>
-              <Feather name="chevron-right" size={16} color={colors.mutedForeground} />
-            </Pressable>
-          </View>
-        )}
-
         {/* ── Today's Market Pulse ──────────────────────── */}
         <View style={[styles.pulseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {/* Header */}
           <View style={styles.pulseHeader}>
             <View style={styles.pulseLeft}>
               <View style={[styles.pulseDot, { backgroundColor: pulseReviewedToday ? colors.green : colors.coin }]} />
@@ -1246,14 +1046,12 @@ export default function HomeScreen() {
             ) : null}
           </View>
 
-          {/* Sub-label */}
           <Text style={[styles.pulseSubLabel, { color: colors.mutedForeground }]}>
             {pulseReviewedToday
               ? `${appliedEvents.length} market event${appliedEvents.length !== 1 ? "s" : ""} reviewed this season`
               : "Fanfolio has prepared today's market storyline."}
           </Text>
 
-          {/* Pending pulse teaser */}
           {pendingEvent && !pulseReviewedToday && (
             <View style={[styles.pulseTeaserCard, { backgroundColor: colors.coin + "0D", borderColor: colors.coin + "30" }]}>
               <Text style={styles.pulseTeaserEmoji}>{pendingEvent.emoji}</Text>
@@ -1267,7 +1065,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* Latest reviewed event (after review or on subsequent opens) */}
           {pulseReviewedToday && latestEvent && (
             <View style={styles.pulseEventBody}>
               <View style={styles.pulseEventRow}>
@@ -1278,10 +1075,7 @@ export default function HomeScreen() {
                     {latestEvent.sport} · {timeAgo(latestEvent.appliedAt)}
                   </Text>
                 </View>
-                <View style={[
-                  styles.moveBadge,
-                  { backgroundColor: (latestEvent.biggestMove.changePercent >= 0 ? colors.green : colors.red) + "20" },
-                ]}>
+                <View style={[styles.moveBadge, { backgroundColor: (latestEvent.biggestMove.changePercent >= 0 ? colors.green : colors.red) + "20" }]}>
                   <Text style={[styles.moveBadgeText, { color: latestEvent.biggestMove.changePercent >= 0 ? colors.green : colors.red }]}>
                     {latestEvent.biggestMove.symbol} {latestEvent.biggestMove.changePercent >= 0 ? "+" : ""}{latestEvent.biggestMove.changePercent.toFixed(0)}%
                   </Text>
@@ -1293,24 +1087,17 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* No events yet */}
           {!pendingEvent && !pulseReviewedToday && !latestEvent && (
             <View style={styles.pulseEmptyRow}>
               <Feather name="activity" size={18} color={colors.mutedForeground} />
-              <Text style={[styles.pulseEmptyText, { color: colors.mutedForeground }]}>
-                Preparing today's pulse…
-              </Text>
+              <Text style={[styles.pulseEmptyText, { color: colors.mutedForeground }]}>Preparing today's pulse…</Text>
             </View>
           )}
 
-          {/* Action button */}
           {!pulseReviewedToday && pendingEvent ? (
             <Pressable
               onPress={handleReviewPulse}
-              style={({ pressed }) => [
-                styles.simulateBtn,
-                { backgroundColor: colors.coin, borderRadius: colors.radius - 2, opacity: pressed ? 0.85 : 1 },
-              ]}
+              style={({ pressed }) => [styles.simulateBtn, { backgroundColor: colors.coin, borderRadius: colors.radius - 2, opacity: pressed ? 0.85 : 1 }]}
             >
               <Feather name="zap" size={16} color="#0C0F14" />
               <Text style={[styles.simulateBtnText, { color: "#0C0F14" }]}>Review Pulse</Text>
@@ -1323,6 +1110,15 @@ export default function HomeScreen() {
           ) : null}
         </View>
 
+        {/* ── Portfolio Recap ───────────────────────────── */}
+        <PortfolioRecapCard
+          totalValue={totalValue}
+          portfolioSnapshots={portfolioSnapshots ?? []}
+          latestEvent={latestEvent}
+          colors={colors}
+          educationalTipsEnabled={prefs.educationalTipsEnabled}
+        />
+
         {/* ── Market Decision Coach ─────────────────────── */}
         {showCoachCard && latestEvent && (
           <View style={styles.coachWrapper}>
@@ -1334,148 +1130,78 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* ── Scanner Pick ──────────────────────────────── */}
-        {scannerPick && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View style={styles.watchlistSectionLeft}>
-                <Feather name="filter" size={15} color={colors.primary} />
-                <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Scanner Pick</Text>
-              </View>
-              <Pressable onPress={() => router.push("/(tabs)/scanner")}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>Open Scanner</Text>
-              </Pressable>
-            </View>
+        {/* ── Market Snapshot ───────────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Market Snapshot</Text>
+            <Pressable onPress={() => router.push("/(tabs)/market")}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text>
+            </Pressable>
+          </View>
+
+          {/* Scanner shortcut chip */}
+          {scannerPick && (
             <Pressable
-              onPress={() => router.push({ pathname: "/asset/[id]", params: { id: scannerPick.asset.id } })}
-              style={({ pressed }) => [
-                styles.scanPickCard,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  opacity: pressed ? 0.85 : 1,
-                },
-              ]}
+              onPress={() => router.push("/(tabs)/scanner")}
+              style={({ pressed }) => [styles.scanChip, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 }]}
             >
-              <View style={[styles.scanPickAccent, { backgroundColor: scannerPick.isUp ? colors.green : colors.red }]} />
-              <View style={styles.scanPickBody}>
-                <View style={styles.scanPickTop}>
-                  <View style={[styles.scanPickLabelRow, { backgroundColor: colors.primary + "15" }]}>
-                    <Text style={styles.scanPickLabelEmoji}>{scannerPick.scanEmoji}</Text>
-                    <Text style={[styles.scanPickLabel, { color: colors.primary }]}>{scannerPick.scanLabel}</Text>
-                  </View>
-                  <View style={[styles.scanPickChange, { backgroundColor: (scannerPick.isUp ? colors.green : colors.red) + "18" }]}>
-                    <Text style={[styles.scanPickChangeTxt, { color: scannerPick.isUp ? colors.green : colors.red }]}>
-                      {scannerPick.isUp ? "+" : ""}{scannerPick.asset.dailyChangePercent.toFixed(2)}%
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.scanPickMain}>
-                  <View style={styles.scanPickInfo}>
-                    <Text style={[styles.scanPickSymbol, { color: colors.foreground }]}>{scannerPick.asset.symbol}</Text>
-                    <Text style={[styles.scanPickName, { color: colors.mutedForeground }]} numberOfLines={1}>
-                      {scannerPick.asset.name}
-                    </Text>
-                    <Text style={[styles.scanPickPrice, { color: colors.foreground }]}>
-                      {scannerPick.asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} LC
-                    </Text>
-                  </View>
-                  <SparklineChart
-                    data={scannerPick.asset.chartData}
-                    width={80}
-                    height={36}
-                    positive={scannerPick.isUp}
-                  />
-                </View>
+              <View style={[styles.scanChipAccent, { backgroundColor: scannerPick.isUp ? colors.green : colors.red }]} />
+              <Text style={styles.scanChipEmoji}>{scannerPick.scanEmoji}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.scanChipLabel, { color: colors.mutedForeground }]}>{scannerPick.scanLabel}</Text>
+                <Text style={[styles.scanChipSymbol, { color: colors.foreground }]}>
+                  {scannerPick.asset.symbol}
+                  <Text style={{ color: colors.mutedForeground }}> · {scannerPick.asset.name}</Text>
+                </Text>
               </View>
+              <View style={[styles.scanChipBadge, { backgroundColor: (scannerPick.isUp ? colors.green : colors.red) + "18" }]}>
+                <Text style={[styles.scanChipChange, { color: scannerPick.isUp ? colors.green : colors.red }]}>
+                  {scannerPick.isUp ? "+" : ""}{scannerPick.asset.dailyChangePercent.toFixed(1)}%
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={13} color={colors.mutedForeground} />
             </Pressable>
-          </View>
-        )}
-
-        {/* ── Watchlist Movers ──────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <View style={styles.watchlistSectionLeft}>
-              <Feather name="bookmark" size={15} color={colors.coin} />
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Watchlist</Text>
-            </View>
-            <Pressable onPress={() => router.push("/(tabs)/market")}>
-              <Text style={[styles.seeAll, { color: colors.coin }]}>Manage</Text>
-            </Pressable>
-          </View>
-
-          {watchlistMovers.length === 0 ? (
-            <View style={[styles.watchlistEmpty, { backgroundColor: colors.coin + "10", borderColor: colors.coin + "25" }]}>
-              <Feather name="bookmark" size={28} color={colors.coin} />
-              <Text style={[styles.watchlistEmptyTitle, { color: colors.foreground }]}>
-                Watch assets before you trade
-              </Text>
-              <Text style={[styles.watchlistEmptyText, { color: colors.mutedForeground }]}>
-                Following an asset helps you learn how prices move before spending LuckyCoin. Like scouting a player before drafting them.
-              </Text>
-              <Pressable
-                onPress={() => router.push("/(tabs)/market")}
-                style={[styles.watchlistEmptyBtn, { backgroundColor: colors.coin }]}
-              >
-                <Text style={[styles.watchlistEmptyBtnText, { color: "#0C0F14" }]}>Browse Market</Text>
-              </Pressable>
-            </View>
-          ) : (
-            watchlistMovers.map(asset => {
-              const isUp = asset.dailyChangePercent >= 0;
-              const changeColor = isUp ? colors.green : colors.red;
-              return (
-                <Pressable
-                  key={asset.id}
-                  onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
-                  style={({ pressed }) => [
-                    styles.moverCard,
-                    { backgroundColor: colors.card, borderColor: colors.coin + "30", opacity: pressed ? 0.85 : 1 },
-                  ]}
-                >
-                  <View style={styles.moverLeft}>
-                    <View style={styles.watchlistMoverSymbolRow}>
-                      <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
-                      <Feather name="bookmark" size={10} color={colors.coin} />
-                    </View>
-                    <Text style={[styles.moverName, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
-                  </View>
-                  <SparklineChart data={asset.chartData} width={60} height={24} positive={isUp} />
-                  <View style={styles.moverRight}>
-                    <Text style={[styles.moverPrice, { color: colors.foreground }]}>
-                      {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                    <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
-                      <Text style={[styles.changeText, { color: changeColor }]}>
-                        {isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%
-                      </Text>
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })
           )}
-        </View>
 
-        {/* ── Top Movers ───────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Top Movers</Text>
-            <Pressable onPress={() => router.push("/(tabs)/market")}>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
-            </Pressable>
-          </View>
-          {topMovers.map(asset => {
+          {/* Watchlist movers — max 2, hidden if empty */}
+          {watchlistMovers.slice(0, 2).map(asset => {
             const isUp = asset.dailyChangePercent >= 0;
             const changeColor = isUp ? colors.green : colors.red;
             return (
               <Pressable
                 key={asset.id}
                 onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
-                style={({ pressed }) => [
-                  styles.moverCard,
-                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-                ]}
+                style={({ pressed }) => [styles.moverCard, { backgroundColor: colors.card, borderColor: colors.coin + "30", opacity: pressed ? 0.85 : 1 }]}
+              >
+                <View style={styles.moverLeft}>
+                  <View style={styles.watchlistMoverSymbolRow}>
+                    <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
+                    <Feather name="bookmark" size={10} color={colors.coin} />
+                  </View>
+                  <Text style={[styles.moverName, { color: colors.mutedForeground }]} numberOfLines={1}>{asset.name}</Text>
+                </View>
+                <SparklineChart data={asset.chartData} width={60} height={24} positive={isUp} />
+                <View style={styles.moverRight}>
+                  <Text style={[styles.moverPrice, { color: colors.foreground }]}>
+                    {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                  <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
+                    <Text style={[styles.changeText, { color: changeColor }]}>{isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%</Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+
+          {/* Top movers — max 2 */}
+          {topMovers.slice(0, 2).map(asset => {
+            const isUp = asset.dailyChangePercent >= 0;
+            const changeColor = isUp ? colors.green : colors.red;
+            return (
+              <Pressable
+                key={asset.id}
+                onPress={() => router.push({ pathname: "/asset/[id]", params: { id: asset.id } })}
+                style={({ pressed }) => [styles.moverCard, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 }]}
               >
                 <View style={styles.moverLeft}>
                   <Text style={[styles.moverSymbol, { color: colors.foreground }]}>{asset.symbol}</Text>
@@ -1487,9 +1213,7 @@ export default function HomeScreen() {
                     {asset.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </Text>
                   <View style={[styles.changeBadge, { backgroundColor: changeColor + "20" }]}>
-                    <Text style={[styles.changeText, { color: changeColor }]}>
-                      {isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%
-                    </Text>
+                    <Text style={[styles.changeText, { color: changeColor }]}>{isUp ? "+" : ""}{asset.dailyChangePercent.toFixed(2)}%</Text>
                   </View>
                 </View>
               </Pressable>
@@ -1497,120 +1221,27 @@ export default function HomeScreen() {
           })}
         </View>
 
-        {/* ── Event History ─────────────────────────────── */}
-        {recentEvents.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Event History</Text>
-            {recentEvents.map((ev, i) => {
-              const isPos = ev.biggestMove.changePercent >= 0;
-              const mc = isPos ? colors.green : colors.red;
-              return (
-                <View
-                  key={ev.eventId + i}
-                  style={[styles.historyCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-                >
-                  <Text style={styles.historyEmoji}>{ev.emoji}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.historyTitle, { color: colors.foreground }]}>{ev.title}</Text>
-                    <Text style={[styles.historySport, { color: colors.mutedForeground }]}>
-                      {ev.sport} · {timeAgo(ev.appliedAt)}
-                    </Text>
-                  </View>
-                  <View style={[styles.historyBadge, { backgroundColor: mc + "20" }]}>
-                    <Text style={[styles.historyBadgeText, { color: mc }]}>
-                      {ev.biggestMove.symbol} {isPos ? "+" : ""}{ev.biggestMove.changePercent.toFixed(0)}%
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {/* ── Recent Trades ──────────────────────────────── */}
-        {recentTx.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Recent Trades</Text>
-              <Pressable onPress={() => router.push("/journal")}>
-                <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
-              </Pressable>
-            </View>
-            {recentTx.map(tx => {
-              const isBuy = tx.type === "buy";
-              return (
-                <View key={tx.id} style={[styles.txCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  <View style={[styles.txIcon, { backgroundColor: (isBuy ? colors.green : colors.primary) + "20" }]}>
-                    <Feather
-                      name={isBuy ? "arrow-down-left" : "arrow-up-right"}
-                      size={16}
-                      color={isBuy ? colors.green : colors.primary}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.txTitle, { color: colors.foreground }]}>
-                      {isBuy ? "Bought" : "Sold"} {tx.assetSymbol}
-                    </Text>
-                    <Text style={[styles.txSub, { color: colors.mutedForeground }]}>
-                      {tx.quantity} share{tx.quantity !== 1 ? "s" : ""} @ {tx.price.toLocaleString(undefined, { maximumFractionDigits: 2 })} LC
-                    </Text>
-                  </View>
-                  <View style={styles.txRight}>
-                    <Text style={[styles.txAmountLabel, { color: colors.mutedForeground }]}>
-                      {isBuy ? "Spent" : "Received"}
-                    </Text>
-                    <Text style={[styles.txAmount, { color: colors.foreground }]}>
-                      {tx.total.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {holdings.length === 0 && (
-          <Pressable
-            onPress={() => router.push("/(tabs)/market")}
-            style={({ pressed }) => [
-              styles.ctaCard,
-              { backgroundColor: colors.primary + "15", borderColor: colors.primary + "40", opacity: pressed ? 0.85 : 1 },
-            ]}
-          >
-            <Feather name="trending-up" size={24} color={colors.primary} />
-            <Text style={[styles.ctaTitle, { color: colors.primary }]}>Start your first trade</Text>
-            <Text style={[styles.ctaSub, { color: colors.mutedForeground }]}>Browse the market and buy your first asset</Text>
-            <Feather name="arrow-right" size={18} color={colors.primary} />
-          </Pressable>
-        )}
-
-        {/* ── Market News ───────────────────────────── */}
+        {/* ── News Preview (max 2) ──────────────────────── */}
         <View style={styles.newsSection}>
           <View style={styles.newsSectionHeader}>
             <View style={styles.newsSectionLeft}>
               <Feather name="rss" size={15} color={colors.foreground} />
               <Text style={[styles.newsSectionTitle, { color: colors.foreground }]}>Market News</Text>
             </View>
-            <Pressable
-              onPress={() => router.push("/news")}
-              style={({ pressed }) => [styles.newsViewAll, { opacity: pressed ? 0.7 : 1 }]}
-            >
+            <Pressable onPress={() => router.push("/news")} style={({ pressed }) => [styles.newsViewAll, { opacity: pressed ? 0.7 : 1 }]}>
               <Text style={[styles.newsViewAllText, { color: colors.primary }]}>View All</Text>
               <Feather name="chevron-right" size={13} color={colors.primary} />
             </Pressable>
           </View>
           <Text style={[styles.newsSectionSub, { color: colors.mutedForeground }]}>Simulated headlines that move the market.</Text>
           <View style={styles.newsCards}>
-            {MOCK_NEWS.slice(0, 3).map(item => {
+            {MOCK_NEWS.slice(0, 2).map(item => {
               const sent = SENTIMENT_CONFIG[item.sentiment];
               return (
                 <Pressable
                   key={item.id}
                   onPress={() => router.push("/news")}
-                  style={({ pressed }) => [
-                    styles.newsCard,
-                    { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.88 : 1 },
-                  ]}
+                  style={({ pressed }) => [styles.newsCard, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.88 : 1 }]}
                 >
                   <View style={styles.newsCardTop}>
                     <View style={[styles.newsCardCat, { backgroundColor: colors.primary + "15" }]}>
@@ -1623,23 +1254,13 @@ export default function HomeScreen() {
                   </View>
                   <Text style={[styles.newsCardTitle, { color: colors.foreground }]} numberOfLines={2}>{item.title}</Text>
                   <Text style={[styles.newsCardSummary, { color: colors.mutedForeground }]} numberOfLines={1}>{item.summary}</Text>
-                  <View style={styles.newsCardSymbols}>
-                    {item.relatedAssetSymbols.slice(0, 3).map(sym => (
-                      <View key={sym} style={[styles.newsCardSym, { backgroundColor: colors.muted + "50" }]}>
-                        <Text style={[styles.newsCardSymText, { color: colors.mutedForeground }]}>{sym}</Text>
-                      </View>
-                    ))}
-                  </View>
                 </Pressable>
               );
             })}
           </View>
           <Pressable
             onPress={() => router.push("/news")}
-            style={({ pressed }) => [
-              styles.newsAllBtn,
-              { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-            ]}
+            style={({ pressed }) => [styles.newsAllBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 }]}
           >
             <Feather name="rss" size={14} color={colors.primary} />
             <Text style={[styles.newsAllBtnText, { color: colors.primary }]}>View All {MOCK_NEWS.length} Headlines</Text>
@@ -1822,6 +1443,14 @@ const styles = StyleSheet.create({
   newsCardSymText: { fontSize: 10, fontFamily: "Inter_700Bold" },
   newsAllBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 12, borderWidth: 1, paddingVertical: 12 },
   newsAllBtnText: { fontSize: 13, fontFamily: "Inter_600SemiBold" },
+  // Scanner shortcut chip
+  scanChip: { flexDirection: "row", alignItems: "center", gap: 10, borderRadius: 12, borderWidth: 1, marginBottom: 8, overflow: "hidden" as const, paddingRight: 12 },
+  scanChipAccent: { width: 3, alignSelf: "stretch" as const },
+  scanChipEmoji: { fontSize: 18, paddingVertical: 10, paddingLeft: 10 },
+  scanChipLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  scanChipSymbol: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  scanChipBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
+  scanChipChange: { fontSize: 12, fontFamily: "Inter_700Bold" },
 });
 
 // ── Rookie Playbook Styles ──────────────────────────────────
@@ -1845,6 +1474,17 @@ const rpStyles = StyleSheet.create({
   goBtn: { borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
   goBtnText: { fontSize: 11, fontFamily: "Inter_700Bold" },
   claimPrompt: { fontSize: 12, fontFamily: "Inter_700Bold", marginTop: 3 },
+  // Compact playbook card
+  compactCard: { borderRadius: 14, borderWidth: 1, overflow: "hidden" as const },
+  compactHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 14, paddingTop: 14, paddingBottom: 10 },
+  compactNext: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, paddingVertical: 12, borderTopWidth: 1 },
+  compactNextIcon: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  compactNextLabel: { fontSize: 10, fontFamily: "Inter_500Medium" },
+  compactNextTitle: { fontSize: 13, fontFamily: "Inter_600SemiBold", marginTop: 1 },
+  compactBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 },
+  compactBtnText: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  compactLink: { paddingHorizontal: 14, paddingVertical: 10, borderTopWidth: 1 },
+  compactLinkText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
 });
 
 // ── Event Modal Styles ──────────────────────────────────────
