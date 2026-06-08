@@ -401,6 +401,420 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     reliability: "confirmed",
   },
 
+  // ── Pro Football Starter Pack v1 — Generic Source Stories ──────────────────
+  // All names are generic. No real team names, player names, or official branding.
+
+  // ── Injury ────────────────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-injury-kc-qb1",
+    title: "[SIMULATED] Kansas City QB1 Listed as Limited — Shoulder Concern",
+    summary:
+      "Simulated injury report: The Kansas City Football Team's franchise quarterback is listed as limited in Wednesday's practice with a shoulder concern. Game-day availability is uncertain, creating immediate selling pressure on KCQB1 and rippling into the team stock.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "injury",
+    relatedAssetIds: ["kc-qb1-coin", "kcft-stock", "pf-power-index", "pf-mvp-future"],
+    confidenceScore: 0.75,
+    sourceLabel: "Simulated Injury Report Feed",
+    publishedAt: "2025-11-05T09:15:00Z",
+    educationalAngle:
+      "Quarterback injury reports are the single highest-impact market signal in football. Even a 'limited practice' designation moves the player coin, the team stock, and any futures tied to that player's performance. This cascading effect shows how concentrated risk behaves.",
+    reliability: "strong",
+  },
+  {
+    id: "src-pf-injury-det-wr1",
+    title: "[SIMULATED] Detroit WR1 Hamstring Concern — Day-to-Day",
+    summary:
+      "Simulated injury report: Detroit Football Team's top wide receiver is listed as day-to-day with a hamstring issue following Wednesday's limited practice session. DETWR1 holders face uncertainty heading into the weekend.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "injury",
+    relatedAssetIds: ["det-wr1-coin", "detft-stock", "pf-young-stars-index", "pf-power-index"],
+    confidenceScore: 0.70,
+    sourceLabel: "Simulated Injury Report Feed",
+    publishedAt: "2025-11-12T10:00:00Z",
+    educationalAngle:
+      "Skill-position injuries send immediate ripples through related assets: the player coin drops most, the team stock dips moderately, and the broad index barely moves. This magnitude difference is diversification doing its job.",
+    reliability: "moderate",
+  },
+  {
+    id: "src-pf-injury-bal-qb1",
+    title: "[SIMULATED] Baltimore QB1 Knee Bruise — Probable Tag Applied",
+    summary:
+      "Simulated medical report: Baltimore Football Team's dual-threat quarterback received a Probable designation after a knee bruise suffered in Sunday's game. Expected to play, but reduced mobility could limit the rushing game that drives Baltimore's offensive system.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "injury",
+    relatedAssetIds: ["bal-qb1-coin", "balft-stock", "pf-mvp-future", "pf-power-index"],
+    confidenceScore: 0.82,
+    sourceLabel: "Simulated Injury Report Feed",
+    publishedAt: "2025-11-19T11:30:00Z",
+    educationalAngle:
+      "A 'Probable' designation reduces uncertainty more than it eliminates it. The market partially prices in the injury risk but retains a portion of the discount until game-day confirmation. This is how markets handle partial information.",
+    reliability: "confirmed",
+  },
+
+  // ── Breakout Performance ─────────────────────────────────────────────────
+
+  {
+    id: "src-pf-breakout-kc-qb1-perfect",
+    title: "[SIMULATED] Kansas City QB1 Posts Perfect Passer Rating — Fourth Straight Dominant Game",
+    summary:
+      "Simulated box score: The Kansas City QB1 recorded a perfect efficiency rating for the second time this season — 340 yards, four touchdowns, zero turnovers. KCQB1 reached a new season high as MVP conversation solidified.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "breakout_performance",
+    relatedAssetIds: ["kc-qb1-coin", "kcft-stock", "pf-mvp-future", "pf-champ-momentum-future"],
+    confidenceScore: 0.96,
+    sourceLabel: "Simulated Box Score Pipeline",
+    publishedAt: "2025-11-16T23:00:00Z",
+    educationalAngle:
+      "Elite quarterback efficiency across multiple games creates both player coin appreciation and team stock momentum. The MVP futures connection shows how individual excellence becomes a macro-market narrative — lifting the whole ecosystem.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-breakout-dal-edge",
+    title: "[SIMULATED] Dallas Edge Rusher Sets Single-Game Disruption Record",
+    summary:
+      "Simulated performance data: The Dallas Edge Rusher recorded four sacks and three quarterback hurries in a dominant defensive performance — the highest single-game disruption score in the simulated season. DALEDG surged to a monthly high.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "breakout_performance",
+    relatedAssetIds: ["dal-edge-coin", "dalft-stock", "pf-def-star-future", "pf-def-edge-index"],
+    confidenceScore: 0.92,
+    sourceLabel: "Simulated Box Score Pipeline",
+    publishedAt: "2025-11-23T22:30:00Z",
+    educationalAngle:
+      "Defensive breakout games move the player coin most, with ripples into team stock, the defensive futures asset, and the sector index. The magnitude drops at each step — primary asset moves most, index moves least. This is the cascade effect of concentrated star performance.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-breakout-buf-qb1-wind",
+    title: "[SIMULATED] Buffalo QB1 Throws for 380 Yards in Gusting Wind — Arm Talent Validated",
+    summary:
+      "Simulated box score: Buffalo QB1 overcame 25 mph gusting winds to throw for 380 yards and three touchdowns in a statement performance. The weather condition made the efficiency metrics even more impressive, accelerating the MVP narrative.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "breakout_performance",
+    relatedAssetIds: ["buf-qb1-coin", "bufft-stock", "pf-mvp-future", "pf-champ-momentum-future"],
+    confidenceScore: 0.94,
+    sourceLabel: "Simulated Box Score Pipeline",
+    publishedAt: "2025-11-30T21:15:00Z",
+    educationalAngle:
+      "Adverse-condition performance validates a player's core skill claim more than good-weather numbers. Markets price in a 'weather premium' on big-arm quarterbacks who deliver in difficult environments — it's a quality-of-evidence signal.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-breakout-lv-rb1-streak",
+    title: "[SIMULATED] Las Vegas RB1 Breaks 140-Yard Mark for Third Straight Week",
+    summary:
+      "Simulated box score: Las Vegas RB1 rushed for 148 yards and two touchdowns, extending a three-game 140-yard streak — the longest in the simulated season. LVRB1 holders saw the biggest weekly gain among all pro football running backs.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "breakout_performance",
+    relatedAssetIds: ["lv-rb1-coin", "lvft-stock", "pf-young-stars-index"],
+    confidenceScore: 0.90,
+    sourceLabel: "Simulated Box Score Pipeline",
+    publishedAt: "2025-12-07T22:00:00Z",
+    educationalAngle:
+      "Streak performance creates a momentum premium that extends beyond individual game value. Markets price in continuation probability — three straight elite games makes LVRB1 more valuable than the raw stat total suggests, because it validates consistency.",
+    reliability: "confirmed",
+  },
+
+  // ── Team Momentum ────────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-momentum-det-win-streak",
+    title: "[SIMULATED] Detroit Football Team Wins 7th Straight — Playoff Seeding Locked",
+    summary:
+      "Simulated standings model: The Detroit Football Team has now won seven consecutive games, locking their playoff seeding position. DETFT reached a seasonal high as the championship narrative solidified around this franchise's unexpected run.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "team_momentum",
+    relatedAssetIds: ["detft-stock", "det-wr1-coin", "det-rb1-coin", "pf-champ-momentum-future", "pf-power-index"],
+    confidenceScore: 0.88,
+    sourceLabel: "Simulated Standings and Momentum Engine",
+    publishedAt: "2025-11-22T19:00:00Z",
+    educationalAngle:
+      "Win streaks create compounding momentum premiums — each additional win raises the probability of the next, which lifts price further. The team stock, player coins, and championship futures all gain together when franchise momentum is this strong.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-momentum-bal-defense-shutout",
+    title: "[SIMULATED] Baltimore Football Team Posts Second Shutout in Three Weeks",
+    summary:
+      "Simulated defensive stats: Baltimore Football Team has shut out their second opponent in three weeks — the most dominant defensive stretch of the simulated season. BALFT, the Defensive Edge Index, and defensive futures all moved sharply higher.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "team_momentum",
+    relatedAssetIds: ["balft-stock", "bal-lb1-coin", "pf-def-edge-index", "pf-def-arch-stock", "pf-champ-momentum-future"],
+    confidenceScore: 0.90,
+    sourceLabel: "Simulated Defensive Analytics Feed",
+    publishedAt: "2025-11-29T18:30:00Z",
+    educationalAngle:
+      "Back-to-back defensive dominance moves the entire defensive asset cluster: team stock, linebacker coins, coach stock, and sector index all gain. This cluster behavior demonstrates how a single franchise theme can simultaneously lift a basket of related assets.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-momentum-buf-road-win",
+    title: "[SIMULATED] Buffalo Football Team Goes 4-0 Away from Home — Road Warriors Premium",
+    summary:
+      "Simulated travel-game model: Buffalo Football Team is now a perfect 4-0 in road games, generating the strongest away-game differential in the simulated league. Road dominance is one of the strongest championship predictor signals in the model.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "team_momentum",
+    relatedAssetIds: ["bufft-stock", "buf-qb1-coin", "pf-champ-momentum-future", "pf-power-index"],
+    confidenceScore: 0.85,
+    sourceLabel: "Simulated Standings and Momentum Engine",
+    publishedAt: "2025-12-01T17:00:00Z",
+    educationalAngle:
+      "Road wins are weighted more heavily than home wins in championship probability models because they require more consistent execution. A perfect road record creates a statistical premium that lifts both the team stock and the championship futures basket.",
+    reliability: "strong",
+  },
+
+  // ── Coach Stories ────────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-coach-off-mastermind-recognition",
+    title: "[SIMULATED] Offensive Mastermind Coach Named Top Coordinator for Third Straight Week",
+    summary:
+      "Simulated analyst ratings: The Offensive Mastermind Coach has topped the weekly coordinator rankings for the third consecutive week, building the most dominant Coach of the Year case of the simulated season. OFMC and the Coach Momentum Future surged.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "coach_buzz",
+    relatedAssetIds: ["pf-off-coach-stock", "pf-coach-momentum-future", "pf-power-index"],
+    confidenceScore: 0.80,
+    sourceLabel: "Simulated Analyst Rating Engine",
+    publishedAt: "2025-11-14T10:00:00Z",
+    educationalAngle:
+      "Coaching award recognition accumulates over time — early leaders build a reputation premium that compounds as the season progresses. The market prices in this compounding effect, lifting coaching stocks beyond what a single-game analysis would justify.",
+    reliability: "strong",
+  },
+  {
+    id: "src-pf-coach-hot-seat-blowout",
+    title: "[SIMULATED] Hot Seat Coach Faces Fourth Blowout Loss — Front Office Pressure Intensifies",
+    summary:
+      "Simulated narrative tracker: The franchise in question has now lost four games by more than 20 points, and reports of front-office dissatisfaction are spreading through the simulated analyst ecosystem. HOTS dropped to a new season low.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "coach_controversy",
+    relatedAssetIds: ["pf-hot-seat-stock", "pf-power-index"],
+    confidenceScore: 0.62,
+    sourceLabel: "Simulated Team Report Feed",
+    publishedAt: "2025-11-18T14:00:00Z",
+    educationalAngle:
+      "Job-security controversy is the most volatile coaching narrative. Markets price in leadership uncertainty immediately because the outcome — coaching change or continuation — is a binary event with major asset implications. Even unconfirmed pressure reports move prices.",
+    reliability: "moderate",
+  },
+  {
+    id: "src-pf-coach-rookie-dev-breakout",
+    title: "[SIMULATED] Rookie Developer Coach Produces Third Player Breakout in One Season",
+    summary:
+      "Simulated performance analytics: For the third time this season, a player under the Rookie Developer Coach's system has produced a career-high statistical performance. Development narrative is building the most compelling long-term coaching stock case in the market.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "coach_buzz",
+    relatedAssetIds: ["pf-rookie-dev-stock", "pf-young-stars-index", "pf-power-index"],
+    confidenceScore: 0.78,
+    sourceLabel: "Simulated Development Analytics Feed",
+    publishedAt: "2025-11-26T11:00:00Z",
+    educationalAngle:
+      "Player development success creates a long-term coaching stock premium that is often underpriced early in the season. The market re-rates upward as evidence accumulates — this is value discovery in a narrative asset.",
+    reliability: "strong",
+  },
+
+  // ── Award Races ──────────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-award-mvp-kc-vs-buf",
+    title: "[SIMULATED] MVP Race Narrows to KC QB1 vs. Buffalo QB1 — Separation Compresses",
+    summary:
+      "Simulated award tracker: The simulated MVP race has narrowed to a two-candidate contest between the Kansas City and Buffalo quarterbacks, separated by just 0.4 composite performance points. Futures compression is creating a buying opportunity before the final stretch.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "award_race",
+    relatedAssetIds: ["pf-mvp-future", "kc-qb1-coin", "buf-qb1-coin"],
+    confidenceScore: 0.84,
+    sourceLabel: "Simulated Award Probability Engine",
+    publishedAt: "2025-12-03T09:30:00Z",
+    educationalAngle:
+      "When an award race narrows to two candidates, the futures price rises because uncertainty has compressed — one of two known outcomes will happen. This is how expectation-based pricing works when the probability distribution concentrates.",
+    reliability: "strong",
+  },
+  {
+    id: "src-pf-award-def-star-sack-leader",
+    title: "[SIMULATED] Dallas Edge Rusher Leads League in Sacks — Defensive Star Case Builds",
+    summary:
+      "Simulated cumulative stats: The Dallas Edge Rusher has taken the sack lead for the first time this season, pushing the Defensive Star Future to a monthly high. The market had previously underweighted this candidate relative to the offense-heavy competition.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "award_race",
+    relatedAssetIds: ["pf-def-star-future", "dal-edge-coin", "pf-def-edge-index"],
+    confidenceScore: 0.82,
+    sourceLabel: "Simulated Award Probability Engine",
+    publishedAt: "2025-12-06T10:00:00Z",
+    educationalAngle:
+      "Defensive award futures are often underpriced because the market systematically underweights defensive performance. Taking the sack lead creates a sudden re-rating — the market rushes to catch up to what the stats already showed.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-award-coach-momentum-final-push",
+    title: "[SIMULATED] Coach Momentum Future Surges as Two Candidates Separate from the Pack",
+    summary:
+      "Simulated coaching recognition tracker: The field has narrowed significantly, with two head coaches pulling well ahead of the rest. PFCMF futures reached a season high as the market priced in the clear path to a two-candidate finale.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "award_race",
+    relatedAssetIds: ["pf-coach-momentum-future", "pf-off-coach-stock", "pf-rookie-dev-stock"],
+    confidenceScore: 0.80,
+    sourceLabel: "Simulated Award Probability Engine",
+    publishedAt: "2025-12-09T09:00:00Z",
+    educationalAngle:
+      "When a field of many narrows to two, the futures price rises in two ways: uncertainty falls, and each remaining candidate's individual impact on the futures value increases. This is the mechanics of winner-take-all expectation markets.",
+    reliability: "strong",
+  },
+
+  // ── Championship Momentum ────────────────────────────────────────────────
+
+  {
+    id: "src-pf-champ-kc-det-buf-surge",
+    title: "[SIMULATED] Three Top Contenders Win Convincingly on the Same Weekend",
+    summary:
+      "Simulated championship model: Kansas City, Detroit, and Buffalo all posted dominant performances on the same weekend — the first time three of the four top contenders won by double digits in the same week. PFCHM reached a new season high.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "championship_momentum",
+    relatedAssetIds: ["pf-champ-momentum-future", "kcft-stock", "detft-stock", "bufft-stock", "pf-power-index"],
+    confidenceScore: 0.92,
+    sourceLabel: "Simulated Championship Probability Model",
+    publishedAt: "2025-12-10T20:00:00Z",
+    educationalAngle:
+      "When multiple championship contenders win simultaneously, the championship futures basket lifts even faster than individual team stocks because the overall quality level of the contender pool just rose. Basket assets amplify correlated upside.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-champ-sf-clinch",
+    title: "[SIMULATED] San Francisco Football Team Clinches Top Seed — Home Field Secured",
+    summary:
+      "Simulated playoff bracket: San Francisco Football Team has clinched the top seed and home-field advantage through the simulated playoffs. SFFT jumped to a monthly high as the home-field premium was formally priced into the championship model.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "championship_momentum",
+    relatedAssetIds: ["sfft-stock", "sf-rb1-coin", "pf-champ-momentum-future", "pf-power-index"],
+    confidenceScore: 0.95,
+    sourceLabel: "Simulated Championship Probability Model",
+    publishedAt: "2025-12-14T17:00:00Z",
+    educationalAngle:
+      "Clinching events resolve a major uncertainty — seeding — and let the market price in the full home-field advantage premium in one moment. Clarity events like this are the clearest example of how certainty reduces risk premiums and lifts asset prices.",
+    reliability: "confirmed",
+  },
+
+  // ── Meme Hype ────────────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-meme-missed-tackle-week",
+    title: "[SIMULATED] League-Wide Missed Tackle Epidemic — MTC Hits Weekly Record",
+    summary:
+      "Simulated missed tackle tracker: This week set a new record for total missed tackles across all tracked games — 487 missed in one weekend, shattering the previous high. Missed Tackle Coin holders celebrated the chaos with a 60%+ surge.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "meme_hype",
+    relatedAssetIds: ["missed-tackle-coin", "fourth-quarter-coin", "red-zone-coin"],
+    confidenceScore: 0.65,
+    sourceLabel: "Simulated Viral Moments Tracker",
+    publishedAt: "2025-11-17T23:00:00Z",
+    educationalAngle:
+      "MTC is a pure sentiment coin — it rises on collective frustration. There are no fundamentals to anchor it, which means the move is fast and the reversal is equally fast. This is the textbook case for why you do not hold meme coins long-term.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-meme-hail-mary-connects",
+    title: "[SIMULATED] Miracle Hail Mary at the Final Whistle — HMC Explodes Overnight",
+    summary:
+      "Simulated viral moments: A desperation 60-yard heave into triple coverage somehow connected as time expired, producing the first successful Hail Mary play of the simulated season. HMC holders saw the largest single-game gain of any Fanfolio coin this year.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "meme_hype",
+    relatedAssetIds: ["hail-mary-coin", "missed-tackle-coin", "fourth-quarter-coin"],
+    confidenceScore: 0.60,
+    sourceLabel: "Simulated Viral Moments Tracker",
+    publishedAt: "2025-11-24T23:45:00Z",
+    educationalAngle:
+      "HMC teaches lottery-bias in markets. The coin's expected return is very low — Hail Marys almost never work. But when they do, the payoff is enormous, which keeps buyers interested at irrationally high prices. This is pure behavioral finance.",
+    reliability: "confirmed",
+  },
+
+  // ── Index Rotation ───────────────────────────────────────────────────────
+
+  {
+    id: "src-pf-index-rotation-to-defense",
+    title: "[SIMULATED] Capital Rotates from QB Coins into Defensive Sector",
+    summary:
+      "Simulated capital flow model: Following two consecutive low-scoring weekends, capital is rotating out of quarterback coins and into the Defensive Edge Index and defensive player coins. DEFI is gaining as KCQB1 and BUFQB1 apply modest giving back.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "index_rotation",
+    relatedAssetIds: ["pf-def-edge-index", "pf-def-arch-stock", "kc-qb1-coin", "buf-qb1-coin"],
+    confidenceScore: 0.74,
+    sourceLabel: "Simulated Capital Flow Model",
+    publishedAt: "2025-11-25T13:00:00Z",
+    educationalAngle:
+      "Sector rotation is how experienced simulated traders rebalance. Moving capital from QB coins (offense) to the Defensive Edge Index during a defensive-dominant stretch is a theme-based rotation — the same move institutional investors make in real markets.",
+    reliability: "moderate",
+  },
+  {
+    id: "src-pf-index-rotation-power-index-rally",
+    title: "[SIMULATED] Capital Flows into Pro Football Power Index After Volatile Week",
+    summary:
+      "Simulated capital flow model: Following a week of high individual-asset volatility, capital is moving into the Pro Football Power Index as traders seek stability. PFPI is gaining even as individual team stocks show mixed results.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "index_rotation",
+    relatedAssetIds: ["pf-power-index", "pf-champ-momentum-future", "missed-tackle-coin", "hail-mary-coin"],
+    confidenceScore: 0.72,
+    sourceLabel: "Simulated Capital Flow Model",
+    publishedAt: "2025-12-08T12:00:00Z",
+    educationalAngle:
+      "After volatile individual-asset weeks, traders often retreat to indexes as a 'flight to diversification.' This is the portfolio equivalent of a flight to quality — buying the basket instead of the individual component.",
+    reliability: "moderate",
+  },
+
+  // ── Confirmed Trades / General News ─────────────────────────────────────
+
+  {
+    id: "src-pf-trade-lv-edge-extension",
+    title: "[SIMULATED] Las Vegas Edge Rusher Signs Multi-Year Extension — Certainty Restored",
+    summary:
+      "Simulated transaction wire: The Las Vegas Football Team's premier pass rusher has signed a multi-year contract extension, ending speculation about his future. LVEDG surged as the market priced in long-term certainty and commitment from both sides.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "confirmed_trade",
+    relatedAssetIds: ["lv-edge-coin", "lvft-stock", "pf-def-edge-index"],
+    confidenceScore: 0.96,
+    sourceLabel: "Simulated Transaction Wire",
+    publishedAt: "2025-10-30T15:00:00Z",
+    educationalAngle:
+      "Contract extensions eliminate a key uncertainty premium. Before the deal, LVEDG held a discount reflecting the chance the player would leave. After confirmation, that discount is erased immediately — certainty is always priced in the moment it arrives.",
+    reliability: "confirmed",
+  },
+  {
+    id: "src-pf-general-kcft-media-attention",
+    title: "[SIMULATED] Kansas City Football Team Dominates National Media Coverage for Third Straight Week",
+    summary:
+      "Simulated media tracker: The Kansas City Football Team has generated the highest national media coverage score for the third consecutive week, driven by their winning streak and the ongoing MVP narrative around QB1. Brand assets and futures all benefit.",
+    sport: "Football",
+    league: "Pro Football",
+    storyType: "general_news",
+    relatedAssetIds: ["kcft-stock", "kc-qb1-coin", "kc-te1-coin", "pf-mvp-future"],
+    confidenceScore: 0.76,
+    sourceLabel: "Simulated Media Attention Tracker",
+    publishedAt: "2025-11-20T08:30:00Z",
+    educationalAngle:
+      "Media attention is a compounding premium. Each additional week of national coverage lifts brand value — not just on-field performance. The Kansas City ecosystem demonstrates how media narrative and fundamentals reinforce each other during winning streaks.",
+    reliability: "strong",
+  },
+
   // ── General News ────────────────────────────────────────────────────────────
 
   {

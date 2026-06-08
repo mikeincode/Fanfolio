@@ -5,3 +5,4 @@
 - [Fanfolio user preferences wiring](fanfolio-user-prefs.md) — all 4 prefs (haptics/eduTips/compactCards/safetyDisclaimers) wired into app behavior; use `const topPad = Platform.OS === "web"` as reliable anchor for hook insertion in screen functions.
 - [Fanfolio Rookie Playbook](fanfolio-rookie-playbook.md) — uses challengeFlags strings for new flags; declare playbookSteps useMemo AFTER handleSimulateEvent to avoid TDZ crash.
 - [Fanfolio Market Source Adapter](fanfolio-market-source-adapter.md) — data/marketSources.ts + lib/marketSourceAdapter.ts; pendingGeneratedPulse must be restored via isValidMarketEvent() in saveHealth.ts, never hardcoded null.
+- [Fanfolio Pro Football Pack & Entity Sanitizer](fanfolio-pf-pack.md) — 39 new generic assets in assetUniverse.ts PF_* arrays; lib/entitySanitizer.ts is the entity-map/sanitizer foundation; league field must be "Pro Football" (not "NFL") for new generic assets.

@@ -568,6 +568,241 @@ export const MARKET_EVENTS: MarketEvent[] = [
     marketLesson:
       "Index rotation happens when traders move capital from high-risk assets into more stable baskets. This teaches a core portfolio principle: in uncertain markets, indexes often absorb the capital that flees individual high-risk positions.",
   },
+  // ── Pro Football Starter Pack v1 — Generic Curated Events ──────────────────
+  // Generic names only. No real team names, player names, or official branding.
+
+  {
+    id: "pf-kc-qb1-dominant-stretch",
+    title: "Kansas City QB1 Efficiency Surge",
+    sport: "Football",
+    category: "Breakout",
+    emoji: "⚡",
+    summary:
+      "Three consecutive perfect-rating games from the Kansas City QB1 pushed the MVP narrative to its peak. KCQB1, the team stock, and championship futures all gained as the franchise's ceiling became the story of the simulated week.",
+    impacts: [
+      { assetId: "kc-qb1-coin", symbol: "KCQB1", impactPercent: 14 },
+      { assetId: "kcft-stock", symbol: "KCFT", impactPercent: 7 },
+      { assetId: "pf-mvp-future", symbol: "PFMVP", impactPercent: 18 },
+      { assetId: "pf-champ-momentum-future", symbol: "PFCHM", impactPercent: 9 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 2 },
+    ],
+    marketLesson:
+      "A QB's elite stretch lifts their own coin most, but the ripple reaches team stock, futures, and even the broad index. Understanding this cascade helps you build a diversified football portfolio that captures the upside without concentrating in one coin.",
+  },
+  {
+    id: "pf-det-win-streak-surge",
+    title: "Detroit Football Team Win Streak Momentum",
+    sport: "Football",
+    category: "Championship",
+    emoji: "📈",
+    summary:
+      "Seven straight wins sent DETFT to a multi-year high, pulling player coins and championship futures higher. Detroit's turnaround narrative has become one of the strongest momentum trades in the simulated football market.",
+    impacts: [
+      { assetId: "detft-stock", symbol: "DETFT", impactPercent: 12 },
+      { assetId: "det-wr1-coin", symbol: "DETWR1", impactPercent: 9 },
+      { assetId: "det-rb1-coin", symbol: "DETRB1", impactPercent: 8 },
+      { assetId: "pf-champ-momentum-future", symbol: "PFCHM", impactPercent: 11 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 2.5 },
+    ],
+    marketLesson:
+      "Winning streaks create compounding momentum premiums. Each win raises the probability of the next, lifting the team stock, player coins, and championship futures simultaneously. Turnaround franchises often generate the biggest team-stock gains in a single season.",
+  },
+  {
+    id: "pf-dal-edge-record-disruption",
+    title: "Dallas Edge Rusher Season Record",
+    sport: "Football",
+    category: "Breakout",
+    emoji: "🛡️",
+    summary:
+      "The Dallas Edge Rusher posted a record single-game disruption performance — four sacks and three forced incompletions. Defensive assets surged across the board while Dallas's offensive stocks showed no meaningful movement.",
+    impacts: [
+      { assetId: "dal-edge-coin", symbol: "DALEDG", impactPercent: 19 },
+      { assetId: "dalft-stock", symbol: "DALFT", impactPercent: 5 },
+      { assetId: "pf-def-star-future", symbol: "PFDSF", impactPercent: 15 },
+      { assetId: "pf-def-edge-index", symbol: "DEFI", impactPercent: 8 },
+      { assetId: "dal-qb1-coin", symbol: "DALQB1", impactPercent: -1 },
+    ],
+    marketLesson:
+      "Defensive breakouts can lift a coin more than comparable offensive performances because defensive excellence is rarer and harder to sustain. The decoupling of the edge rusher's gain from the QB's flat movement shows how defensive and offensive assets are only loosely correlated.",
+  },
+  {
+    id: "pf-bal-shutout-defense",
+    title: "Baltimore Defense Posts Back-to-Back Shutouts",
+    sport: "Football",
+    category: "Defense",
+    emoji: "🛡️",
+    summary:
+      "Baltimore Football Team's second shutout in three weeks created a dominant defensive narrative that lifted team stock, linebacker coins, the defensive coach stock, and the Defensive Edge Index simultaneously.",
+    impacts: [
+      { assetId: "balft-stock", symbol: "BALFT", impactPercent: 10 },
+      { assetId: "bal-lb1-coin", symbol: "BALLB1", impactPercent: 12 },
+      { assetId: "bal-qb1-coin", symbol: "BALQB1", impactPercent: 4 },
+      { assetId: "pf-def-arch-stock", symbol: "DARC", impactPercent: 14 },
+      { assetId: "pf-def-edge-index", symbol: "DEFI", impactPercent: 9 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 1.5 },
+    ],
+    marketLesson:
+      "Elite defensive performances lift an entire cluster of related assets: team stock, defensive player coins, coordinator stock, and sector index all gain together. This cluster behavior shows how a single narrative theme can simultaneously move a basket of correlated assets.",
+  },
+  {
+    id: "pf-hail-mary-mania",
+    title: "Hail Mary Mania — HMC Goes Parabolic",
+    sport: "Football",
+    category: "Chaos",
+    emoji: "🚀",
+    summary:
+      "A 60-yard miracle play connected at the final whistle, producing the simulated season's first successful Hail Mary. Hail Mary Coin holders saw the largest single-game gain of any Fanfolio asset this season.",
+    impacts: [
+      { assetId: "hail-mary-coin", symbol: "HMC", impactPercent: 75 },
+      { assetId: "fourth-quarter-coin", symbol: "4QC", impactPercent: 32 },
+      { assetId: "missed-tackle-coin", symbol: "MTC", impactPercent: 20 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 0.5 },
+    ],
+    marketLesson:
+      "HMC demonstrates the lottery-bias in sports markets. The payoff is enormous when it hits, but expected value is low because these plays almost never succeed. Buyers of high-variance meme coins are accepting near-zero probability for outsized return — pure speculative behavior.",
+  },
+  {
+    id: "pf-missed-tackle-epidemic",
+    title: "Missed Tackle Epidemic — MTC Week",
+    sport: "Football",
+    category: "Chaos",
+    emoji: "😬",
+    summary:
+      "A record week of missed tackles across the simulated league sent Missed Tackle Coin to a weekly high. The chaos was real — 487 missed tackles in one weekend. Defensive player coins dipped as execution quality fell across the board.",
+    impacts: [
+      { assetId: "missed-tackle-coin", symbol: "MTC", impactPercent: 55 },
+      { assetId: "fourth-quarter-coin", symbol: "4QC", impactPercent: 18 },
+      { assetId: "pf-def-edge-index", symbol: "DEFI", impactPercent: -6 },
+      { assetId: "bal-lb1-coin", symbol: "BALLB1", impactPercent: -5 },
+      { assetId: "sf-lb1-coin", symbol: "SFLB1", impactPercent: -4 },
+    ],
+    marketLesson:
+      "Meme coins and the assets they reference can move in opposite directions. When missed tackles surge (bad defensive execution), MTC rises while defensive player coins fall — because the meme trades on chaos, while the player coins trade on quality.",
+  },
+  {
+    id: "pf-champ-three-contenders-surge",
+    title: "Three Contenders Win Big — Championship Basket Surges",
+    sport: "Football",
+    category: "Championship",
+    emoji: "🏆",
+    summary:
+      "Kansas City, Detroit, and Buffalo all won by double digits on the same weekend — the first time three of the four top contenders dominated simultaneously. The Championship Momentum Future hit its highest value of the simulated season.",
+    impacts: [
+      { assetId: "pf-champ-momentum-future", symbol: "PFCHM", impactPercent: 16 },
+      { assetId: "kcft-stock", symbol: "KCFT", impactPercent: 8 },
+      { assetId: "detft-stock", symbol: "DETFT", impactPercent: 7 },
+      { assetId: "bufft-stock", symbol: "BUFFT", impactPercent: 7 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 3 },
+    ],
+    marketLesson:
+      "Championship futures basket assets amplify correlated upside. When three top contenders win simultaneously, the basket rises faster than any single team stock — it is capturing the combined probability lift. Correlated wins in a basket are a portfolio multiplier.",
+  },
+  {
+    id: "pf-young-stars-breakout-week",
+    title: "Young Stars Football Index — Breakout Week",
+    sport: "Football",
+    category: "Breakout",
+    emoji: "⭐",
+    summary:
+      "Detroit WR1, Las Vegas RB1, and Detroit RB1 all posted career-high simulated performances in the same week, sending the Young Stars Football Index to a new monthly high. Youth-asset portfolios outperformed every other segment.",
+    impacts: [
+      { assetId: "pf-young-stars-index", symbol: "YSFI", impactPercent: 16 },
+      { assetId: "det-wr1-coin", symbol: "DETWR1", impactPercent: 12 },
+      { assetId: "lv-rb1-coin", symbol: "LVRB1", impactPercent: 14 },
+      { assetId: "det-rb1-coin", symbol: "DETRB1", impactPercent: 11 },
+      { assetId: "pf-off-rookie-future", symbol: "PFORK", impactPercent: 18 },
+    ],
+    marketLesson:
+      "High-beta youth indexes can massively outperform in breakout weeks. When multiple young players simultaneously post career highs, the index captures all the gains at once. This is the upside of a high-risk youth basket — but it works in reverse just as quickly.",
+  },
+  {
+    id: "pf-defensive-edge-index-rally",
+    title: "Defensive Edge Index — Low-Scoring Weekend Rally",
+    sport: "Football",
+    category: "Defense",
+    emoji: "📊",
+    summary:
+      "A low-scoring weekend across football drove capital from quarterback coins into the Defensive Edge Index. DEFI gained as KCQB1 and BUFQB1 gave back recent gains — sector rotation in real time.",
+    impacts: [
+      { assetId: "pf-def-edge-index", symbol: "DEFI", impactPercent: 12 },
+      { assetId: "dal-edge-coin", symbol: "DALEDG", impactPercent: 10 },
+      { assetId: "lv-edge-coin", symbol: "LVEDG", impactPercent: 10 },
+      { assetId: "kc-qb1-coin", symbol: "KCQB1", impactPercent: -5 },
+      { assetId: "buf-qb1-coin", symbol: "BUFQB1", impactPercent: -4 },
+    ],
+    marketLesson:
+      "Defensive and offensive assets in football are negatively correlated in low-scoring games. This is a natural hedge — owning both sectors cushions the impact of a defensive-dominant weekend by letting the defensive gains offset offensive losses.",
+  },
+  {
+    id: "pf-hot-seat-chaos",
+    title: "Hot Seat Coaching Crisis — HOTS Craters",
+    sport: "Football",
+    category: "Coach",
+    emoji: "🌪️",
+    summary:
+      "Four blowout losses triggered a hot-seat coaching narrative that sent HOTS to its lowest point of the simulated season. Front-office pressure reports accelerated selling, even though no official change was announced.",
+    impacts: [
+      { assetId: "pf-hot-seat-stock", symbol: "HOTS", impactPercent: -28 },
+      { assetId: "pf-coach-momentum-future", symbol: "PFCMF", impactPercent: -8 },
+      { assetId: "pf-off-coach-stock", symbol: "OFMC", impactPercent: 6 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: -0.5 },
+    ],
+    marketLesson:
+      "Job-security coaching stocks are uniquely volatile because the outcome is binary — the coach stays or goes. Markets price in the probability of change immediately, even on rumors, because each piece of evidence updates the probability distribution sharply.",
+  },
+  {
+    id: "pf-mvp-race-compression",
+    title: "MVP Race Narrows — PFMVP Compression Rally",
+    sport: "Football",
+    category: "Futures",
+    emoji: "🏅",
+    summary:
+      "The simulated MVP race narrowed to two candidates — Kansas City QB1 vs. Buffalo QB1 — separated by a razor-thin performance margin. PFMVP surged as uncertainty compressed and the market priced in a two-candidate finale.",
+    impacts: [
+      { assetId: "pf-mvp-future", symbol: "PFMVP", impactPercent: 22 },
+      { assetId: "kc-qb1-coin", symbol: "KCQB1", impactPercent: 10 },
+      { assetId: "buf-qb1-coin", symbol: "BUFQB1", impactPercent: 9 },
+      { assetId: "pf-champ-momentum-future", symbol: "PFCHM", impactPercent: 5 },
+    ],
+    marketLesson:
+      "When an award race narrows to two, the futures price rallies because uncertainty has structurally compressed. Both remaining candidates' coins also benefit — being in the top two is itself a premium-worthy position regardless of who wins.",
+  },
+  {
+    id: "pf-mia-cold-weather-collapse",
+    title: "Miami Football Team Cold-Weather Road Loss",
+    sport: "Football",
+    category: "Chaos",
+    emoji: "🌨️",
+    summary:
+      "Miami Football Team lost a critical road game in sub-freezing conditions, triggering analyst models that flag cold-weather vulnerability as a structural risk factor. MIAFT and player coins gave back recent gains as the playoff narrative weakened.",
+    impacts: [
+      { assetId: "miaft-stock", symbol: "MIAFT", impactPercent: -12 },
+      { assetId: "mia-qb1-coin", symbol: "MIAQB1", impactPercent: -10 },
+      { assetId: "mia-wr1-coin", symbol: "MIAWR1", impactPercent: -8 },
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: -1 },
+    ],
+    marketLesson:
+      "Environmental factors create repeatable risk patterns. A warm-weather team's cold-weather road performance is a known variable — experienced traders factor schedule composition into their risk model. This is systematic risk pricing, not random volatility.",
+  },
+  {
+    id: "pf-power-index-broad-bull",
+    title: "Pro Football Power Index — Five-Team Rally",
+    sport: "Football",
+    category: "Stability",
+    emoji: "📈",
+    summary:
+      "Five of the eight tracked pro football teams posted winning performances on the same weekend, driving a sustained broad-market rally in the Pro Football Power Index. Individual team stocks showed mixed results while the index climbed steadily.",
+    impacts: [
+      { assetId: "pf-power-index", symbol: "PFPI", impactPercent: 8 },
+      { assetId: "kcft-stock", symbol: "KCFT", impactPercent: 7 },
+      { assetId: "balft-stock", symbol: "BALFT", impactPercent: 6 },
+      { assetId: "bufft-stock", symbol: "BUFFT", impactPercent: 5 },
+      { assetId: "lvft-stock", symbol: "LVFT", impactPercent: -3 },
+    ],
+    marketLesson:
+      "Broad index rallies occur when multiple components move in the same direction simultaneously. Even when one or two components dip, the majority vote wins. This is exactly why indexes are lower-risk than individual assets — the basket smooths individual outcomes.",
+  },
+
   {
     id: "nfl-index-broad-rally",
     title: "NFL Power Index Posts Strong Week",
