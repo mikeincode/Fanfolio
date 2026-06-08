@@ -74,11 +74,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-injury-kelce-knee",
-    title: "[SIMULATED] Kelce Knee Concern — Listed as Limited in Practice",
+    title: "[SIMULATED] KC TE1 Knee Concern — Listed as Limited in Practice",
     summary:
-      "Simulated injury report: Travis Kelce is listed as limited in Wednesday practice with a knee concern. Availability for the upcoming game is uncertain, creating short-term selling pressure on player-coin holders.",
+      "Simulated injury report: The Kansas City TE1 is listed as limited in Wednesday practice with a knee concern. Availability for the upcoming game is uncertain, creating short-term selling pressure on player-coin holders.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "injury",
     relatedAssetIds: ["kelce-coin", "chiefs-stock", "nfl-power-index"],
     confidenceScore: 0.72,
@@ -90,11 +90,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
   },
   {
     id: "src-injury-niners-starter",
-    title: "[SIMULATED] 49ers Starting QB Listed as Questionable — Ankle Issue",
+    title: "[SIMULATED] San Francisco Starting QB Listed as Questionable — Ankle Issue",
     summary:
-      "Simulated injury report: The 49ers' starting quarterback is officially questionable for Sunday following an ankle sprain in Wednesday practice. Team stock holders face short-term uncertainty until the final injury designation.",
+      "Simulated injury report: The San Francisco Football Team's starting quarterback is officially questionable for Sunday following an ankle sprain in Wednesday practice. Team stock holders face short-term uncertainty until the final injury designation.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "injury",
     relatedAssetIds: ["niners-stock", "nfl-power-index", "football-power-index"],
     confidenceScore: 0.80,
@@ -109,11 +109,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-breakout-jefferson-historic",
-    title: "[SIMULATED] Jefferson Posts 220-Yard Historic Night — Three TDs",
+    title: "[SIMULATED] Football WR Star Posts 220-Yard Historic Night — Three TDs",
     summary:
-      "Simulated box score: Justin Jefferson recorded 220 receiving yards and three touchdowns in a prime-time matchup, setting a new single-game simulated franchise record. JJC surged to a monthly high immediately after the final whistle.",
+      "Simulated box score: The Football WR Star recorded 220 receiving yards and three touchdowns in a prime-time matchup, setting a new single-game simulated franchise record. FWRS surged to a monthly high immediately after the final whistle.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "breakout_performance",
     relatedAssetIds: ["jefferson-coin", "nfl-power-index", "rookie-futures-index"],
     confidenceScore: 0.95,
@@ -125,11 +125,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
   },
   {
     id: "src-breakout-hurts-dual-threat",
-    title: "[SIMULATED] Hurts Explodes for Four TDs and 80 Rush Yards — Eagles Dominant",
+    title: "[SIMULATED] Philadelphia QB1 Explodes for Four TDs and 80 Rush Yards",
     summary:
-      "Simulated game summary: Jalen Hurts posted a career-high four touchdowns — two rushing, two passing — driving the Eagles' offense to a season-best performance. Dual-threat output is the core value driver for JHRT holders.",
+      "Simulated game summary: The Philadelphia QB1 posted a career-high four touchdowns — two rushing, two passing — driving the offense to a season-best performance. Dual-threat output is the core value driver for PHQB1 holders.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "breakout_performance",
     relatedAssetIds: ["hurts-coin", "offensive-coach-stock", "nfl-power-index"],
     confidenceScore: 0.92,
@@ -141,11 +141,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
   },
   {
     id: "src-breakout-parsons-record-disruption",
-    title: "[SIMULATED] Parsons Shatters Single-Game Disruption Record — Defense Takes Over",
+    title: "[SIMULATED] Dallas Edge Rusher Shatters Single-Game Disruption Record — Defense Takes Over",
     summary:
-      "Simulated performance data: Micah Parsons recorded 3.5 sacks and forced two fumbles, reaching a new single-game simulated record for total disruptions. Defensive-linked assets surged as the narrative shifted firmly to defense dominating the league.",
+      "Simulated performance data: The Dallas Edge Rusher recorded 3.5 sacks and forced two fumbles, reaching a new single-game simulated record for total disruptions. Defensive-linked assets surged as the narrative shifted firmly to defense dominating the league.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "breakout_performance",
     relatedAssetIds: ["parsons-coin", "cowboys-stock", "defensive-coach-stock", "defense-index"],
     confidenceScore: 0.88,
@@ -160,11 +160,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-momentum-lions-win-streak",
-    title: "[SIMULATED] Lions Win 6th Straight — Playoff Confidence at Season High",
+    title: "[SIMULATED] Detroit Football Team Wins 6th Straight — Playoff Confidence at Season High",
     summary:
-      "Simulated standings model: Detroit has won six consecutive games, building the most dominant mid-season run in the NFC. Playoff probability scores are surging for DETL holders, and the championship narrative is driving futures higher.",
+      "Simulated standings model: The Detroit Football Team has won six consecutive games, building the most dominant mid-season run of the year. Playoff probability scores are surging for DETL holders, and the championship narrative is driving futures higher.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "team_momentum",
     relatedAssetIds: ["lions-stock", "super-bowl-future", "nfl-power-index", "coty-future"],
     confidenceScore: 0.85,
@@ -176,11 +176,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
   },
   {
     id: "src-momentum-ravens-elite-defense",
-    title: "[SIMULATED] Ravens Hold Three Straight Opponents Under 10 Points",
+    title: "[SIMULATED] Baltimore Football Team Holds Three Straight Opponents Under 10 Points",
     summary:
-      "Simulated defensive stats: Baltimore has now held three consecutive opponents under 10 points — the most dominant defensive stretch of the simulated season. BALT, defensive coach stocks, and the defense index are all moving higher.",
+      "Simulated defensive stats: The Baltimore Football Team has now held three consecutive opponents under 10 points — the most dominant defensive stretch of the simulated season. BALT, defensive coach stocks, and the defense index are all moving higher.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "team_momentum",
     relatedAssetIds: ["ravens-stock", "defensive-coach-stock", "defense-index", "super-bowl-future"],
     confidenceScore: 0.87,
@@ -199,7 +199,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated analyst rankings: The league's leading offensive coordinator has been rated the most creative fourth-quarter play-caller in the league for the third straight week. Coach of the Year buzz is building early, lifting COTY futures.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "coach_buzz",
     relatedAssetIds: ["offensive-coach-stock", "coty-future", "nfl-power-index"],
     confidenceScore: 0.78,
@@ -215,7 +215,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated report (unconfirmed): Multiple unnamed sources describe growing friction between the offensive coaching staff and key skill players. Morale concerns are being priced into coaching stocks and the team franchise immediately.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "coach_controversy",
     relatedAssetIds: ["offensive-coach-stock", "lions-stock", "coty-future", "nfl-power-index"],
     confidenceScore: 0.55,
@@ -234,7 +234,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated award tracker: Two head coaches are now separated by just 0.3 simulated performance points. The narrowing race is driving COTY futures higher as the market prices in tighter uncertainty and a clearer path to settlement.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "award_race",
     relatedAssetIds: ["coty-future", "offensive-coach-stock", "defensive-coach-stock"],
     confidenceScore: 0.82,
@@ -250,7 +250,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated rookie stats model: One offensive rookie has extended their lead in the cumulative stats model to the widest margin of the season. OROTY futures and the Rookie Futures Index are re-rating upward as the race clarifies.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "award_race",
     relatedAssetIds: ["oroty-future", "rookie-futures-index", "hurts-coin"],
     confidenceScore: 0.79,
@@ -266,7 +266,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated performance data: The leading Comeback Player candidate recorded their highest single-game performance score since returning from a season-ending injury. Narrative momentum and emotional buying sent CMPBK and ComebackCoin sharply higher.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "award_race",
     relatedAssetIds: ["comeback-future", "comeback-coin", "underdog-index"],
     confidenceScore: 0.84,
@@ -281,11 +281,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-champ-chiefs-division-clinch",
-    title: "[SIMULATED] Chiefs Clinch Division — Championship Model Tilts in Their Favor",
+    title: "[SIMULATED] Kansas City Football Team Clinches Division — Championship Model Tilts in Their Favor",
     summary:
-      "Simulated playoff model: The Kansas City Chiefs have clinched their division, moving to the top seed in the simulated playoff bracket. KCC and Mahomes Coin surge as championship probability shifts to the clear market leader.",
+      "Simulated playoff model: The Kansas City Football Team has clinched their division, moving to the top seed in the simulated playoff bracket. KCC and Football QB Star Coin surge as championship probability shifts to the clear market leader.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "championship_momentum",
     relatedAssetIds: ["chiefs-stock", "mahomes-coin", "super-bowl-future", "nfl-power-index"],
     confidenceScore: 0.90,
@@ -304,7 +304,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated game data: Three separate games ended on walk-off plays in the final four seconds. 4QC holders drove prices to a weekly high immediately as the shared narrative captured the meme-coin market in a single burst of excitement.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "meme_hype",
     relatedAssetIds: ["fourth-quarter-coin", "comeback-coin", "clutch-coin", "meme-market-index"],
     confidenceScore: 0.70,
@@ -320,7 +320,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated stats: This week posted the highest red zone scoring efficiency in the simulated season — 94% conversion across all tracked games. RZC holders saw immediate price action as the theme dominated fan commentary.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "meme_hype",
     relatedAssetIds: ["red-zone-coin", "fourth-quarter-coin", "meme-market-index"],
     confidenceScore: 0.68,
@@ -336,7 +336,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     summary:
       "Simulated narrative tracker: A heated post-game press conference exchange between two coaches went viral within the first hour. DramaCoin, UpsetCoin, and ChokeCoin all surged as the meme-coin market captured the emotional reaction.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "meme_hype",
     relatedAssetIds: ["drama-coin", "upset-coin", "choke-coin", "meme-market-index"],
     confidenceScore: 0.65,
@@ -353,7 +353,7 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
     id: "src-index-rotation-to-stability",
     title: "[SIMULATED] Capital Rotates from Meme Coins to Index Assets",
     summary:
-      "Simulated capital flow model: A broad rotation out of high-volatility meme coins into the NFL Power Index and Fanfolio 100 is underway this week. Experienced traders are shifting toward stability following last week's meme-coin selloff.",
+      "Simulated capital flow model: A broad rotation out of high-volatility meme coins into the Football Stars Index and Fanfolio 100 is underway this week. Experienced traders are shifting toward stability following last week's meme-coin selloff.",
     sport: "All Sports",
     league: "Multi",
     storyType: "index_rotation",
@@ -370,11 +370,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-trade-rumor-jefferson",
-    title: "[SIMULATED] Trade Rumor: Jefferson in Discussions — Market Reacts to Uncertainty",
+    title: "[SIMULATED] Trade Rumor: WR Star in Discussions — Market Reacts to Uncertainty",
     summary:
-      "Simulated trade rumor (unconfirmed): Multiple simulated sources suggest Justin Jefferson is in trade discussions with a new franchise. Until confirmed or denied, uncertainty is the dominant force — JJC is volatile while the broad index barely moves.",
+      "Simulated trade rumor (unconfirmed): Multiple simulated sources suggest the Football WR Star is in trade discussions with a new franchise. Until confirmed or denied, uncertainty is the dominant force — FWRS is volatile while the broad index barely moves.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "trade_rumor",
     relatedAssetIds: ["jefferson-coin", "nfl-power-index"],
     confidenceScore: 0.45,
@@ -386,11 +386,11 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
   },
   {
     id: "src-trade-confirmed-parsons-extension",
-    title: "[SIMULATED] Parsons Signs Long-Term Extension — Market Certainty Returns",
+    title: "[SIMULATED] Dallas Edge Rusher Signs Long-Term Extension — Market Certainty Returns",
     summary:
-      "Simulated transaction wire: Micah Parsons has agreed to a long-term contract extension with Dallas, ending months of speculation. Certainty is restored, and MPC surges as holders gain confidence in the asset's long-term value.",
+      "Simulated transaction wire: The Dallas Edge Rusher has agreed to a long-term contract extension, ending months of speculation. Certainty is restored, and DALER surges as holders gain confidence in the asset's long-term value.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "confirmed_trade",
     relatedAssetIds: ["parsons-coin", "cowboys-stock", "defensive-coach-stock", "defense-index"],
     confidenceScore: 0.97,
@@ -819,18 +819,18 @@ export const MOCK_SOURCE_STORIES: MarketSourceStory[] = [
 
   {
     id: "src-general-cowboys-media-cycle",
-    title: "[SIMULATED] Cowboys Dominate National Media Coverage — Rally in Brand Assets",
+    title: "[SIMULATED] Dallas Football Team Dominates National Media Coverage — Rally in Brand Assets",
     summary:
-      "Simulated media tracker: The Dallas Cowboys have generated more national media coverage this week than any other franchise, driven by a high-profile rivalry matchup preview. Brand-driven assets rally on coverage alone — performance is secondary.",
+      "Simulated media tracker: The Dallas Football Team has generated more national media coverage this week than any other franchise, driven by a high-profile rivalry matchup preview. Brand-driven assets rally on coverage alone — performance is secondary.",
     sport: "Football",
-    league: "NFL",
+    league: "Pro Football",
     storyType: "general_news",
     relatedAssetIds: ["cowboys-stock", "parsons-coin", "nfl-power-index"],
     confidenceScore: 0.72,
     sourceLabel: "Simulated Media Attention Tracker",
     publishedAt: "2025-11-13T08:00:00Z",
     educationalAngle:
-      "High-media assets can rally on coverage alone. Brand value and performance value are different drivers — the Cowboys demonstrate that media narrative moves price even when underlying stats are mixed.",
+      "High-media assets can rally on coverage alone. Brand value and performance value are different drivers — a high-profile franchise demonstrates that media narrative moves price even when underlying stats are mixed.",
     reliability: "strong",
   },
 ];

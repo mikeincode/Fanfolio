@@ -69,14 +69,14 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "star-player-breakout",
-    title: "LeBron 40-Point Triple-Double",
+    title: "Basketball Star 40-Point Triple-Double",
     sport: "Basketball",
     category: "Breakout",
     emoji: "🏀",
     summary:
-      "A transcendent performance — 40 points, 14 rebounds, 11 assists — drove the crowd wild and sent LeBron Coin and the Basketball Stars Index surging.",
+      "A transcendent performance — 40 points, 14 rebounds, 11 assists — drove the crowd wild and sent the Basketball Star Coin and the Basketball Stars Index surging.",
     impacts: [
-      { assetId: "lebron-coin", symbol: "LBJ", impactPercent: 15 },
+      { assetId: "lebron-coin", symbol: "BSC", impactPercent: 15 },
       { assetId: "basketball-stars-index", symbol: "BSI", impactPercent: 8 },
       { assetId: "clutch-coin", symbol: "CLUTCH", impactPercent: 12 },
       { assetId: "lakers-stock", symbol: "LAL", impactPercent: 9 },
@@ -96,7 +96,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "defense-index", symbol: "DEX", impactPercent: 12 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 5 },
       { assetId: "chiefs-stock", symbol: "KCC", impactPercent: 8 },
-      { assetId: "mahomes-coin", symbol: "PMC", impactPercent: -4 },
+      { assetId: "mahomes-coin", symbol: "FQBS", impactPercent: -4 },
       { assetId: "super-bowl-future", symbol: "CHAMP", impactPercent: -7 },
     ],
     marketLesson:
@@ -204,7 +204,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
     impacts: [
       { assetId: "super-bowl-future", symbol: "CHAMP", impactPercent: 25 },
       { assetId: "chiefs-stock", symbol: "KCC", impactPercent: 12 },
-      { assetId: "mahomes-coin", symbol: "PMC", impactPercent: 8 },
+      { assetId: "mahomes-coin", symbol: "FQBS", impactPercent: 8 },
       { assetId: "rookie-future", symbol: "RKF1", impactPercent: -10 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 4 },
     ],
@@ -212,19 +212,19 @@ export const MARKET_EVENTS: MarketEvent[] = [
       "Futures assets respond strongly when uncertainty resolves. Clarity about future outcomes reduces risk, which drives price discovery. Buying futures before clarity is high-risk — holding through clarity is often rewarded.",
   },
 
-  // ── New events — NFL Team Stocks ────────────────────────────────────────────
+  // ── New events — Legacy Football Team Stocks ────────────────────────────────
   {
     id: "lions-championship-surge",
-    title: "Lions Championship Run Gains Steam",
+    title: "Football Franchise Championship Run Gains Steam",
     sport: "Football",
     category: "Championship",
     emoji: "🦁",
     summary:
-      "The Lions posted their fifth straight dominant performance, driving the franchise's market confidence to a season high. The NFL Power Index moved modestly higher as football sentiment improved broadly.",
+      "The Detroit Football Team posted their fifth straight dominant performance, driving the franchise's market confidence to a season high. The Football Stars Index moved modestly higher as football sentiment improved broadly.",
     impacts: [
       { assetId: "lions-stock", symbol: "DETL", impactPercent: 16 },
       { assetId: "super-bowl-future", symbol: "CHAMP", impactPercent: 12 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2.5 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2.5 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 2 },
     ],
     marketLesson:
@@ -232,34 +232,34 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "ravens-defense-shutdown",
-    title: "Ravens Defense Shuts Out the League",
+    title: "Elite Defense Shuts Out the League",
     sport: "Football",
     category: "Defense",
     emoji: "🛡️",
     summary:
-      "The Ravens' historic defensive performance held their opponent to zero points in the first half. Defensive-linked assets surged while offensive player coins for the opposing team dropped sharply.",
+      "The Baltimore Football Team's historic defensive performance held their opponent to zero points in the first half. Defensive-linked assets surged while offensive player coins for the opposing team dropped sharply.",
     impacts: [
       { assetId: "ravens-stock", symbol: "BALT", impactPercent: 11 },
       { assetId: "defensive-coach-stock", symbol: "DCSC", impactPercent: 13 },
       { assetId: "defense-index", symbol: "DEX", impactPercent: 4.5 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
-      { assetId: "mahomes-coin", symbol: "PMC", impactPercent: -5 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
+      { assetId: "mahomes-coin", symbol: "FQBS", impactPercent: -5 },
     ],
     marketLesson:
       "Defensive outperformance is a reminder that football markets have two sides. Owning only offensive player coins leaves you exposed when the defensive narrative takes over.",
   },
   {
     id: "cowboys-media-surge",
-    title: "Cowboys Media Cycle Ignites Rally",
+    title: "High-Profile Franchise Media Cycle Ignites Rally",
     sport: "Football",
     category: "Rally",
     emoji: "⭐",
     summary:
-      "High-profile national coverage of the Cowboys' recent performances sparked a buying surge. Brand-driven stocks respond to media attention even when underlying stats are mixed.",
+      "High-profile national coverage of the Dallas Football Team's recent performances sparked a buying surge. Brand-driven stocks respond to media attention even when underlying stats are mixed.",
     impacts: [
       { assetId: "cowboys-stock", symbol: "DALC", impactPercent: 10 },
-      { assetId: "parsons-coin", symbol: "MPC", impactPercent: 7 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 1.5 },
+      { assetId: "parsons-coin", symbol: "DALER", impactPercent: 7 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 1.5 },
       { assetId: "choke-coin", symbol: "CHOKE", impactPercent: -4 },
     ],
     marketLesson:
@@ -267,15 +267,15 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "niners-injury-scare",
-    title: "49ers Key Player Injury Scare",
+    title: "Football Franchise Injury Scare",
     sport: "Football",
     category: "Chaos",
     emoji: "🚑",
     summary:
-      "A practice injury report listed a key offensive starter as limited, triggering quick selling pressure on the 49ers stock. Index assets absorbed the shock and held their value.",
+      "A practice injury report listed a key offensive starter as limited, triggering quick selling pressure on the San Francisco Football Team stock. Index assets absorbed the shock and held their value.",
     impacts: [
       { assetId: "niners-stock", symbol: "SF49", impactPercent: -14 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: -2 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: -2 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: -1 },
       { assetId: "defense-index", symbol: "DEX", impactPercent: 1.5 },
     ],
@@ -283,34 +283,34 @@ export const MARKET_EVENTS: MarketEvent[] = [
       "Injury news hits individual team stocks hard but barely dents broad indexes. This is a real-world principle: indexes absorb individual shocks because they hold many positions at once.",
   },
 
-  // ── New events — NFL Player Coins ───────────────────────────────────────────
+  // ── New events — Legacy Football Player Coins ───────────────────────────────
   {
     id: "kelce-milestone-game",
-    title: "Kelce Breaks All-Time Reception Record",
+    title: "Pro TE Breaks All-Time Reception Record",
     sport: "Football",
     category: "Breakout",
     emoji: "🏈",
     summary:
-      "A record-breaking reception total put TKC holders in celebration mode. The correlated Chiefs stock also moved higher, demonstrating how player coins and team stocks can move together.",
+      "A record-breaking reception total put KCTE holders in celebration mode. The correlated Kansas City Football Team stock also moved higher, demonstrating how player coins and team stocks can move together.",
     impacts: [
-      { assetId: "kelce-coin", symbol: "TKC", impactPercent: 16 },
+      { assetId: "kelce-coin", symbol: "KCTE", impactPercent: 16 },
       { assetId: "chiefs-stock", symbol: "KCC", impactPercent: 7 },
-      { assetId: "mahomes-coin", symbol: "PMC", impactPercent: 5 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "mahomes-coin", symbol: "FQBS", impactPercent: 5 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
     ],
     marketLesson:
       "Some player coins are correlated with their team stock. When both move at once, portfolios with overlapping exposure amplify the gain — or the loss. Know your correlations.",
   },
   {
     id: "parsons-four-sack-game",
-    title: "Parsons Dominant Four-Sack Performance",
+    title: "Edge Rusher Dominant Four-Sack Performance",
     sport: "Football",
     category: "Breakout",
     emoji: "💥",
     summary:
-      "A four-sack performance pushed Micah Parsons Coin to a monthly high. Defensive stocks moved across the board as the narrative shifted to defense dominating the league.",
+      "A four-sack performance pushed the Dallas Edge Rusher Coin to a monthly high. Defensive stocks moved across the board as the narrative shifted to defense dominating the league.",
     impacts: [
-      { assetId: "parsons-coin", symbol: "MPC", impactPercent: 14 },
+      { assetId: "parsons-coin", symbol: "DALER", impactPercent: 14 },
       { assetId: "cowboys-stock", symbol: "DALC", impactPercent: 5 },
       { assetId: "defensive-coach-stock", symbol: "DCSC", impactPercent: 9 },
       { assetId: "defense-index", symbol: "DEX", impactPercent: 3.5 },
@@ -320,15 +320,15 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "jefferson-200-yard-game",
-    title: "Jefferson Posts 200-Yard Receiving Game",
+    title: "WR Star Posts 200-Yard Receiving Game",
     sport: "Football",
     category: "Breakout",
     emoji: "🎯",
     summary:
-      "A 200-yard, two-touchdown performance sent Justin Jefferson Coin to a season high. The rookie futures index also lifted as the league-wide receiver narrative drove broad optimism.",
+      "A 200-yard, two-touchdown performance sent the Football WR Star Coin to a season high. The rookie futures index also lifted as the league-wide receiver narrative drove broad optimism.",
     impacts: [
-      { assetId: "jefferson-coin", symbol: "JJC", impactPercent: 18 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "jefferson-coin", symbol: "FWRS", impactPercent: 18 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
       { assetId: "rookie-futures-index", symbol: "RFIDX", impactPercent: 4 },
     ],
     marketLesson:
@@ -336,16 +336,16 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "hurts-triple-threat-game",
-    title: "Hurts Dual-Threat Explosion",
+    title: "Dual-Threat QB Explosion",
     sport: "Football",
     category: "Breakout",
     emoji: "⚡",
     summary:
-      "Three rushing touchdowns and 280 passing yards in a single game drove Jalen Hurts Coin to a weekly high. Offensive-linked assets benefited as the dual-threat narrative dominated headlines.",
+      "Three rushing touchdowns and 280 passing yards in a single game drove the Philadelphia QB1 Coin to a weekly high. Offensive-linked assets benefited as the dual-threat narrative dominated headlines.",
     impacts: [
-      { assetId: "hurts-coin", symbol: "JHRT", impactPercent: 14 },
+      { assetId: "hurts-coin", symbol: "PHQB1", impactPercent: 14 },
       { assetId: "offensive-coach-stock", symbol: "OCSC", impactPercent: 8 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 1.5 },
     ],
     marketLesson:
@@ -353,16 +353,16 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "kelce-injury-alert",
-    title: "Kelce Injury Alert Shocks the Market",
+    title: "Pro TE Injury Alert Shocks the Market",
     sport: "Football",
     category: "Chaos",
     emoji: "🚑",
     summary:
-      "A mid-game exit for Travis Kelce triggered an immediate sell-off in TKC and a secondary drop in Chiefs Stock. The NFL Power Index felt a smaller ripple as broad diversification limited the damage.",
+      "A mid-game exit for the Kansas City TE1 triggered an immediate sell-off in KCTE and a secondary drop in Kansas City Football Team stock. The Football Stars Index felt a smaller ripple as broad diversification limited the damage.",
     impacts: [
-      { assetId: "kelce-coin", symbol: "TKC", impactPercent: -20 },
+      { assetId: "kelce-coin", symbol: "KCTE", impactPercent: -20 },
       { assetId: "chiefs-stock", symbol: "KCC", impactPercent: -9 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: -2.5 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: -2.5 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: -1.5 },
     ],
     marketLesson:
@@ -399,7 +399,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "lions-stock", symbol: "DETL", impactPercent: -13 },
       { assetId: "offensive-coach-stock", symbol: "OCSC", impactPercent: -17 },
       { assetId: "coty-future", symbol: "COTY", impactPercent: -11 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: -3 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: -3 },
     ],
     marketLesson:
       "Coach stocks can be volatile because they depend heavily on sentiment and narrative. A coaching controversy can move a team stock more than a bad game. This is why no single coach stock should dominate your simulated portfolio.",
@@ -417,7 +417,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "defensive-coach-stock", symbol: "DCSC", impactPercent: 14 },
       { assetId: "coty-future", symbol: "COTY", impactPercent: 10 },
       { assetId: "defense-index", symbol: "DEX", impactPercent: 3.5 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
     ],
     marketLesson:
       "Coach stocks are a unique Fanfolio asset type — simulated, not real equity. They teach that markets price in coaching quality as a factor in team success. Owning both offensive and defensive coach stocks is a way to diversify within the coaching narrative.",
@@ -434,9 +434,9 @@ export const MARKET_EVENTS: MarketEvent[] = [
       "Three strong performances in one week tightened the simulated Offensive Rookie of the Year race significantly. The Rookie Futures Index surged as the whole basket re-rated upward.",
     impacts: [
       { assetId: "oroty-future", symbol: "OROTY", impactPercent: 20 },
-      { assetId: "hurts-coin", symbol: "JHRT", impactPercent: 8 },
+      { assetId: "hurts-coin", symbol: "PHQB1", impactPercent: 8 },
       { assetId: "rookie-futures-index", symbol: "RFIDX", impactPercent: 14 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
     ],
     marketLesson:
       "Fanfolio futures track simulated season storylines — they are not sportsbook odds, bets, or real-money prediction markets. When the leading candidate performs well, the future's price rises because simulated expectations change. This is how expectation-based markets work.",
@@ -460,12 +460,12 @@ export const MARKET_EVENTS: MarketEvent[] = [
   },
   {
     id: "ravens-championship-momentum",
-    title: "Ravens Championship Momentum Builds",
+    title: "Defensive Powerhouse Championship Momentum Builds",
     sport: "Football",
     category: "Championship",
     emoji: "🏆",
     summary:
-      "Back-to-back dominant victories pushed the Ravens into the top spot in simulated championship probability models. All related assets moved together: team stock, defensive coach stock, and championship futures.",
+      "Back-to-back dominant victories pushed the Baltimore Football Team into the top spot in simulated championship probability models. All related assets moved together: team stock, defensive coach stock, and championship futures.",
     impacts: [
       { assetId: "ravens-stock", symbol: "BALT", impactPercent: 10 },
       { assetId: "super-bowl-future", symbol: "CHAMP", impactPercent: 14 },
@@ -489,7 +489,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "oroty-future", symbol: "OROTY", impactPercent: 12 },
       { assetId: "coty-future", symbol: "COTY", impactPercent: 15 },
       { assetId: "rookie-futures-index", symbol: "RFIDX", impactPercent: 10 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 2 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 2 },
     ],
     marketLesson:
       "Fanfolio futures track simulated season outcomes — not real-money bets or sportsbook odds. As the simulated season narrows and expectations converge, futures prices move toward their likely settlement value. This is how real expectation-based markets behave at deadline.",
@@ -525,7 +525,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "red-zone-coin", symbol: "RZC", impactPercent: 38 },
       { assetId: "fourth-quarter-coin", symbol: "4QC", impactPercent: 15 },
       { assetId: "meme-market-index", symbol: "MMI", impactPercent: 9 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 1 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 1 },
     ],
     marketLesson:
       "Football meme coins can rally together when a shared theme dominates. But notice the index barely moved — broad diversification is almost immune to these hype cycles.",
@@ -543,7 +543,7 @@ export const MARKET_EVENTS: MarketEvent[] = [
       { assetId: "red-zone-coin", symbol: "RZC", impactPercent: -24 },
       { assetId: "drama-coin", symbol: "DRAMA", impactPercent: -15 },
       { assetId: "meme-market-index", symbol: "MMI", impactPercent: -16 },
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 1.5 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 1.5 },
     ],
     marketLesson:
       "Hype-driven assets give back gains even faster than they earned them. A meme coin that went up 38% in one week can lose 28% the following week on nothing but silence. Exiting hype is harder than entering it.",
@@ -557,9 +557,9 @@ export const MARKET_EVENTS: MarketEvent[] = [
     category: "Stability",
     emoji: "📊",
     summary:
-      "A broad rotation out of high-risk meme coins into NFL and football index assets drove a steady, sustained rally in index prices. Meme coins weakened as capital moved toward fundamentals.",
+      "A broad rotation out of high-risk meme coins into pro football and general football index assets drove a steady, sustained rally in index prices. Meme coins weakened as capital moved toward fundamentals.",
     impacts: [
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 9 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 9 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 6 },
       { assetId: "rookie-futures-index", symbol: "RFIDX", impactPercent: 7 },
       { assetId: "fanfolio-100", symbol: "FF100", impactPercent: 4 },
@@ -805,14 +805,14 @@ export const MARKET_EVENTS: MarketEvent[] = [
 
   {
     id: "nfl-index-broad-rally",
-    title: "NFL Power Index Posts Strong Week",
+    title: "Football Stars Index Posts Strong Week",
     sport: "Football",
     category: "Stability",
     emoji: "📈",
     summary:
-      "A weekend of competitive, high-quality football across the NFL drove broad bullish sentiment. The NFL Power Index moved steadily higher while individual stocks showed mixed results.",
+      "A weekend of competitive, high-quality football drove broad bullish sentiment. The Football Stars Index moved steadily higher while individual stocks showed mixed results.",
     impacts: [
-      { assetId: "nfl-power-index", symbol: "NFLPI", impactPercent: 8 },
+      { assetId: "nfl-power-index", symbol: "FSIDX", impactPercent: 8 },
       { assetId: "football-power-index", symbol: "FPI", impactPercent: 5 },
       { assetId: "lions-stock", symbol: "DETL", impactPercent: 6 },
       { assetId: "ravens-stock", symbol: "BALT", impactPercent: 4 },

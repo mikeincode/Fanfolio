@@ -139,7 +139,7 @@ export const LESSONS: Lesson[] = [
     difficulty: "Beginner",
     readTime: 2,
     concept: "An index tracks the combined performance of a group of assets. Instead of picking one team or player, you buy a slice of many at once. If the group overall performs well, the index rises.\n\nFanfolio's Sport Indexes — like the Football Power Index or Fanfolio 100 — let you invest in an entire sport without choosing individual assets.",
-    sportsAngle: "A sport index is like owning a piece of the entire league — not just one team. If the NFL has a great season overall, the Football Power Index rises even if your favorite team struggles. You win with the league, not just one franchise.",
+    sportsAngle: "A sport index is like owning a piece of the entire league — not just one team. If pro football has a great season overall, the Football Power Index rises even if your favorite team struggles. You win with the league, not just one franchise.",
     keyTakeaways: [
       "An index tracks a group of assets together",
       "Lower risk than picking individual assets",
