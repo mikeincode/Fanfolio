@@ -25,6 +25,7 @@ import { SparklineChart } from "@/components/SparklineChart";
 import { CoinBadge } from "@/components/CoinBadge";
 import { MOCK_NEWS, SENTIMENT_CONFIG } from "@/data/mockNews";
 import { useUserPreferences } from "@/lib/userPreferences";
+import { openFeedbackForm } from "@/lib/feedback";
 
 function timeAgo(ts: number): string {
   const secs = Math.floor((Date.now() - ts) / 1000);
@@ -1283,6 +1284,15 @@ export default function HomeScreen() {
             <Feather name="arrow-right" size={14} color={colors.primary} />
           </Pressable>
         </View>
+
+        {/* ── Beta feedback link ─────────────────────────────────────── */}
+        <Pressable
+          onPress={() => openFeedbackForm("home", "home", username)}
+          style={({ pressed }) => [styles.betaFeedbackLink, { opacity: pressed ? 0.5 : 1 }]}
+        >
+          <Text style={[styles.betaFeedbackText, { color: colors.mutedForeground }]}>Beta feedback →</Text>
+        </Pressable>
+
       </ScrollView>
 
       <EventResultModal
@@ -1470,6 +1480,8 @@ const styles = StyleSheet.create({
   scanChipSymbol: { fontSize: 13, fontFamily: "Inter_700Bold" },
   scanChipBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 },
   scanChipChange: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  betaFeedbackLink: { alignItems: "center" as const, paddingVertical: 12, paddingHorizontal: 20, marginBottom: 8 },
+  betaFeedbackText: { fontSize: 12, fontFamily: "Inter_400Regular" },
 });
 
 // ── Rookie Playbook Styles ──────────────────────────────────

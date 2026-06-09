@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useUserPreferences } from "@/lib/userPreferences";
 import { formatSyncTime } from "@/lib/cloudSaveUtils";
+import { openFeedbackForm } from "@/lib/feedback";
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -390,6 +391,20 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </View>
+      </View>
+
+      {/* ── Beta Feedback ────────────────────────────────────────────── */}
+      <SectionHeader title="Beta" icon="message-square" colors={colors} />
+
+      <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <NavRow
+          icon="message-square"
+          label="Send Beta Feedback"
+          sublabel="Report bugs, confusing screens, or ideas."
+          onPress={() => openFeedbackForm("settings", "settings", username)}
+          colors={colors}
+          tint={colors.primary}
+        />
       </View>
 
       {/* ── App Status ───────────────────────────────────────────────── */}

@@ -23,6 +23,7 @@ import { CoinBadge } from "@/components/CoinBadge";
 import { ALL_ASSETS } from "@/data/assetUniverse";
 import { buildLeaderboard, getBestCategory, CATEGORIES, UserLeaderboardStats } from "@/data/mockLeaderboard";
 import { useUserPreferences } from "@/lib/userPreferences";
+import { openFeedbackForm } from "@/lib/feedback";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -476,6 +477,7 @@ export default function ProfileScreen() {
           { label: "Portfolio Coach", icon: "activity" as const, onPress: () => router.push("/portfolio-coach"), badge: undefined as number | undefined },
           { label: "Challenges & Achievements", icon: "target" as const, onPress: () => router.push("/challenges"), badge: claimableCount > 0 ? claimableCount : undefined },
           { label: "Trading Journal", icon: "book" as const, onPress: () => router.push("/journal"), badge: undefined as number | undefined },
+          { label: "Send Beta Feedback", icon: "message-square" as const, onPress: () => openFeedbackForm("profile", "profile", username), badge: undefined as number | undefined },
         ].map(item => (
           <Pressable
             key={item.label}
