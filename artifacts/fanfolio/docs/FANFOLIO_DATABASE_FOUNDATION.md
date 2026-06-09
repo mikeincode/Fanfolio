@@ -180,6 +180,49 @@ When the market tables are populated and you are ready to migrate:
 
 ---
 
+## Seed Verification Record (v1 — June 2026)
+
+A full seed verification pass was completed. All tables, enums, IDs, symbols, and
+price history rows were audited. Three bugs were found and repaired.
+
+### Verified Clean
+
+| Check | Result |
+|---|---|
+| All 32 generic Pro Football teams present with correct A/B suffixes | ✅ |
+| All 160 player role rows present (32 teams × 5 roles each) | ✅ |
+| All 160 player coin assets present with correct UUIDs and FK links | ✅ |
+| All 32 team stock assets present with correct symbol pattern (`{PREFIX}FT`) | ✅ |
+| All 4 index assets present (`PFPI`, `PBSI`, `MMACI`, `FF100`) | ✅ |
+| All 6 futures assets present | ✅ (after repair — see below) |
+| All 6 meme coin assets present | ✅ |
+| All seed price history rows present (~208 rows) | ✅ |
+| `futures_markets` rows reference correct asset UUIDs | ✅ |
+| `on conflict` clauses on all insert blocks | ✅ |
+| No real names in any public-facing column | ✅ |
+| RLS policies match schema | ✅ |
+| `databaseMarketTypes.ts` `DbAssetType` union matches `asset_type_enum` | ✅ |
+
+### Bugs Repaired
+
+**Bug 1 — Cyrillic characters in NYB Edge Rusher `asset_symbol`**
+- `generic_player_roles` row for New York B Edge Rusher had `asset_symbol = 'NYBЕР1'`
+  where 'Е' (U+0415) and 'Р' (U+0420) were Cyrillic characters, not ASCII.
+- The corresponding player_coin asset correctly used ASCII `'NYBER1'`, creating a
+  symbol mismatch that would break the role ↔ coin link on insert.
+- **Fixed:** `'NYBЕР1'` → `'NYBER1'` in `generic_player_roles` insert.
+
+**Bug 2 — `PFCHAMP` used invalid `asset_type` enum value `'championship'`**
+- `'championship'` is a valid value in `future_type_enum` (for the `futures_markets`
+  table) but is **not** in `asset_type_enum` (for the `assets` table).
+- **Fixed:** `'championship'` → `'season_future'` for the `PFCHAMP` asset row.
+
+**Bug 3 — `PFCPOY` used invalid `asset_type` enum value `'comeback'`**
+- `'comeback'` does not exist in `asset_type_enum` at all.
+- **Fixed:** `'comeback'` → `'award_future'` for the `PFCPOY` asset row.
+
+---
+
 ## Safety Reminders
 
 - LuckyCoin has no cash value.

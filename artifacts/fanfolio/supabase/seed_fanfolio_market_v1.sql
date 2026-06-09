@@ -395,7 +395,7 @@ values
   ('40000000-0000-0000-0025-000000000001','30000000-0000-0000-0000-000000000025','QB1',         'New York B QB1',            'Quarterback',  'NYBQB1', 6, 5.5),
   ('40000000-0000-0000-0025-000000000002','30000000-0000-0000-0000-000000000025','WR1',         'New York B WR1',            'Wide Receiver','NYBWR1', 5, 6.0),
   ('40000000-0000-0000-0025-000000000003','30000000-0000-0000-0000-000000000025','RB1',         'New York B RB1',            'Running Back', 'NYBRB1', 5, 6.0),
-  ('40000000-0000-0000-0025-000000000004','30000000-0000-0000-0000-000000000025','Edge Rusher', 'New York B Edge Rusher',    'Defensive End','NYBЕР1', 6, 6.0),
+  ('40000000-0000-0000-0025-000000000004','30000000-0000-0000-0000-000000000025','Edge Rusher', 'New York B Edge Rusher',    'Defensive End','NYBER1', 6, 6.0),
   ('40000000-0000-0000-0025-000000000005','30000000-0000-0000-0000-000000000025','LB1',         'New York B LB1',            'Linebacker',   'NYBLB1', 5, 6.0)
 on conflict do nothing;
 
@@ -732,7 +732,7 @@ values
    '["pro-football","future","award","mvp"]'::jsonb),
 
   ('60000000-0000-0000-0002-000000000002',
-   'championship', '10000000-0000-0000-0000-000000000001',
+   'season_future', '10000000-0000-0000-0000-000000000001',
    'PFCHAMP', 'Pro Football Championship Future',
    'Season championship future',
    'Tracks the simulated probability of the league championship outcome. Reprices significantly as playoff positioning clarifies.',
@@ -759,7 +759,7 @@ values
    '["pro-football","future","award","rookie"]'::jsonb),
 
   ('60000000-0000-0000-0002-000000000005',
-   'comeback', '10000000-0000-0000-0000-000000000001',
+   'award_future', '10000000-0000-0000-0000-000000000001',
    'PFCPOY', 'Pro Football Comeback Future',
    'Comeback Player of the Year future',
    'Tracks the simulated Comeback Player award. Emotional narrative drives this asset as much as performance.',
