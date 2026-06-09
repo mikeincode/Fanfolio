@@ -162,29 +162,44 @@ comment on table public.coach_roles is
 -- The core tradeable asset table. References sports/leagues/
 -- teams/roles as optional foreign keys.
 -- ─────────────────────────────────────────────────────────────
-create type if not exists public.asset_type_enum as enum (
-  'team_stock',
-  'player_coin',
-  'coach_stock',
-  'sport_index',
-  'meme_coin',
-  'award_future',
-  'season_future'
-);
+do $$
+begin
+  create type public.asset_type_enum as enum (
+    'team_stock',
+    'player_coin',
+    'coach_stock',
+    'sport_index',
+    'meme_coin',
+    'award_future',
+    'season_future'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
-create type if not exists public.asset_status_enum as enum (
-  'active',
-  'paused',
-  'settled',
-  'retired'
-);
+do $$
+begin
+  create type public.asset_status_enum as enum (
+    'active',
+    'paused',
+    'settled',
+    'retired'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
-create type if not exists public.asset_sentiment_enum as enum (
-  'bullish',
-  'bearish',
-  'neutral',
-  'volatile'
-);
+do $$
+begin
+  create type public.asset_sentiment_enum as enum (
+    'bullish',
+    'bearish',
+    'neutral',
+    'volatile'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists public.assets (
   id                    uuid primary key default gen_random_uuid(),
@@ -304,20 +319,30 @@ create policy "anon_read_index_members" on public.index_members
 -- 10. futures_markets
 -- Settlement rules for future-type assets.
 -- ─────────────────────────────────────────────────────────────
-create type if not exists public.future_type_enum as enum (
-  'award',
-  'season',
-  'championship',
-  'comeback',
-  'coach_momentum'
-);
+do $$
+begin
+  create type public.future_type_enum as enum (
+    'award',
+    'season',
+    'championship',
+    'comeback',
+    'coach_momentum'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
-create type if not exists public.future_status_enum as enum (
-  'open',
-  'pending_settlement',
-  'settled',
-  'voided'
-);
+do $$
+begin
+  create type public.future_status_enum as enum (
+    'open',
+    'pending_settlement',
+    'settled',
+    'voided'
+  );
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists public.futures_markets (
   id               uuid primary key default gen_random_uuid(),
