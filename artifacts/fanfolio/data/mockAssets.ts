@@ -31,6 +31,13 @@ export interface Asset {
   futureCategory?: string;
   settlementRule?: string;
   educationalNote?: string;
+  /**
+   * Supabase UUID for the corresponding public.assets row.
+   * Only populated on assets mapped from the database adapter.
+   * Never used as the app asset id — use id (symbol.toLowerCase()) instead.
+   * Undefined for all local mock assets.
+   */
+  dbAssetId?: string;
 }
 
 function generateChart(basePrice: number, trend: number, volatility: number): number[] {

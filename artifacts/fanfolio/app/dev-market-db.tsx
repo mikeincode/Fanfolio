@@ -13,10 +13,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import type { Asset } from "@/data/mockAssets";
 import {
   getMarketDatabaseCounts,
   getMarketDatabasePreview,
   getIndexMemberSummary,
+  getSupabaseMarketAssets,
+  mapDatabaseAssetToAppAsset,
+  getMarketDataSourceMode,
   type MarketDbCounts,
   type MarketDbPreview,
   type IndexMemberSummary,
@@ -45,11 +49,28 @@ const COUNT_ROWS: { key: keyof MarketDbCounts; label: string }[] = [
 ];
 
 type CheckPhase = "idle" | "loading" | "success" | "error";
+type MapPhase = "idle" | "loading" | "success" | "error";
 
 interface CheckResult {
   counts: MarketDbCounts;
   preview: MarketDbPreview;
   indexSummary: IndexMemberSummary[];
+}
+
+interface InvalidField {
+  symbol: string;
+  issues: string[];
+}
+
+interface MapValidationResult {
+  rawCount: number;
+  mappedCount: number;
+  invalidFields: InvalidField[];
+  duplicateIds: string[];
+  duplicateSymbols: string[];
+  sample: Asset[];
+  fallbackWouldActivate: boolean;
+  fallbackReason?: string;
 }
 
 function CountCard({
@@ -97,6 +118,79 @@ export default function DevMarketDbScreen() {
   const [phase, setPhase] = useState<CheckPhase>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [result, setResult] = useState<CheckResult | null>(null);
+
+  const [mapPhase, setMapPhase] = useState<MapPhase>("idle");
+  const [mapError, setMapError] = useState("");
+  const [mapResult, setMapResult] = useState<MapValidationResult | null>(null);
+
+  const runAdapterValidation = async () => {
+    setMapPhase("loading");
+    setMapError("");
+    setMapResult(null);
+    try {
+      const rows = await getSupabaseMarketAssets();
+      if (!rows) throw new Error("getSupabaseMarketAssets returned null — check Supabase config or permissions.");
+
+      const mapped: Asset[] = [];
+      const invalidFields: InvalidField[] = [];
+
+      for (const row of rows) {
+        try {
+          const asset = mapDatabaseAssetToAppAsset(row);
+          const issues: string[] = [];
+          if (!asset.id)          issues.push("id is empty");
+          if (!asset.name)        issues.push("name is empty");
+          if (!asset.symbol)      issues.push("symbol is empty");
+          if (!asset.sport)       issues.push("sport is empty");
+          if (!asset.description) issues.push("description is empty");
+          if (!asset.marketLesson) issues.push("marketLesson is empty");
+          if (!asset.whyItMoved)  issues.push("whyItMoved is empty");
+          if (!asset.chartData || asset.chartData.length === 0) issues.push("chartData is empty");
+          if (issues.length > 0) invalidFields.push({ symbol: row.symbol, issues });
+          mapped.push(asset);
+        } catch (mapErr) {
+          invalidFields.push({
+            symbol: (row as { symbol?: string }).symbol ?? "unknown",
+            issues: [`mapping threw: ${mapErr instanceof Error ? mapErr.message : String(mapErr)}`],
+          });
+        }
+      }
+
+      const idCounts: Record<string, number> = {};
+      const symbolCounts: Record<string, number> = {};
+      for (const a of mapped) {
+        idCounts[a.id] = (idCounts[a.id] ?? 0) + 1;
+        symbolCounts[a.symbol] = (symbolCounts[a.symbol] ?? 0) + 1;
+      }
+      const duplicateIds = Object.keys(idCounts).filter((k) => idCounts[k] > 1);
+      const duplicateSymbols = Object.keys(symbolCounts).filter((k) => symbolCounts[k] > 1);
+
+      const modeIsSupabase = getMarketDataSourceMode() === "supabase";
+      const fallbackWouldActivate = !isSupabaseConfigured || !modeIsSupabase || mapped.length === 0;
+      const fallbackReason = !isSupabaseConfigured
+        ? "Supabase env vars are missing"
+        : !modeIsSupabase
+        ? "EXPO_PUBLIC_MARKET_DATA_SOURCE is not 'supabase'"
+        : mapped.length === 0
+        ? "Supabase returned 0 assets"
+        : undefined;
+
+      setMapResult({
+        rawCount: rows.length,
+        mappedCount: mapped.length,
+        invalidFields,
+        duplicateIds,
+        duplicateSymbols,
+        sample: mapped.slice(0, 10),
+        fallbackWouldActivate,
+        fallbackReason,
+      });
+      setMapPhase("success");
+    } catch (e: unknown) {
+      setMapError(e instanceof Error ? e.message : "Unknown error");
+      setMapPhase("error");
+    }
+  };
 
   const handleRun = async () => {
     setPhase("loading");
@@ -426,6 +520,232 @@ export default function DevMarketDbScreen() {
               style={({ pressed }) => [
                 styles.runBtn,
                 { backgroundColor: "#0284C780", opacity: pressed ? 0.82 : 1 },
+              ]}
+            >
+              <Feather name="refresh-cw" size={14} color="#fff" />
+              <Text style={styles.runBtnText}>Run Again</Text>
+            </Pressable>
+          </>
+        )}
+
+        {/* ── Adapter Validation ──────────────────────────────────── */}
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Feather name="code" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+            Validate App Asset Mapping
+          </Text>
+        </View>
+
+        <Text style={[styles.body2, { color: colors.mutedForeground }]}>
+          Fetches all active assets from Supabase and runs them through{" "}
+          <Text style={{ fontFamily: "Inter_600SemiBold", color: colors.foreground }}>mapDatabaseAssetToAppAsset()</Text>.
+          Checks for required fields, duplicate IDs, duplicate symbols, and whether the local
+          fallback would activate. App behavior is NOT changed.
+        </Text>
+
+        {mapPhase === "idle" && (
+          <Pressable
+            onPress={runAdapterValidation}
+            disabled={!isSupabaseConfigured}
+            style={({ pressed }) => [
+              styles.runBtn,
+              {
+                backgroundColor: isSupabaseConfigured ? "#7C3AED" : colors.mutedForeground,
+                opacity: pressed ? 0.82 : 1,
+              },
+            ]}
+          >
+            <Feather name="code" size={16} color="#fff" />
+            <Text style={styles.runBtnText}>Validate App Asset Mapping</Text>
+          </Pressable>
+        )}
+
+        {mapPhase === "loading" && (
+          <View style={styles.loadingRow}>
+            <ActivityIndicator color="#7C3AED" />
+            <Text style={[styles.loadingText, { color: colors.mutedForeground }]}>
+              Fetching and mapping 208 assets…
+            </Text>
+          </View>
+        )}
+
+        {mapPhase === "error" && (
+          <>
+            <View style={[styles.resultRow, { backgroundColor: "#EF444418", borderColor: "#EF444435" }]}>
+              <Feather name="alert-circle" size={15} color="#EF4444" />
+              <Text style={[styles.resultText, { color: "#EF4444" }]}>
+                {mapError || "Validation failed. See console for details."}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setMapPhase("idle")}
+              style={({ pressed }) => [
+                styles.runBtn,
+                { backgroundColor: "#7C3AED", opacity: pressed ? 0.82 : 1 },
+              ]}
+            >
+              <Feather name="refresh-cw" size={14} color="#fff" />
+              <Text style={styles.runBtnText}>Try Again</Text>
+            </Pressable>
+          </>
+        )}
+
+        {mapPhase === "success" && mapResult && (
+          <>
+            {/* Summary row */}
+            <View style={[styles.resultRow, {
+              backgroundColor: mapResult.invalidFields.length === 0 && mapResult.duplicateIds.length === 0
+                ? colors.green + "18" : "#F59E0B18",
+              borderColor: mapResult.invalidFields.length === 0 && mapResult.duplicateIds.length === 0
+                ? colors.green + "35" : "#F59E0B40",
+            }]}>
+              <Feather
+                name={mapResult.invalidFields.length === 0 && mapResult.duplicateIds.length === 0 ? "check-circle" : "alert-triangle"}
+                size={15}
+                color={mapResult.invalidFields.length === 0 && mapResult.duplicateIds.length === 0 ? colors.green : "#F59E0B"}
+              />
+              <Text style={[styles.resultText, {
+                color: mapResult.invalidFields.length === 0 && mapResult.duplicateIds.length === 0 ? colors.green : "#F59E0B",
+              }]}>
+                {mapResult.rawCount} raw rows → {mapResult.mappedCount} mapped assets
+                {mapResult.invalidFields.length > 0 ? ` · ${mapResult.invalidFields.length} with field issues` : " · all fields valid"}
+                {mapResult.duplicateIds.length > 0 ? ` · ${mapResult.duplicateIds.length} duplicate IDs` : " · no duplicate IDs"}
+              </Text>
+            </View>
+
+            {/* Fallback status */}
+            <View style={[styles.infoCard, {
+              backgroundColor: mapResult.fallbackWouldActivate ? "#F59E0B12" : colors.green + "12",
+              borderColor: mapResult.fallbackWouldActivate ? "#F59E0B30" : colors.green + "30",
+            }]}>
+              <Feather
+                name={mapResult.fallbackWouldActivate ? "alert-triangle" : "shield"}
+                size={13}
+                color={mapResult.fallbackWouldActivate ? "#F59E0B" : colors.green}
+              />
+              <Text style={[styles.infoText, {
+                color: mapResult.fallbackWouldActivate ? "#F59E0B" : colors.green,
+              }]}>
+                {mapResult.fallbackWouldActivate
+                  ? `Fallback ACTIVE — local mock data serves the app. Reason: ${mapResult.fallbackReason ?? "unknown"}`
+                  : "Fallback inactive — Supabase would serve assets if flag is set."}
+              </Text>
+            </View>
+
+            {/* Duplicate IDs */}
+            {mapResult.duplicateIds.length > 0 && (
+              <View style={[styles.keysCard, { backgroundColor: "#EF444408", borderColor: "#EF444430" }]}>
+                <Text style={[styles.keysTitle, { color: "#EF4444" }]}>
+                  DUPLICATE APP IDs ({mapResult.duplicateIds.length})
+                </Text>
+                {mapResult.duplicateIds.map((id) => (
+                  <View key={id} style={styles.keyRow}>
+                    <Feather name="alert-circle" size={11} color="#EF4444" />
+                    <Text style={[styles.keyText, { color: "#EF4444" }]}>{id}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Duplicate symbols */}
+            {mapResult.duplicateSymbols.length > 0 && (
+              <View style={[styles.keysCard, { backgroundColor: "#F59E0B08", borderColor: "#F59E0B30" }]}>
+                <Text style={[styles.keysTitle, { color: "#F59E0B" }]}>
+                  DUPLICATE SYMBOLS ({mapResult.duplicateSymbols.length})
+                </Text>
+                {mapResult.duplicateSymbols.map((s) => (
+                  <View key={s} style={styles.keyRow}>
+                    <Feather name="alert-triangle" size={11} color="#F59E0B" />
+                    <Text style={[styles.keyText, { color: "#F59E0B" }]}>{s}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            {/* Invalid fields */}
+            {mapResult.invalidFields.length > 0 && (
+              <View style={[styles.keysCard, { backgroundColor: "#F59E0B08", borderColor: "#F59E0B30" }]}>
+                <Text style={[styles.keysTitle, { color: "#F59E0B" }]}>
+                  FIELD ISSUES ({mapResult.invalidFields.length} assets)
+                </Text>
+                {mapResult.invalidFields.slice(0, 10).map((f) => (
+                  <View key={f.symbol} style={[styles.keyRow, { alignItems: "flex-start" }]}>
+                    <Feather name="alert-triangle" size={11} color="#F59E0B" style={{ marginTop: 2 }} />
+                    <Text style={[styles.keyText, { color: colors.foreground, flex: 1 }]}>
+                      <Text style={{ fontFamily: "Inter_600SemiBold" }}>{f.symbol}</Text>
+                      {": "}{f.issues.join(", ")}
+                    </Text>
+                  </View>
+                ))}
+                {mapResult.invalidFields.length > 10 && (
+                  <Text style={[styles.keyText, { color: colors.mutedForeground }]}>
+                    …and {mapResult.invalidFields.length - 10} more
+                  </Text>
+                )}
+              </View>
+            )}
+
+            {/* Sample mapped assets */}
+            <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+              <Feather name="list" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+                First 10 Mapped App Assets
+              </Text>
+            </View>
+
+            <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={[styles.tableRow, styles.tableHeaderRow, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.tableHeader, { color: colors.mutedForeground, flex: 1 }]}>APP ID</Text>
+                <Text style={[styles.tableHeader, { color: colors.mutedForeground, flex: 1 }]}>SYMBOL</Text>
+                <Text style={[styles.tableHeader, { color: colors.mutedForeground, flex: 2 }]}>NAME</Text>
+                <Text style={[styles.tableHeader, { color: colors.mutedForeground, flex: 1, textAlign: "right" }]}>SPORT</Text>
+              </View>
+              {mapResult.sample.map((a) => (
+                <View key={a.id} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.tableCell, { color: colors.mutedForeground, flex: 1, fontSize: 10 }]} numberOfLines={1}>
+                    {a.id}
+                  </Text>
+                  <Text style={[styles.tableCell, { color: colors.foreground, flex: 1, fontFamily: "Inter_600SemiBold" }]}>
+                    {a.symbol}
+                  </Text>
+                  <Text style={[styles.tableCell, { color: colors.foreground, flex: 2 }]} numberOfLines={1}>
+                    {a.name}
+                  </Text>
+                  <Text style={[styles.tableCell, { color: colors.mutedForeground, flex: 1, textAlign: "right", fontSize: 10 }]} numberOfLines={1}>
+                    {a.sport}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            {/* ID generation note */}
+            <View style={[styles.keysCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.keysTitle, { color: colors.mutedForeground }]}>APP ID GENERATION RULE</Text>
+              <View style={styles.keyRow}>
+                <Feather name="key" size={11} color={colors.mutedForeground} />
+                <Text style={[styles.keyText, { color: colors.foreground }]}>
+                  id = symbol.toLowerCase() — e.g. "KCQB1" → "kcqb1"
+                </Text>
+              </View>
+              <View style={styles.keyRow}>
+                <Feather name="database" size={11} color={colors.mutedForeground} />
+                <Text style={[styles.keyText, { color: colors.foreground }]}>
+                  Supabase UUID stored as asset.dbAssetId — never used as app id
+                </Text>
+              </View>
+              <View style={styles.keyRow}>
+                <Feather name="shield" size={11} color={colors.green} />
+                <Text style={[styles.keyText, { color: colors.mutedForeground }]}>
+                  Watchlists, holdings, and trades keyed by symbol-based id — safe to switch sources
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={() => { setMapPhase("idle"); setMapResult(null); }}
+              style={({ pressed }) => [
+                styles.runBtn,
+                { backgroundColor: "#7C3AED80", opacity: pressed ? 0.82 : 1 },
               ]}
             >
               <Feather name="refresh-cw" size={14} color="#fff" />

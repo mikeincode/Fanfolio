@@ -29,6 +29,7 @@ import type {
   AssetRow,
   MarketPulseRow,
   AssetRowConverted,
+  DbAssetSentiment,
 } from "@/data/databaseMarketTypes";
 import { dbAssetTypeToAppType } from "@/data/databaseMarketTypes";
 
@@ -181,6 +182,208 @@ export async function fetchMarketPulsesFromSupabase(
   } catch (err) {
     if (__DEV__) console.warn("[marketRepository] fetchMarketPulsesFromSupabase exception:", err);
     return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Catalog adapter — Supabase → App Asset
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Enriched asset row returned by the catalog adapter's join query.
+ * sport_data / league_data are embedded via PostgREST FK joins.
+ * _settlementRule is populated from a parallel futures_markets query —
+ * it is not a real database column.
+ */
+interface EnrichedAssetRow extends AssetRow {
+  sport_data: { name: string; slug: string } | null;
+  league_data: { name: string; slug: string } | null;
+  /** Populated from public.futures_markets for Future-type assets. */
+  _settlementRule?: string;
+}
+
+/**
+ * Maps a Supabase sport name to the app's sport filter value.
+ * Scanner uses: "Football" | "Basketball" | "MMA" | "Baseball" | "Soccer" | "Hockey"
+ * Index/meme/coach assets with no sport → "All Sports"
+ */
+function dbSportToAppSport(name: string | null | undefined): string {
+  if (!name) return "All Sports";
+  const map: Record<string, string> = {
+    "Pro Football":   "Football",
+    "Pro Basketball": "Basketball",
+    "Pro Baseball":   "Baseball",
+    "Pro Hockey":     "Hockey",
+    "Pro Soccer":     "Soccer",
+    "MMA":            "MMA",
+    "College Sports": "All Sports",
+  };
+  return map[name] ?? "All Sports";
+}
+
+/** Generates a simple user-facing "why it moved" string from db sentiment. */
+function whyItMovedFromSentiment(
+  sentiment: DbAssetSentiment,
+  changePercent: number,
+): string {
+  const dir = changePercent >= 0 ? "higher" : "lower";
+  switch (sentiment) {
+    case "bullish":  return `Positive simulated momentum drove this asset ${dir} today.`;
+    case "bearish":  return `Simulated market pressure moved this asset ${dir} today.`;
+    case "volatile": return `High simulated volatility — sharp price swings in both directions today.`;
+    default:         return `Modest simulated market movement today.`;
+  }
+}
+
+/** Returns a type-appropriate market lesson fallback when educational_note is absent. */
+function defaultMarketLesson(type: import("@/data/mockAssets").AssetType): string {
+  switch (type) {
+    case "Team Stock":
+      return "Team stocks reflect simulated market confidence in a franchise's season trajectory. LuckyCoin has no cash value.";
+    case "Player Coin":
+      return "Player coins track simulated performance narratives for a roster position. They move with in-game momentum. LuckyCoin has no cash value.";
+    case "Coach Stock":
+      return "Coach stocks reflect simulated confidence in a coaching staff's performance. Great coaching lifts entire rosters. LuckyCoin has no cash value.";
+    case "Sport Index":
+      return "Indexes spread risk across many assets. Even if one coin drops, the index barely moves. LuckyCoin has no cash value.";
+    case "Meme Coin":
+      return "Meme coins are high-volatility, narrative-driven assets. They can spike fast and drop just as fast. LuckyCoin has no cash value.";
+    case "Future":
+      return "Futures track simulated season storylines — not gambling, odds, or real-money prediction markets. LuckyCoin has no cash value.";
+  }
+}
+
+/**
+ * Maps a single enriched Supabase asset row to the app Asset type.
+ *
+ * ID safety rule: id = symbol.toLowerCase()
+ *   This matches the format used by local mock assets (e.g. "ff100", "kcqb1").
+ *   It ensures watchlist entries, holdings, and trade records created against
+ *   local mock data continue to resolve correctly if Supabase data is later
+ *   switched on — as long as symbols are consistent.
+ *
+ * UUID preservation: row.id is stored as asset.dbAssetId (optional field).
+ *   It is never used as the app asset id.
+ *
+ * No real names, gambling odds, or real-money language in any output field.
+ */
+export function mapDatabaseAssetToAppAsset(row: EnrichedAssetRow): Asset {
+  const type = dbAssetTypeToAppType(row.asset_type);
+  const sport = dbSportToAppSport(row.sport_data?.name);
+  const league = row.league_data?.name ?? undefined;
+  const bullish = row.daily_change_percent >= 0;
+  const previousPrice =
+    row.current_price / (1 + row.daily_change_percent / 100);
+
+  return {
+    id: row.symbol.toLowerCase(),
+    dbAssetId: row.id,
+    name: row.public_name,
+    symbol: row.symbol,
+    type,
+    sport,
+    league,
+    price: row.current_price,
+    previousPrice: Math.max(0.01, previousPrice),
+    dailyChangePercent: row.daily_change_percent,
+    riskScore: row.risk_score,
+    description:
+      row.description ??
+      `${row.public_name} is a simulated Fanfolio market asset. LuckyCoin has no cash value.`,
+    marketLesson: row.educational_note ?? defaultMarketLesson(type),
+    whyItMoved: whyItMovedFromSentiment(row.sentiment, row.daily_change_percent),
+    chartData: generatePlaceholderChart(row.current_price, row.daily_change_percent),
+    bullish,
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    settlementRule: row._settlementRule ?? undefined,
+    educationalNote: row.educational_note ?? undefined,
+  };
+}
+
+/**
+ * Fetches all active assets from Supabase, enriched with sport and league names.
+ * Runs a parallel query to attach settlement rules for Future-type assets.
+ *
+ * Returns null if Supabase is not configured or any query fails.
+ * Does not affect local mock data — caller decides what to do with null.
+ */
+export async function getSupabaseMarketAssets(): Promise<EnrichedAssetRow[] | null> {
+  try {
+    if (!supabase) return null;
+
+    const [assetsResult, futuresResult] = await Promise.all([
+      supabase
+        .from("assets")
+        .select(
+          "*, sport_data:sports!sport_id ( name, slug ), league_data:leagues!league_id ( name, slug )"
+        )
+        .eq("status", "active")
+        .order("symbol"),
+      supabase
+        .from("futures_markets")
+        .select("asset_id, settlement_rule"),
+    ]);
+
+    if (assetsResult.error) {
+      if (__DEV__)
+        console.warn("[marketRepository] getSupabaseMarketAssets:", assetsResult.error.message);
+      return null;
+    }
+
+    // Build settlement_rule lookup keyed by asset UUID
+    const futuresMap: Record<string, string> = {};
+    if (!futuresResult.error && futuresResult.data) {
+      for (const f of futuresResult.data as { asset_id: string; settlement_rule: string | null }[]) {
+        if (f.settlement_rule) futuresMap[f.asset_id] = f.settlement_rule;
+      }
+    }
+
+    // Attach _settlementRule to matching rows
+    return ((assetsResult.data ?? []) as EnrichedAssetRow[]).map((row) => ({
+      ...row,
+      _settlementRule: futuresMap[row.id] ?? undefined,
+    }));
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getSupabaseMarketAssets exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Returns the active asset list for the app, respecting the feature flag.
+ *
+ * Fallback cascade — returns ALL_ASSETS if:
+ *   1. EXPO_PUBLIC_MARKET_DATA_SOURCE !== "supabase"   (flag not set)
+ *   2. Supabase env vars are missing                   (client is null)
+ *   3. Supabase query fails                            (network / permissions)
+ *   4. Supabase returns 0 valid mapped assets          (empty seed)
+ *
+ * Market, Scanner, and News screens continue to call useLiveAssets() which
+ * uses ALL_ASSETS directly. This function is the future swap-in point for
+ * those screens — they are not changed in this pass.
+ */
+export async function getMarketAssetsWithFallback(): Promise<Asset[]> {
+  if (getMarketDataSourceMode() !== "supabase") return fallbackToLocalAssets();
+  if (!supabase) return fallbackToLocalAssets();
+
+  try {
+    const rows = await getSupabaseMarketAssets();
+    if (!rows || rows.length === 0) return fallbackToLocalAssets();
+
+    const mapped: Asset[] = [];
+    for (const row of rows) {
+      try {
+        mapped.push(mapDatabaseAssetToAppAsset(row));
+      } catch (mapErr) {
+        if (__DEV__)
+          console.warn("[marketRepository] mapDatabaseAssetToAppAsset failed for", row.symbol, mapErr);
+      }
+    }
+
+    return mapped.length > 0 ? mapped : fallbackToLocalAssets();
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getMarketAssetsWithFallback exception:", err);
+    return fallbackToLocalAssets();
   }
 }
 
