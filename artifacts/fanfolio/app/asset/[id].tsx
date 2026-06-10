@@ -422,12 +422,25 @@ export default function AssetDetailScreen() {
                   const changeColor = isUp ? colors.green : colors.red;
                   const tc = memberTypeColor[m.type] ?? colors.mutedForeground;
                   const isLast = idx === displayMembers.length - 1 && totalMembers <= TOP_N;
+                  const memberAppId = m.symbol ? m.symbol.toLowerCase() : null;
+                  const handleMemberPress = memberAppId
+                    ? () => {
+                        if (prefs.hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        router.push({ pathname: "/asset/[id]", params: { id: memberAppId } });
+                      }
+                    : undefined;
                   return (
-                    <View
+                    <Pressable
                       key={m.assetId}
-                      style={[
+                      onPress={handleMemberPress}
+                      disabled={!handleMemberPress}
+                      style={({ pressed }) => [
                         basketStyles.row,
-                        { borderBottomColor: colors.border, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth },
+                        {
+                          borderBottomColor: colors.border,
+                          borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+                          backgroundColor: pressed && handleMemberPress ? colors.border + "40" : "transparent",
+                        },
                       ]}
                     >
                       <View style={basketStyles.colSymbol}>
@@ -441,7 +454,12 @@ export default function AssetDetailScreen() {
                       <Text style={[basketStyles.colChange, { color: changeColor }]}>
                         {isUp ? "+" : ""}{m.dailyChangePercent.toFixed(2)}%
                       </Text>
-                    </View>
+                      <View style={basketStyles.colChevron}>
+                        {handleMemberPress && (
+                          <Feather name="chevron-right" size={13} color={colors.mutedForeground} />
+                        )}
+                      </View>
+                    </Pressable>
                   );
                 })}
 
@@ -661,6 +679,7 @@ const basketStyles = StyleSheet.create({
   symbolText: { fontSize: 12, fontFamily: "Inter_700Bold", marginBottom: 2 },
   typeDot: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, alignSelf: "flex-start" as const },
   typeText: { fontSize: 9, fontFamily: "Inter_600SemiBold", lineHeight: 11 },
+  colChevron: { width: 18, alignItems: "center" as const },
   footer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
   footerText: { fontSize: 12, fontFamily: "Inter_400Regular" },
 });
