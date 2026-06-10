@@ -12,6 +12,7 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Asset } from "@/data/mockAssets";
 import {
@@ -114,6 +115,8 @@ export default function DevMarketDbScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
+  const mode = getMarketDataSourceMode();
+  const liveAssets = useLiveAssets();
 
   const [phase, setPhase] = useState<CheckPhase>("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -247,6 +250,36 @@ export default function DevMarketDbScreen() {
           against expected seed values and shows a small preview of each key table.
           No app behavior is changed — local mock data remains active.
         </Text>
+
+        {/* ── Active Source Status ─────────────────────────────────── */}
+        <View style={[styles.sourceCard, {
+          backgroundColor: mode === "supabase" ? colors.primary + "10" : colors.card,
+          borderColor: mode === "supabase" ? colors.primary + "35" : colors.border,
+        }]}>
+          <Text style={[styles.sourceTitle, { color: colors.mutedForeground }]}>ACTIVE SOURCE STATUS</Text>
+          <View style={styles.sourceRow}>
+            <Feather name="layers" size={13} color={mode === "supabase" ? colors.primary : colors.mutedForeground} />
+            <Text style={[styles.sourceLabel, { color: colors.foreground }]}>Market data source</Text>
+            <View style={[styles.sourceBadge, {
+              backgroundColor: mode === "supabase" ? colors.primary + "20" : colors.green + "20",
+            }]}>
+              <Text style={[styles.sourceBadgeText, {
+                color: mode === "supabase" ? colors.primary : colors.green,
+              }]}>{mode}</Text>
+            </View>
+          </View>
+          <View style={styles.sourceRow}>
+            <Feather name="package" size={13} color={colors.mutedForeground} />
+            <Text style={[styles.sourceLabel, { color: colors.foreground }]}>Assets in useLiveAssets</Text>
+            <Text style={[styles.sourceCount, { color: colors.foreground }]}>{liveAssets.length}</Text>
+          </View>
+          <View style={styles.sourceRow}>
+            <Feather name="flag" size={13} color={colors.mutedForeground} />
+            <Text style={[styles.sourceFlag, { color: colors.mutedForeground, flex: 1 }]}>
+              EXPO_PUBLIC_MARKET_DATA_SOURCE={mode === "supabase" ? '"supabase"' : "(unset — defaults to local)"}
+            </Text>
+          </View>
+        </View>
 
         {/* Config status */}
         {!isSupabaseConfigured ? (
@@ -911,4 +944,13 @@ const styles = StyleSheet.create({
   },
   safeTitle: { fontSize: 13, fontFamily: "Inter_700Bold", marginBottom: 4 },
   safeBody: { fontSize: 13, fontFamily: "Inter_400Regular", lineHeight: 20 },
+
+  sourceCard: { borderRadius: 12, borderWidth: 1, padding: 12, gap: 8 },
+  sourceTitle: { fontSize: 10, fontFamily: "Inter_600SemiBold", letterSpacing: 0.6 },
+  sourceRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  sourceLabel: { fontSize: 12, fontFamily: "Inter_400Regular", flex: 1 },
+  sourceBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
+  sourceBadgeText: { fontSize: 12, fontFamily: "Inter_700Bold" },
+  sourceCount: { fontSize: 14, fontFamily: "Inter_700Bold" },
+  sourceFlag: { fontSize: 10, fontFamily: "Inter_500Medium" },
 });
