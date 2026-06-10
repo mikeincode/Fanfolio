@@ -76,14 +76,31 @@ Run all four files. Each is independently runnable. Must run after 102a–102d a
 |------|------|
 | `104_seed_indexes_futures_pulses.sql` | 6 futures market definitions |
 
+### 2f-b — Index definitions and index members
+
+| File | Rows |
+|------|------|
+| `104b_seed_index_definitions_and_members.sql` | 4 index definitions + 96 index members |
+
+Indexes seeded:
+
+| Symbol | Name | Members | Weighting |
+|--------|------|---------|-----------|
+| PFPI | Pro Football Power Index | 32 team stocks @ 3.0 % each | equal |
+| PBSI | Pro Basketball Stars Index | 8 featured QB1 coins @ 12.5 % each* | equal |
+| MMACI | MMA Chaos Index | MMACHAMP future (40 %) + KO/DRAMA/UPSET memes | market_cap |
+| FF100 | Fanfolio 100 | 32 stocks + 8 QB1 coins + 6 memes + 6 futures | equal |
+
+\* No basketball-specific assets exist in the v1 seed. PBSI is bootstrapped with the 8 featured-team QB1 player coins as "top-tier star player" proxies until basketball assets are added.
+
 ### 2g — Price history
 
 | File | Rows |
 |------|------|
 | `105_seed_price_history.sql` | 208 seed price rows (one per asset) |
 
-> **Note:** `index_definitions`, `index_members`, `market_pulses`, and `market_pulse_impacts`
-> are intentionally empty after seeding. They are populated by the app at runtime.
+> **Note:** `market_pulses` and `market_pulse_impacts` are intentionally empty after seeding.
+> `index_definitions` and `index_members` are now seeded in chunk `104b`.
 
 ---
 
@@ -102,8 +119,8 @@ Expected results after a clean seed:
 | coach_roles | 6 |
 | assets | 208 |
 | asset_price_history | 208 |
-| index_definitions | 0 |
-| index_members | 0 |
+| index_definitions | 4 |
+| index_members | 96 |
 | futures_markets | 6 |
 | market_pulses | 0 |
 | market_pulse_impacts | 0 |
@@ -119,7 +136,7 @@ Expected results after a clean seed:
 102a  102b  102c  102d  102e
 103a
 103b  103c  103d  103e  103f
-104  105
+104  104b  105
 999 (count check)
 ```
 

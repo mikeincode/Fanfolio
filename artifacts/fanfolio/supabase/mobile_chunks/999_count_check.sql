@@ -9,8 +9,8 @@
 --   coach_roles             6
 --   assets                  208  (32 stocks + 160 coins + 4 indexes + 6 futures + 6 memes)
 --   asset_price_history     208  (one seed row per asset)
---   index_definitions       0    (not seeded in v1)
---   index_members           0    (not seeded in v1)
+--   index_definitions       4    (seeded in 104b: PFPI, PBSI, MMACI, FF100)
+--   index_members          96    (seeded in 104b: 32 PFPI + 8 PBSI + 4 MMACI + 52 FF100)
 --   futures_markets         6
 --   market_pulses           0    (not seeded in v1)
 --   market_pulse_impacts    0    (not seeded in v1)
