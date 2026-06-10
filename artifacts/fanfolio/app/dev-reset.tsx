@@ -421,6 +421,30 @@ export default function DevResetScreen() {
           </View>
         )}
 
+        {/* ── Market Database Check ───────────────────────────────── */}
+        <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+          <Feather name="database" size={14} color={colors.mutedForeground} />
+          <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+            Market Database
+          </Text>
+        </View>
+
+        <Text style={[styles.body2, { color: colors.mutedForeground }]}>
+          Confirm the app can read the Supabase market schema and verify seed row counts
+          against expected values. App behavior stays local — this is read-only.
+        </Text>
+
+        <Pressable
+          onPress={() => router.push("/dev-market-db")}
+          style={({ pressed }) => [
+            styles.dangerBtn,
+            { backgroundColor: "#0284C7", opacity: pressed ? 0.8 : 1 },
+          ]}
+        >
+          <Feather name="database" size={16} color="#fff" />
+          <Text style={styles.dangerBtnText}>Market DB Check</Text>
+        </Pressable>
+
         {/* How to use this screen */}
         <View style={[styles.howToCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <Text style={[styles.howToTitle, { color: colors.foreground }]}>How to navigate here</Text>

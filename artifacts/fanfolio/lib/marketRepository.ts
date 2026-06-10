@@ -185,6 +185,220 @@ export async function fetchMarketPulsesFromSupabase(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Dev-only: Market Database sanity check helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface MarketDbCounts {
+  sports: number;
+  leagues: number;
+  generic_teams: number;
+  generic_player_roles: number;
+  coach_roles: number;
+  assets: number;
+  asset_price_history: number;
+  futures_markets: number;
+  index_definitions: number;
+  index_members: number;
+}
+
+export interface AssetPreviewRow {
+  id: string;
+  symbol: string;
+  public_name: string;
+  asset_type: string;
+  current_price: number;
+}
+
+export interface TeamPreviewRow {
+  id: string;
+  city: string;
+  public_name: string;
+  symbol_prefix: string;
+}
+
+export interface PlayerRolePreviewRow {
+  id: string;
+  public_role: string;
+  public_name: string;
+  asset_symbol: string;
+}
+
+export interface IndexDefinitionPreviewRow {
+  id: string;
+  name: string;
+  weighting_method: string;
+}
+
+export interface MarketDbPreview {
+  assets: AssetPreviewRow[];
+  generic_teams: TeamPreviewRow[];
+  generic_player_roles: PlayerRolePreviewRow[];
+  index_definitions: IndexDefinitionPreviewRow[];
+}
+
+export interface IndexMemberSummary {
+  index_id: string;
+  index_name: string;
+  member_count: number;
+  total_weight: number;
+}
+
+/**
+ * Dev-only. Queries Supabase for exact row counts across all seeded tables.
+ * Returns null if Supabase is not configured or any query fails.
+ * Does NOT affect app behavior — local mock data is untouched.
+ */
+export async function getMarketDatabaseCounts(): Promise<MarketDbCounts | null> {
+  try {
+    if (!supabase) return null;
+
+    const countOf = (table: string) =>
+      supabase!.from(table).select("*", { count: "exact", head: true });
+
+    const [
+      sports,
+      leagues,
+      generic_teams,
+      generic_player_roles,
+      coach_roles,
+      assets,
+      asset_price_history,
+      futures_markets,
+      index_definitions,
+      index_members,
+    ] = await Promise.all([
+      countOf("sports"),
+      countOf("leagues"),
+      countOf("generic_teams"),
+      countOf("generic_player_roles"),
+      countOf("coach_roles"),
+      countOf("assets"),
+      countOf("asset_price_history"),
+      countOf("futures_markets"),
+      countOf("index_definitions"),
+      countOf("index_members"),
+    ]);
+
+    if (
+      sports.error || leagues.error || generic_teams.error ||
+      generic_player_roles.error || coach_roles.error || assets.error ||
+      asset_price_history.error || futures_markets.error ||
+      index_definitions.error || index_members.error
+    ) {
+      const firstError =
+        sports.error ?? leagues.error ?? generic_teams.error ??
+        generic_player_roles.error ?? coach_roles.error ?? assets.error ??
+        asset_price_history.error ?? futures_markets.error ??
+        index_definitions.error ?? index_members.error;
+      if (__DEV__) console.warn("[marketRepository] getMarketDatabaseCounts error:", firstError?.message);
+      return null;
+    }
+
+    return {
+      sports: sports.count ?? -1,
+      leagues: leagues.count ?? -1,
+      generic_teams: generic_teams.count ?? -1,
+      generic_player_roles: generic_player_roles.count ?? -1,
+      coach_roles: coach_roles.count ?? -1,
+      assets: assets.count ?? -1,
+      asset_price_history: asset_price_history.count ?? -1,
+      futures_markets: futures_markets.count ?? -1,
+      index_definitions: index_definitions.count ?? -1,
+      index_members: index_members.count ?? -1,
+    };
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getMarketDatabaseCounts exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Dev-only. Fetches a small preview of key reference table rows.
+ * Returns null if Supabase is not configured or any query fails.
+ */
+export async function getMarketDatabasePreview(): Promise<MarketDbPreview | null> {
+  try {
+    if (!supabase) return null;
+
+    const [assets, teams, roles, indexDefs] = await Promise.all([
+      supabase
+        .from("assets")
+        .select("id, symbol, public_name, asset_type, current_price")
+        .order("symbol")
+        .limit(5),
+      supabase
+        .from("generic_teams")
+        .select("id, city, public_name, symbol_prefix")
+        .order("city")
+        .limit(5),
+      supabase
+        .from("generic_player_roles")
+        .select("id, public_role, public_name, asset_symbol")
+        .order("asset_symbol")
+        .limit(5),
+      supabase
+        .from("index_definitions")
+        .select("id, name, weighting_method")
+        .order("name"),
+    ]);
+
+    if (assets.error || teams.error || roles.error || indexDefs.error) {
+      if (__DEV__)
+        console.warn("[marketRepository] getMarketDatabasePreview error:", assets.error ?? teams.error ?? roles.error ?? indexDefs.error);
+      return null;
+    }
+
+    return {
+      assets: (assets.data ?? []) as AssetPreviewRow[],
+      generic_teams: (teams.data ?? []) as TeamPreviewRow[],
+      generic_player_roles: (roles.data ?? []) as PlayerRolePreviewRow[],
+      index_definitions: (indexDefs.data ?? []) as IndexDefinitionPreviewRow[],
+    };
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getMarketDatabasePreview exception:", err);
+    return null;
+  }
+}
+
+/**
+ * Dev-only. Returns per-index member count and total weight, computed in JS.
+ * Returns null if Supabase is not configured or any query fails.
+ */
+export async function getIndexMemberSummary(): Promise<IndexMemberSummary[] | null> {
+  try {
+    if (!supabase) return null;
+
+    const [defsResult, membersResult] = await Promise.all([
+      supabase.from("index_definitions").select("id, name"),
+      supabase.from("index_members").select("index_id, weight_percent"),
+    ]);
+
+    if (defsResult.error || membersResult.error) {
+      if (__DEV__)
+        console.warn("[marketRepository] getIndexMemberSummary error:", defsResult.error ?? membersResult.error);
+      return null;
+    }
+
+    const defs = (defsResult.data ?? []) as { id: string; name: string }[];
+    const members = (membersResult.data ?? []) as { index_id: string; weight_percent: number }[];
+
+    return defs.map((def) => {
+      const defMembers = members.filter((m) => m.index_id === def.id);
+      const total = defMembers.reduce((sum, m) => sum + (m.weight_percent ?? 0), 0);
+      return {
+        index_id: def.id,
+        index_name: def.name,
+        member_count: defMembers.length,
+        total_weight: Math.round(total * 1000) / 1000,
+      };
+    });
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getIndexMemberSummary exception:", err);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main entry point (used by screens in a future pass)
 // ─────────────────────────────────────────────────────────────────────────────
 
