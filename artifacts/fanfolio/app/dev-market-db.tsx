@@ -22,6 +22,7 @@ import {
   getSupabaseMarketAssets,
   mapDatabaseAssetToAppAsset,
   getMarketDataSourceMode,
+  getIndexBasketForAsset,
   type MarketDbCounts,
   type MarketDbPreview,
   type IndexMemberSummary,
@@ -52,10 +53,18 @@ const COUNT_ROWS: { key: keyof MarketDbCounts; label: string }[] = [
 type CheckPhase = "idle" | "loading" | "success" | "error";
 type MapPhase = "idle" | "loading" | "success" | "error";
 
+interface BasketTestResult {
+  symbol: string;
+  indexName: string;
+  memberCount: number;
+  totalWeight: number;
+}
+
 interface CheckResult {
   counts: MarketDbCounts;
   preview: MarketDbPreview;
   indexSummary: IndexMemberSummary[];
+  basketTest: BasketTestResult | null;
 }
 
 interface InvalidField {
@@ -200,10 +209,14 @@ export default function DevMarketDbScreen() {
     setErrorMsg("");
     setResult(null);
     try {
-      const [counts, preview, indexSummary] = await Promise.all([
+      // Find the first Sport Index asset with a dbAssetId to use for basket test
+      const firstIndex = liveAssets.find(a => a.type === "Sport Index" && a.dbAssetId);
+
+      const [counts, preview, indexSummary, basketRaw] = await Promise.all([
         getMarketDatabaseCounts(),
         getMarketDatabasePreview(),
         getIndexMemberSummary(),
+        firstIndex ? getIndexBasketForAsset(firstIndex) : Promise.resolve(null),
       ]);
 
       if (!counts || !preview || !indexSummary) {
@@ -212,7 +225,17 @@ export default function DevMarketDbScreen() {
         return;
       }
 
-      setResult({ counts, preview, indexSummary });
+      const basketTest: BasketTestResult | null =
+        firstIndex && basketRaw
+          ? {
+              symbol: firstIndex.symbol,
+              indexName: basketRaw.indexName,
+              memberCount: basketRaw.members.length,
+              totalWeight: basketRaw.totalWeight,
+            }
+          : null;
+
+      setResult({ counts, preview, indexSummary, basketTest });
       setPhase("success");
     } catch (e: unknown) {
       setErrorMsg(e instanceof Error ? e.message : "Unknown error");
@@ -429,6 +452,38 @@ export default function DevMarketDbScreen() {
                   </View>
                 );
               })}
+            </View>
+
+            {/* Basket fetch test */}
+            <View style={[styles.sectionHeader, { borderTopColor: colors.border }]}>
+              <Feather name="layers" size={14} color={colors.mutedForeground} />
+              <Text style={[styles.sectionHeaderText, { color: colors.mutedForeground }]}>
+                Basket Fetch Test (getIndexBasketForAsset)
+              </Text>
+            </View>
+            <View style={[styles.tableCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {result.basketTest ? (
+                <View style={[styles.tableRow, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text style={[styles.tableCell, { color: colors.foreground }]}>
+                      <Text style={{ fontFamily: "Inter_700Bold" }}>{result.basketTest.symbol}</Text>
+                      {" — "}{result.basketTest.indexName}
+                    </Text>
+                    <Text style={[styles.tableCell, { color: colors.mutedForeground }]}>
+                      {result.basketTest.memberCount} members · {result.basketTest.totalWeight.toFixed(3)}% total weight{" "}
+                      <Text style={{ color: Math.abs(result.basketTest.totalWeight - 100) < 0.1 ? colors.green : "#EF4444" }}>
+                        {Math.abs(result.basketTest.totalWeight - 100) < 0.1 ? "✓" : "⚠ not 100%"}
+                      </Text>
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={[styles.tableRow, { borderBottomColor: colors.border, borderBottomWidth: 0 }]}>
+                  <Text style={[styles.tableCell, { color: colors.mutedForeground }]}>
+                    No Sport Index with dbAssetId found in live assets — basket fetch skipped.
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Asset preview */}

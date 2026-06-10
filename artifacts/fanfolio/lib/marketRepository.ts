@@ -30,6 +30,7 @@ import type {
   MarketPulseRow,
   AssetRowConverted,
   DbAssetSentiment,
+  DbAssetType,
 } from "@/data/databaseMarketTypes";
 import { dbAssetTypeToAppType } from "@/data/databaseMarketTypes";
 
@@ -597,6 +598,133 @@ export async function getIndexMemberSummary(): Promise<IndexMemberSummary[] | nu
     });
   } catch (err) {
     if (__DEV__) console.warn("[marketRepository] getIndexMemberSummary exception:", err);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Index basket — public types
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** One member of an index basket, resolved with live asset data. */
+export interface IndexBasketMember {
+  /** Supabase UUID of the member asset. */
+  assetId: string;
+  symbol: string;
+  name: string;
+  /** App-friendly type label, e.g. "Team Stock". */
+  type: string;
+  weightPercent: number;
+  price: number;
+  dailyChangePercent: number;
+}
+
+/** Resolved basket for a Sport Index asset. */
+export interface IndexBasket {
+  indexId: string;
+  indexName: string;
+  weightingMethod: string;
+  /** Ordered by weight_percent DESC (as returned by DB). */
+  members: IndexBasketMember[];
+  /** Sum of all member weight_percent values, rounded to 3 dp. */
+  totalWeight: number;
+}
+
+/**
+ * Fetches the index basket for a Sport Index asset.
+ *
+ * - Only runs in Supabase mode. Returns null in local mode.
+ * - Returns null if the asset is not a "Sport Index".
+ * - Returns null if asset.dbAssetId is missing (local mock asset).
+ * - Never throws — returns null on any network or query error.
+ * - Does NOT query private_entity_aliases.
+ * - LuckyCoin only — no real money, no gambling, no odds.
+ */
+export async function getIndexBasketForAsset(asset: Asset): Promise<IndexBasket | null> {
+  if (getMarketDataSourceMode() !== "supabase") return null;
+  if (!supabase) return null;
+  if (asset.type !== "Sport Index") return null;
+  if (!asset.dbAssetId) return null;
+
+  try {
+    // 1. Resolve the index_definition row for this asset UUID
+    const defResult = await supabase
+      .from("index_definitions")
+      .select("id, name, weighting_method")
+      .eq("asset_id", asset.dbAssetId)
+      .limit(1)
+      .single();
+
+    if (defResult.error || !defResult.data) {
+      if (__DEV__) console.warn("[marketRepository] getIndexBasketForAsset: no index_definition for", asset.symbol, defResult.error?.message);
+      return null;
+    }
+
+    const def = defResult.data as { id: string; name: string; weighting_method: string };
+
+    // 2. Fetch index_members for this index, ordered by weight descending
+    const membersResult = await supabase
+      .from("index_members")
+      .select("asset_id, weight_percent")
+      .eq("index_id", def.id)
+      .order("weight_percent", { ascending: false });
+
+    if (membersResult.error || !membersResult.data || membersResult.data.length === 0) {
+      if (__DEV__) console.warn("[marketRepository] getIndexBasketForAsset: no members for", def.name, membersResult.error?.message);
+      return null;
+    }
+
+    const rawMembers = membersResult.data as { asset_id: string; weight_percent: number }[];
+    const memberAssetIds = rawMembers.map(m => m.asset_id);
+
+    // 3. Fetch asset details for all member IDs in one query
+    const assetsResult = await supabase
+      .from("assets")
+      .select("id, symbol, public_name, asset_type, current_price, daily_change_percent")
+      .in("id", memberAssetIds);
+
+    if (assetsResult.error) {
+      if (__DEV__) console.warn("[marketRepository] getIndexBasketForAsset: assets fetch failed:", assetsResult.error.message);
+      return null;
+    }
+
+    const assetMap = new Map<string, {
+      symbol: string;
+      public_name: string;
+      asset_type: string;
+      current_price: number;
+      daily_change_percent: number;
+    }>();
+    for (const row of (assetsResult.data ?? []) as {
+      id: string; symbol: string; public_name: string;
+      asset_type: string; current_price: number; daily_change_percent: number;
+    }[]) {
+      assetMap.set(row.id, row);
+    }
+
+    const members: IndexBasketMember[] = rawMembers
+      .map(m => {
+        const a = assetMap.get(m.asset_id);
+        if (!a) return null;
+        return {
+          assetId: m.asset_id,
+          symbol: a.symbol,
+          name: a.public_name,
+          type: dbAssetTypeToAppType(a.asset_type as DbAssetType),
+          weightPercent: m.weight_percent,
+          price: a.current_price,
+          dailyChangePercent: a.daily_change_percent,
+        } as IndexBasketMember;
+      })
+      .filter((m): m is IndexBasketMember => m !== null);
+
+    const totalWeight = Math.round(
+      members.reduce((sum, m) => sum + m.weightPercent, 0) * 1000
+    ) / 1000;
+
+    return { indexId: def.id, indexName: def.name, weightingMethod: def.weighting_method, members, totalWeight };
+  } catch (err) {
+    if (__DEV__) console.warn("[marketRepository] getIndexBasketForAsset exception:", err);
     return null;
   }
 }

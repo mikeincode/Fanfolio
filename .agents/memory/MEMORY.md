@@ -2,3 +2,4 @@
 - [Fanfolio challenge system](fanfolio-challenges.md) — 17 challenges, 10 achievements, 7 levels; XP/flags persisted via GameContext; progress computed in useChallenges hook.
 - [Fanfolio routing conventions](fanfolio-routing.md) — app/index.tsx is the root redirect gate for onboarding; all stack screens must have explicit Stack.Screen entries with headerShown: false.
 - [Fanfolio Supabase layer](fanfolio-supabase.md) — lib/supabase.ts, lib/marketRepository.ts, market data feature-flagged via EXPO_PUBLIC_MARKET_DATA_SOURCE; local/mock is default.
+- [Fanfolio index basket feature](fanfolio-index-basket.md) — getIndexBasketForAsset in marketRepository.ts, useIndexBasket hook with module-level cache, basket UI in asset/[id].tsx, basket test in dev-market-db.tsx.

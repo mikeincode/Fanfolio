@@ -9,6 +9,7 @@ import {
   Platform,
   Alert,
   Modal,
+  ActivityIndicator,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useLiveAsset } from "@/hooks/useLiveAssets";
+import { useIndexBasket } from "@/hooks/useIndexBasket";
 import { useGame } from "@/context/GameContext";
 import { SparklineChart } from "@/components/SparklineChart";
 import { RiskBar } from "@/components/RiskBar";
@@ -179,6 +181,7 @@ export default function AssetDetailScreen() {
   const asset = useLiveAsset(id ?? "");
   const holding = getHolding(id ?? "");
   const watched = id ? isWatched(id) : false;
+  const { loading: basketLoading, basket, isSupabaseMode } = useIndexBasket(asset);
 
   const handleWatchToggle = () => {
     if (!id) return;
@@ -309,7 +312,7 @@ export default function AssetDetailScreen() {
             </View>
           )}
 
-          {/* ── Index composition card ──────────────── */}
+          {/* ── Index composition card (local mock) ─── */}
           {asset.type === "Sport Index" && asset.indexComposition && asset.indexComposition.length > 0 && (
             <View style={[styles.card, { backgroundColor: colors.green + "10", borderColor: colors.green + "30" }]}>
               <View style={styles.cardRow}>
@@ -321,6 +324,139 @@ export default function AssetDetailScreen() {
               </Text>
             </View>
           )}
+
+          {/* ── Index basket section (Supabase mode) ── */}
+          {asset.type === "Sport Index" && (() => {
+            const memberTypeColor: Record<string, string> = {
+              "Team Stock": colors.blue,
+              "Player Coin": "#A78BFA",
+              "Coach Stock": "#06B6D4",
+              "Sport Index": colors.green,
+              "Meme Coin": "#F97316",
+              "Future": "#EC4899",
+            };
+
+            // Local mode — show informational fallback, no crash
+            if (!isSupabaseMode) {
+              return (
+                <View style={[styles.card, { backgroundColor: colors.green + "08", borderColor: colors.green + "25" }]}>
+                  <View style={styles.cardRow}>
+                    <Feather name="layers" size={14} color={colors.green} />
+                    <Text style={[styles.cardLabel, { color: colors.green }]}>What's inside this index?</Text>
+                  </View>
+                  <Text style={[styles.cardBody, { color: colors.mutedForeground }]}>
+                    Basket details are available when the market database is active.
+                  </Text>
+                </View>
+              );
+            }
+
+            // Loading state
+            if (basketLoading) {
+              return (
+                <View style={[styles.card, { backgroundColor: colors.green + "08", borderColor: colors.green + "25", alignItems: "center", paddingVertical: 24 }]}>
+                  <ActivityIndicator color={colors.green} size="small" />
+                  <Text style={[styles.cardBody, { color: colors.mutedForeground, marginTop: 8 }]}>Loading basket…</Text>
+                </View>
+              );
+            }
+
+            // No basket data (not found or error) — show educational fallback
+            if (!basket || basket.members.length === 0) {
+              return (
+                <View style={[styles.card, { backgroundColor: colors.green + "08", borderColor: colors.green + "25" }]}>
+                  <View style={styles.cardRow}>
+                    <Feather name="layers" size={14} color={colors.green} />
+                    <Text style={[styles.cardLabel, { color: colors.green }]}>What's inside this index?</Text>
+                  </View>
+                  <Text style={[styles.cardBody, { color: colors.mutedForeground }]}>
+                    An index is a basket of assets. It spreads movement across many holdings instead of depending on one asset.
+                  </Text>
+                </View>
+              );
+            }
+
+            const TOP_N = 10;
+            const displayMembers = basket.members.slice(0, TOP_N);
+            const totalMembers = basket.members.length;
+            const weightOk = Math.abs(basket.totalWeight - 100) < 0.1;
+
+            return (
+              <View style={[styles.card, { backgroundColor: colors.green + "08", borderColor: colors.green + "25", gap: 0, padding: 0 }]}>
+                {/* Header */}
+                <View style={[basketStyles.header, { borderBottomColor: colors.green + "25" }]}>
+                  <View style={styles.cardRow}>
+                    <Feather name="layers" size={14} color={colors.green} />
+                    <Text style={[styles.cardLabel, { color: colors.green }]}>What's inside this index?</Text>
+                  </View>
+                  <View style={basketStyles.metaRow}>
+                    <View style={[basketStyles.pill, { backgroundColor: colors.green + "20" }]}>
+                      <Text style={[basketStyles.pillText, { color: colors.green }]}>{totalMembers} assets</Text>
+                    </View>
+                    <View style={[basketStyles.pill, { backgroundColor: weightOk ? colors.green + "20" : "#F59E0B20" }]}>
+                      <Text style={[basketStyles.pillText, { color: weightOk ? colors.green : "#F59E0B" }]}>
+                        {basket.totalWeight.toFixed(1)}% total weight
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Educational note */}
+                <View style={{ paddingHorizontal: 14, paddingTop: 12, paddingBottom: 8 }}>
+                  <Text style={[styles.cardBody, { color: colors.mutedForeground, fontSize: 13 }]}>
+                    An index is a basket of assets. It spreads movement across many holdings instead of depending on one asset.
+                  </Text>
+                </View>
+
+                {/* Column headers */}
+                <View style={[basketStyles.row, basketStyles.headerRow, { borderBottomColor: colors.border, backgroundColor: colors.green + "10" }]}>
+                  <Text style={[basketStyles.colSymbol, { color: colors.mutedForeground }]}>SYMBOL</Text>
+                  <Text style={[basketStyles.colName, { color: colors.mutedForeground }]}>NAME</Text>
+                  <Text style={[basketStyles.colWeight, { color: colors.mutedForeground }]}>WT%</Text>
+                  <Text style={[basketStyles.colChange, { color: colors.mutedForeground }]}>CHG</Text>
+                </View>
+
+                {/* Member rows */}
+                {displayMembers.map((m, idx) => {
+                  const isUp = m.dailyChangePercent >= 0;
+                  const changeColor = isUp ? colors.green : colors.red;
+                  const tc = memberTypeColor[m.type] ?? colors.mutedForeground;
+                  const isLast = idx === displayMembers.length - 1 && totalMembers <= TOP_N;
+                  return (
+                    <View
+                      key={m.assetId}
+                      style={[
+                        basketStyles.row,
+                        { borderBottomColor: colors.border, borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth },
+                      ]}
+                    >
+                      <View style={basketStyles.colSymbol}>
+                        <Text style={[basketStyles.symbolText, { color: colors.foreground }]}>{m.symbol}</Text>
+                        <View style={[basketStyles.typeDot, { backgroundColor: tc + "30" }]}>
+                          <Text style={[basketStyles.typeText, { color: tc }]} numberOfLines={1}>{m.type.replace(" ", "\n")}</Text>
+                        </View>
+                      </View>
+                      <Text style={[basketStyles.colName, { color: colors.foreground }]} numberOfLines={2}>{m.name}</Text>
+                      <Text style={[basketStyles.colWeight, { color: colors.foreground }]}>{m.weightPercent.toFixed(2)}%</Text>
+                      <Text style={[basketStyles.colChange, { color: changeColor }]}>
+                        {isUp ? "+" : ""}{m.dailyChangePercent.toFixed(2)}%
+                      </Text>
+                    </View>
+                  );
+                })}
+
+                {/* "Showing top N of X" footer */}
+                {totalMembers > TOP_N && (
+                  <View style={[basketStyles.footer, { borderTopColor: colors.border }]}>
+                    <Feather name="more-horizontal" size={13} color={colors.mutedForeground} />
+                    <Text style={[basketStyles.footerText, { color: colors.mutedForeground }]}>
+                      Showing top {TOP_N} of {totalMembers} members
+                    </Text>
+                  </View>
+                )}
+              </View>
+            );
+          })()}
 
           {/* ── Related News ────────────────────────── */}
           {(() => {
@@ -509,6 +645,24 @@ const styles = StyleSheet.create({
   newsItemLesson: { fontSize: 11, fontFamily: "Inter_600SemiBold", flex: 1 },
   newsMoreBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 9, borderWidth: 1, paddingVertical: 9 },
   newsMoreBtnText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+});
+
+const basketStyles = StyleSheet.create({
+  header: { padding: 14, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth, gap: 8 },
+  metaRow: { flexDirection: "row", gap: 6, flexWrap: "wrap" as const },
+  pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  pillText: { fontSize: 11, fontFamily: "Inter_600SemiBold" },
+  row: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 9, gap: 6 },
+  headerRow: { paddingVertical: 6 },
+  colSymbol: { width: 68 },
+  colName: { flex: 1, fontSize: 12, fontFamily: "Inter_400Regular", lineHeight: 16 },
+  colWeight: { width: 52, textAlign: "right" as const, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  colChange: { width: 56, textAlign: "right" as const, fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  symbolText: { fontSize: 12, fontFamily: "Inter_700Bold", marginBottom: 2 },
+  typeDot: { paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4, alignSelf: "flex-start" as const },
+  typeText: { fontSize: 9, fontFamily: "Inter_600SemiBold", lineHeight: 11 },
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  footerText: { fontSize: 12, fontFamily: "Inter_400Regular" },
 });
 
 const tradeStyles = StyleSheet.create({
