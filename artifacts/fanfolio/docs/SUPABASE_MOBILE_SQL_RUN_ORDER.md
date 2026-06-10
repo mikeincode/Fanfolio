@@ -84,14 +84,14 @@ Run all four files. Each is independently runnable. Must run after 102a–102d a
 
 Indexes seeded:
 
-| Symbol | Name | Members | Weighting |
-|--------|------|---------|-----------|
-| PFPI | Pro Football Power Index | 32 team stocks @ 3.0 % each | equal |
-| PBSI | Pro Basketball Stars Index | 8 featured QB1 coins @ 12.5 % each* | equal |
-| MMACI | MMA Chaos Index | MMACHAMP future (40 %) + KO/DRAMA/UPSET memes | market_cap |
-| FF100 | Fanfolio 100 | 32 stocks + 8 QB1 coins + 6 memes + 6 futures | equal |
+| Symbol | Name | Members | Weight total |
+|--------|------|---------|-------------|
+| PFPI | Pro Football Power Index | 32 team stocks @ 3.125 % each | 100.000 % |
+| PBSI | Featured Player Stars Index | 8 featured QB1 coins @ 12.5 % each | 100.000 % |
+| MMACI | MMA Chaos Index | MMACHAMP future (40 %) + KO/DRAMA/UPSET memes | 100.000 % |
+| FF100 | Fanfolio 100 | 32 stocks + 8 QB1 coins + 6 memes + 6 futures | 100.000 % |
 
-\* No basketball-specific assets exist in the v1 seed. PBSI is bootstrapped with the 8 featured-team QB1 player coins as "top-tier star player" proxies until basketball assets are added.
+**PBSI note:** The symbol PBSI maps to an asset named "Featured Player Stars Index" — a cross-sport featured-player coin basket. It is not labelled as a basketball index because no basketball-specific assets exist in the v1 seed. The 8 members are the QB1 player coins from the featured franchises. The basket expands when additional sport/role assets are added.
 
 ### 2g — Price history
 
