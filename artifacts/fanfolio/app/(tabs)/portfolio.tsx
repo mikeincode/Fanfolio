@@ -126,6 +126,13 @@ export default function PortfolioScreen() {
     }>;
   }, [holdings, liveAssets]);
 
+  // Holdings whose assetId is not in the active catalog (stale saves from a
+  // different data-source mode). Data is preserved; rows show "Unknown Asset".
+  const staleHoldings = useMemo(
+    () => holdings.filter(h => !liveAssets.find(a => a.id === h.assetId)),
+    [holdings, liveAssets]
+  );
+
   const portfolioValue = enriched.reduce((s, e) => s + e.currentValue, 0);
   const totalInvested = enriched.reduce((s, e) => s + e.totalInvested, 0);
   const totalPL = portfolioValue - totalInvested;
@@ -277,38 +284,58 @@ export default function PortfolioScreen() {
             <Text style={[styles.emptyAction, { color: colors.primary }]}>Go to Market</Text>
           </Pressable>
         ) : (
-          enriched.map(e => {
-            const isUp = e.profitLoss >= 0;
-            const plColor = isUp ? colors.green : colors.red;
-            return (
-              <Pressable
-                key={e.assetId}
-                onPress={() => router.push({ pathname: "/asset/[id]", params: { id: e.assetId } })}
-                style={({ pressed }) => [
-                  styles.holdingCard,
-                  { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
-                ]}
+          <>
+            {enriched.map(e => {
+              const isUp = e.profitLoss >= 0;
+              const plColor = isUp ? colors.green : colors.red;
+              return (
+                <Pressable
+                  key={e.assetId}
+                  onPress={() => router.push({ pathname: "/asset/[id]", params: { id: e.assetId } })}
+                  style={({ pressed }) => [
+                    styles.holdingCard,
+                    { backgroundColor: colors.card, borderColor: colors.border, opacity: pressed ? 0.85 : 1 },
+                  ]}
+                >
+                  <View style={styles.holdingLeft}>
+                    <Text style={[styles.holdingSym, { color: colors.foreground }]}>{e.asset.symbol}</Text>
+                    <Text style={[styles.holdingName, { color: colors.mutedForeground }]} numberOfLines={1}>{e.asset.name}</Text>
+                    <Text style={[styles.holdingQty, { color: colors.mutedForeground }]}>{e.quantity} shares</Text>
+                  </View>
+                  <SparklineChart data={e.asset.chartData} width={52} height={22} positive={isUp} />
+                  <View style={styles.holdingRight}>
+                    <Text style={[styles.holdingValue, { color: colors.foreground }]}>
+                      {e.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </Text>
+                    <Text style={[styles.holdingPL, { color: plColor }]}>
+                      {isUp ? "+" : ""}{e.profitLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
+                    </Text>
+                    <Text style={[styles.holdingPLPct, { color: plColor }]}>
+                      {isUp ? "+" : ""}{e.profitLossPercent.toFixed(2)}%
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+            {staleHoldings.map(h => (
+              <View
+                key={"stale-" + h.assetId}
+                style={[styles.holdingCard, { backgroundColor: colors.card, borderColor: colors.border, opacity: 0.4 }]}
               >
                 <View style={styles.holdingLeft}>
-                  <Text style={[styles.holdingSym, { color: colors.foreground }]}>{e.asset.symbol}</Text>
-                  <Text style={[styles.holdingName, { color: colors.mutedForeground }]} numberOfLines={1}>{e.asset.name}</Text>
-                  <Text style={[styles.holdingQty, { color: colors.mutedForeground }]}>{e.quantity} shares</Text>
+                  <Text style={[styles.holdingSym, { color: colors.mutedForeground }]}>—</Text>
+                  <Text style={[styles.holdingName, { color: colors.mutedForeground }]}>Unknown Asset</Text>
+                  <Text style={[styles.holdingQty, { color: colors.mutedForeground }]}>
+                    {h.quantity} share{h.quantity !== 1 ? "s" : ""} · data unavailable
+                  </Text>
                 </View>
-                <SparklineChart data={e.asset.chartData} width={52} height={22} positive={isUp} />
                 <View style={styles.holdingRight}>
-                  <Text style={[styles.holdingValue, { color: colors.foreground }]}>
-                    {e.currentValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                  </Text>
-                  <Text style={[styles.holdingPL, { color: plColor }]}>
-                    {isUp ? "+" : ""}{e.profitLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })} LC
-                  </Text>
-                  <Text style={[styles.holdingPLPct, { color: plColor }]}>
-                    {isUp ? "+" : ""}{e.profitLossPercent.toFixed(2)}%
-                  </Text>
+                  <Text style={[styles.holdingValue, { color: colors.mutedForeground }]}>—</Text>
+                  <Text style={[styles.holdingPL, { color: colors.mutedForeground }]}>—</Text>
                 </View>
-              </Pressable>
-            );
-          })
+              </View>
+            ))}
+          </>
         )}
       </View>
 

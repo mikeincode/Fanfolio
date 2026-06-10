@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { useColors } from "@/hooks/useColors";
 import { useGame, Transaction } from "@/context/GameContext";
 import { getAllAssetById } from "@/data/assetUniverse";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { useUserPreferences } from "@/lib/userPreferences";
 
 type KindFilter = "All" | "Buys" | "Sells" | "Team Stock" | "Player Coin" | "Coach Stock" | "Sport Index" | "Meme Coin" | "Future";
@@ -63,10 +64,14 @@ function StatCard({ label, value, sub, accent, colors }: {
   );
 }
 
-function TradeRow({ tx, colors }: { tx: Transaction; colors: ReturnType<typeof useColors> }) {
+function TradeRow({ tx, colors, resolvedAsset }: {
+  tx: Transaction;
+  colors: ReturnType<typeof useColors>;
+  resolvedAsset?: ReturnType<typeof getAllAssetById>;
+}) {
   const isBuy = tx.type === "buy";
   const iconColor = isBuy ? colors.green : colors.primary;
-  const asset = getAllAssetById(tx.assetId);
+  const asset = resolvedAsset ?? getAllAssetById(tx.assetId);
   const typeLabel = asset
     ? asset.type === "Sport Index" ? "Index"
       : asset.type === "Team Stock" ? "Team"
@@ -136,14 +141,21 @@ export default function JournalScreen() {
   const [filter, setFilter] = useState<KindFilter>("All");
   const [sort, setSort] = useState<SortOption>("Newest");
 
+  const liveAssets = useLiveAssets();
   const { prefs } = useUserPreferences();
   const topPad = Platform.OS === "web" ? 67 : insets.top;
   const bottomPad = Platform.OS === "web" ? 34 : insets.bottom;
 
   // ── Augmented transactions with asset info ──────────────────
+  // Prefer the active catalog (liveAssets) so type labels and sport badges
+  // appear correctly in both local and Supabase mode.
+  // Falls back to getAllAssetById (local mock) for any stale save entries.
   const augmented = useMemo(() =>
-    transactions.map(tx => ({ ...tx, asset: getAllAssetById(tx.assetId) })),
-    [transactions]
+    transactions.map(tx => ({
+      ...tx,
+      asset: liveAssets.find(a => a.id === tx.assetId) ?? getAllAssetById(tx.assetId),
+    })),
+    [transactions, liveAssets]
   );
 
   // ── Stats ───────────────────────────────────────────────────
@@ -399,7 +411,7 @@ export default function JournalScreen() {
         }
         renderItem={({ item }) => (
           <View style={{ paddingHorizontal: 16, marginBottom: 8 }}>
-            <TradeRow tx={item} colors={colors} />
+            <TradeRow tx={item} colors={colors} resolvedAsset={item.asset} />
           </View>
         )}
         ListEmptyComponent={

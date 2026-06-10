@@ -1,6 +1,6 @@
 ---
 name: Fanfolio Supabase layer
-description: Supabase client setup, market repository adapter, useLiveAssets wiring, and feature flag conventions.
+description: Supabase client setup, market repository adapter, useLiveAssets wiring, feature flag conventions, and QA sweep findings.
 ---
 
 ## Packages
@@ -11,35 +11,36 @@ Exports `supabase` (null if env vars missing) and `isSupabaseConfigured` (bool).
 
 ## lib/marketRepository.ts — adapter functions
 - `getSupabaseMarketAssets()` — enriched join query (assets + sports + leagues + futures_markets); returns `EnrichedAssetRow[] | null`
-- `mapDatabaseAssetToAppAsset(row)` — maps one `EnrichedAssetRow` → `Asset`; id = `symbol.toLowerCase()` (matches local mock id format); fills chartData with placeholder sparkline
-- `getMarketAssetsWithFallback()` — respects feature flag, falls back to `ALL_ASSETS` on any error; 4-level fallback cascade
+- `mapDatabaseAssetToAppAsset(row)` — maps one `EnrichedAssetRow` → `Asset`; id = `symbol.toLowerCase()`; fills chartData with placeholder sparkline
+- `getMarketAssetsWithFallback()` — respects feature flag, falls back to `ALL_ASSETS` on any error
 - `getMarketDataSourceMode()` — reads `EXPO_PUBLIC_MARKET_DATA_SOURCE`; defaults to "local"
 
 ## hooks/useLiveAssets.ts — wiring
-`useLiveAssets()` now checks `getMarketDataSourceMode()` on every render:
-- "local" (default): reads `ALL_ASSETS` synchronously — identical to old behavior, zero overhead
-- "supabase": uses module-level `_cachedAssets` / `_loadPromise` cache; fetches once per app session via `getMarketAssetsWithFallback()`; during initial load frame returns `ALL_ASSETS` as interim so no screen blanks
-`useLiveAsset(id)` now calls `useLiveAssets()` internally and does `.find()` — works for both local and supabase assets.
+- "local" (default): reads `ALL_ASSETS` synchronously — zero overhead
+- "supabase": module-level cache (`_cachedAssets` / `_loadPromise`); fetches once per app session; interim ALL_ASSETS until fetch completes
 
-**Why cache is module-level:** React state initializer reads it synchronously on re-mounts so there is no loading flash on screens that mount after the first load.
+**Why cache is module-level:** React state initializer reads it synchronously on re-mounts — no loading flash.
 
 ## Feature flag
-Set `EXPO_PUBLIC_MARKET_DATA_SOURCE=supabase` in env to activate Supabase market data.
-Without this flag, `useLiveAssets` returns `ALL_ASSETS` immediately — Supabase is never queried.
+`EXPO_PUBLIC_MARKET_DATA_SOURCE=supabase` activates Supabase data. Requires Metro rebundle (restart workflow) — baked at build time, not runtime.
 
-## Screens affected when flag = "supabase"
-All screens that call `useLiveAssets()` or `useLiveAsset(id)` automatically use Supabase data:
-Market, Scanner, Asset Detail, Portfolio, Watchlist, Portfolio Coach, Journal, Home (index).
-No screen-level changes needed.
+## QA sweep — ALL_ASSETS / getAllAssetById bugs found and fixed
+All hooks/screens that use `ALL_ASSETS` directly for type/sport lookups (instead of `liveAssets`) produce wrong results in Supabase mode. Fixed files:
+- `leaderboard.tsx` — uniqueSports/uniqueTypes: `ALL_ASSETS` → `liveAssets` (diversification score was always 0)
+- `profile.tsx` — same uniqueSports/uniqueTypes fix (rank computation wrong)
+- `performance.tsx` — `getAllAssetById` for topHolding/topMover → `liveAssets.find()` (names blank)
+- `useChallenges.ts` — holdingSports + indexBuyCount + memeBuyAssetIds: `ALL_ASSETS` → `liveAssets` (3-sports challenge and buy-index challenge never completed)
+- `useTraderIdentity.ts` — memeHoldings/indexHoldings/futuresHoldings/memeBuyTx/indexBuyTx/holdingSports/holdingTypes: `assetMap` → `liveMap` (identity always misclassified; assetMap still used as price fallback)
+- `journal.tsx` — `augmented` array + `TradeRow.resolvedAsset` prop: `getAllAssetById` → `liveAssets.find() ?? getAllAssetById()` (type badge and filter broken)
 
-## Screens NOT yet using the hook (still use ALL_ASSETS directly)
-`useChallenges.ts` and `useTraderIdentity.ts` use `ALL_ASSETS.find()` for sport/type lookups on holdings/transactions. These work correctly because holdings are built with `symbol.toLowerCase()` ids that exist in both local and Supabase asset sets. No change needed for the current scope.
+**Rule:** Never use `ALL_ASSETS.find()` or `getAllAssetById()` for live type/sport lookups. Always use `liveAssets` from `useLiveAssets()`. Keep `getAllAssetById` only as a stale-save fallback.
+
+## Stale-save handling
+`portfolio.tsx` adds `staleHoldings = holdings.filter(h => !liveAssets.find(...))` and renders dimmed "Unknown Asset · data unavailable" rows. User data is preserved, no crash, no silent deletion.
+Journal `augmented` uses `liveAssets.find() ?? getAllAssetById()` — stale transactions still render with symbol/name/qty/price from the saved Transaction shape.
 
 ## Supabase DB counts (seeded)
 sports 7, leagues 7, generic_teams 32, generic_player_roles 160, coach_roles 6, assets 208, asset_price_history 208, futures_markets 6, index_definitions 4, index_members 96.
 
 ## Dev tool — app/dev-market-db.tsx
-Read-only sanity check screen. Shows:
-- **Active Source Status** card: mode (local/supabase), `useLiveAssets.length`, and flag value
-- "Run Supabase Market Check" button: row counts + index/team/player previews
-- "Validate App Asset Mapping" section: per-row field validation + duplicate detection
+Active Source Status card: mode (local/supabase), `useLiveAssets.length`, and flag value.

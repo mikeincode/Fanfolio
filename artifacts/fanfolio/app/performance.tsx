@@ -15,7 +15,6 @@ import { useGame, PortfolioSnapshot } from "@/context/GameContext";
 import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { SparklineChart } from "@/components/SparklineChart";
 import { useUserPreferences } from "@/lib/userPreferences";
-import { getAllAssetById } from "@/data/assetUniverse";
 
 function formatLC(n: number, compact = false): string {
   if (compact) {
@@ -113,10 +112,10 @@ export default function PerformanceScreen() {
   // Top holding name
   const latestSnap = snaps[0];
   const topHolding = latestSnap?.topHoldingId
-    ? getAllAssetById(latestSnap.topHoldingId)
+    ? (liveAssets.find(a => a.id === latestSnap.topHoldingId) ?? null)
     : null;
   const topMover = latestSnap?.topMoverId
-    ? getAllAssetById(latestSnap.topMoverId)
+    ? (liveAssets.find(a => a.id === latestSnap.topMoverId) ?? null)
     : null;
 
   return (

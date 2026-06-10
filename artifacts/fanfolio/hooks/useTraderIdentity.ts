@@ -216,18 +216,18 @@ export function useTraderIdentity(): TraderIdentityResult {
     const usedMomentum = challengeFlags.includes("view_momentum");
     const viewedJournal = challengeFlags.includes("view_journal");
 
-    const memeHoldings = holdings.filter(h => assetMap[h.assetId]?.type === "Meme Coin");
-    const indexHoldings = holdings.filter(h => assetMap[h.assetId]?.type === "Sport Index");
-    const futuresHoldings = holdings.filter(h => assetMap[h.assetId]?.type === "Future");
+    const memeHoldings = holdings.filter(h => liveMap[h.assetId]?.type === "Meme Coin");
+    const indexHoldings = holdings.filter(h => liveMap[h.assetId]?.type === "Sport Index");
+    const futuresHoldings = holdings.filter(h => liveMap[h.assetId]?.type === "Future");
 
-    const memeBuyTx = buyTx.filter(t => assetMap[t.assetId]?.type === "Meme Coin");
-    const indexBuyTx = buyTx.filter(t => assetMap[t.assetId]?.type === "Sport Index");
+    const memeBuyTx = buyTx.filter(t => liveMap[t.assetId]?.type === "Meme Coin");
+    const indexBuyTx = buyTx.filter(t => liveMap[t.assetId]?.type === "Sport Index");
 
     const holdingSports = new Set(
-      holdings.map(h => assetMap[h.assetId]?.sport).filter((s): s is string => Boolean(s))
+      holdings.map(h => liveMap[h.assetId]?.sport).filter((s): s is string => Boolean(s))
     );
     const holdingTypes = new Set(
-      holdings.map(h => assetMap[h.assetId]?.type).filter((t): t is AssetType => Boolean(t))
+      holdings.map(h => liveMap[h.assetId]?.type).filter((t): t is AssetType => Boolean(t))
     );
 
     const portfolioValue = holdings.reduce((s, h) => {
