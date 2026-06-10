@@ -42,5 +42,10 @@ Journal `augmented` uses `liveAssets.find() ?? getAllAssetById()` — stale tran
 ## Supabase DB counts (seeded)
 sports 7, leagues 7, generic_teams 32, generic_player_roles 160, coach_roles 6, assets 208, asset_price_history 208, futures_markets 6, index_definitions 4, index_members 96.
 
+## buildSnapshot live-catalog fix
+`buildSnapshot` in `GameContext.tsx` is a module-level pure function — it cannot call hooks. It originally used `getAllAssetById()` only, which misses all Supabase assets → `holdingsValue=0`, `topHoldingId/topMoverId` undefined in Supabase mode.
+**Fix pattern:** module-level `_liveAssetCatalog: Asset[]` ref + exported `registerLiveAssetCatalog(assets)` setter. `buildSnapshot` consults `_liveAssetCatalog.find()` first, then `getAllAssetById()` as fallback. A `LiveAssetRegistrar` component (renders `null`, calls `useLiveAssets()` + `registerLiveAssetCatalog()` on every render) is placed inside `<GameProvider>` in `_layout.tsx`. No circular dependency, no snapshot shape change, local mode fully preserved.
+`performance.tsx` already renders topHolding/topMover via `liveAssets.find()` — the render side was already correct; the bug was only in snapshot creation.
+
 ## Dev tool — app/dev-market-db.tsx
 Active Source Status card: mode (local/supabase), `useLiveAssets.length`, and flag value.

@@ -14,8 +14,21 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { GameProvider } from "@/context/GameContext";
+import { GameProvider, registerLiveAssetCatalog } from "@/context/GameContext";
+import { useLiveAssets } from "@/hooks/useLiveAssets";
 import { UserPreferencesProvider } from "@/lib/userPreferences";
+
+/**
+ * Keeps the module-level live asset catalog in GameContext up-to-date so that
+ * buildSnapshot can resolve Supabase asset names/prices without a circular import.
+ * Must be rendered inside <GameProvider> (needs useGame via useLiveAssets).
+ * Renders nothing — side-effect only.
+ */
+function LiveAssetRegistrar() {
+  const liveAssets = useLiveAssets();
+  registerLiveAssetCatalog(liveAssets);
+  return null;
+}
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,6 +82,7 @@ export default function RootLayout() {
             <KeyboardProvider>
               <UserPreferencesProvider>
                 <GameProvider>
+                  <LiveAssetRegistrar />
                   <RootLayoutNav />
                 </GameProvider>
               </UserPreferencesProvider>

@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import type { Asset } from "@/data/mockAssets";
 import { getAllAssetById } from "@/data/assetUniverse";
 import { getEventById, getRandomEvent, MarketEvent } from "@/data/mockMarketEvents";
 import { generateRandomSourceEvent } from "@/lib/marketSourceAdapter";
@@ -14,6 +15,17 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { safeMerge } from "@/lib/cloudSaveUtils";
 import { safeParseGameState, SaveHealthStatus } from "@/lib/saveHealth";
 import type { User } from "@supabase/supabase-js";
+
+// ─── Live asset catalog ref ───────────────────────────────────────────────────
+// Populated by LiveAssetRegistrar (rendered inside GameProvider in _layout.tsx).
+// Avoids a circular import: useLiveAssets → GameContext → useLiveAssets.
+// buildSnapshot consults this first; falls back to getAllAssetById for local mode.
+let _liveAssetCatalog: Asset[] = [];
+
+/** Call this from a component inside GameProvider to keep snapshot lookups current. */
+export function registerLiveAssetCatalog(assets: Asset[]): void {
+  _liveAssetCatalog = assets;
+}
 
 const STORAGE_KEY = "@fanfolio_game_state_v2";
 const SAVED_AT_KEY = "@fanfolio_local_saved_at";
@@ -213,7 +225,8 @@ function buildSnapshot(
   let topMoverChange = 0;
 
   for (const h of params.holdings) {
-    const base = getAllAssetById(h.assetId);
+    // Resolve asset: live catalog (Supabase mode) → local mock fallback
+    const base = _liveAssetCatalog.find(a => a.id === h.assetId) ?? getAllAssetById(h.assetId);
     if (!base) continue;
     const override = params.priceOverrides[h.assetId];
     const price = override?.price ?? base.price;
