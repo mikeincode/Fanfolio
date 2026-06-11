@@ -1,8 +1,13 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "Jf06sEB5CTj-6j46UhtV0"
 uri = "file://artifacts/fanfolio/assets/images/icon.png"
 type = "image"
 title = "fanfolio app icon"
+
+[[outputs]]
+id = "C8b91n5tS27HDeq0mJsZR"
+uri = "file://artifacts/fanfolio/docs/FANFOLIO_BETA_RC_CHECKLIST.md"
+type = "text"
+title = "Fanfolio Beta RC Checklist"
