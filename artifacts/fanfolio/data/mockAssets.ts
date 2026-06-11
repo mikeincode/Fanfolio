@@ -79,7 +79,7 @@ export const MOCK_ASSETS: Asset[] = [
     dailyChangePercent: 2.08,
     riskScore: 3,
     description: "Tracks the combined performance of the top 20 pro football franchises weighted by win rate, market cap, and fan engagement.",
-    marketLesson: "An index removes single-asset risk. You own a piece of everything, not one bet.",
+    marketLesson: "An index removes single-asset risk. You own a piece of the whole basket, not one single asset.",
     whyItMoved: "Playoff bracket speculation drove football team stocks up across the board.",
     chartData: generateChart(980, 1.5, 15),
     bullish: true,
