@@ -18,7 +18,7 @@ import { useColors } from "@/hooks/useColors";
 import { useGame } from "@/context/GameContext";
 import { useUserPreferences } from "@/lib/userPreferences";
 import { formatSyncTime } from "@/lib/cloudSaveUtils";
-import { openFeedbackForm } from "@/lib/feedback";
+import { openFeedbackForm, BUILD_TAG } from "@/lib/feedback";
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -429,6 +429,11 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* ── Build badge ──────────────────────────────────────────────── */}
+      <Text style={[styles.buildBadge, { color: colors.mutedForeground }]}>
+        Fanfolio {BUILD_TAG}
+      </Text>
+
     </ScrollView>
   );
 }
@@ -658,4 +663,5 @@ const styles = StyleSheet.create({
   },
   statusChipLabel: { fontSize: 10, fontFamily: "Inter_500Medium", marginBottom: 3 },
   statusChipValue: { fontSize: 13, fontFamily: "Inter_700Bold" },
+  buildBadge: { fontSize: 11, fontFamily: "Inter_400Regular", textAlign: "center", paddingVertical: 20, opacity: 0.45 },
 });

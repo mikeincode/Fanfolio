@@ -14,7 +14,7 @@ import { Platform, Linking, Alert } from "react-native";
 
 const FEEDBACK_URL: string = process.env.EXPO_PUBLIC_TALLY_FEEDBACK_URL ?? "";
 const FORM_ID: string = process.env.EXPO_PUBLIC_TALLY_FORM_ID ?? "";
-const BUILD_TAG = "beta-rc1";
+export const BUILD_TAG = "beta-rc1";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
